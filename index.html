@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Real-time ISS tracking with beautiful 3D solar system visualization">
+    <title>Real-Time ISS & Solar System Visualization</title>
+
+    <!-- Styles -->
+    <link rel="stylesheet" href="src/styles/main.css">
+    <link rel="stylesheet" href="src/styles/ui.css">
+</head>
+<body>
+    <!-- Loading Screen -->
+    <div id="loading-screen">
+        <div class="loading-content">
+            <h1>🚀 ISS Tracker</h1>
+            <div class="loading-spinner"></div>
+            <p>Initializing solar system...</p>
+        </div>
+    </div>
+
+    <!-- Main 3D Canvas Container -->
+    <div id="canvas-container"></div>
+
+    <!-- UI Overlay -->
+    <div id="ui-overlay">
+        <!-- Header with Title and FPS -->
+        <div id="header">
+            <h1>🌍 Real-Time ISS Tracker</h1>
+            <div id="fps-counter">FPS: --</div>
+        </div>
+
+        <!-- Control Panel -->
+        <div id="control-panel" class="panel">
+            <h3>Controls</h3>
+
+            <!-- Time Speed Slider -->
+            <div class="control-group">
+                <label for="time-speed">Time Speed: <span id="speed-value">500x</span></label>
+                <input type="range" id="time-speed" min="1" max="50000" value="500" step="1">
+                <div class="preset-speeds">
+                    <button data-speed="1">1x</button>
+                    <button data-speed="100">100x</button>
+                    <button data-speed="500">500x</button>
+                    <button data-speed="2000">2000x</button>
+                    <button data-speed="10000">10000x</button>
+                </div>
+            </div>
+
+            <!-- Play/Pause -->
+            <div class="control-group">
+                <button id="play-pause" class="btn-primary">⏸ Pause</button>
+                <button id="reset-camera" class="btn-secondary">🎥 Reset Camera</button>
+            </div>
+
+            <!-- Visual Style Switcher -->
+            <div class="control-group">
+                <label>Visual Style:</label>
+                <div class="style-buttons">
+                    <button data-style="realistic" class="style-btn active">🌎 Realistic</button>
+                    <button data-style="cartoon" class="style-btn">🎨 Cartoon</button>
+                    <button data-style="neon" class="style-btn">⚡ Neon</button>
+                    <button data-style="minimalist" class="style-btn">◯ Minimal</button>
+                </div>
+            </div>
+
+            <!-- Feature Toggles -->
+            <div class="control-group">
+                <label>Display:</label>
+                <div class="toggles">
+                    <label class="toggle">
+                        <input type="checkbox" id="toggle-orbits" checked>
+                        <span>Orbits</span>
+                    </label>
+                    <label class="toggle">
+                        <input type="checkbox" id="toggle-labels" checked>
+                        <span>Labels</span>
+                    </label>
+                    <label class="toggle">
+                        <input type="checkbox" id="toggle-trails" checked>
+                        <span>Trails</span>
+                    </label>
+                    <label class="toggle">
+                        <input type="checkbox" id="toggle-stars" checked>
+                        <span>Stars</span>
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        <!-- Info Panel -->
+        <div id="info-panel" class="panel">
+            <h3>🛰️ ISS Status</h3>
+            <div id="iss-info">
+                <div class="info-row">
+                    <span class="info-label">Position:</span>
+                    <span id="iss-position">Loading...</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Altitude:</span>
+                    <span id="iss-altitude">-- km</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Velocity:</span>
+                    <span id="iss-velocity">-- km/h</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Last Update:</span>
+                    <span id="iss-update-time">--</span>
+                </div>
+            </div>
+
+            <h3>📍 Selected Object</h3>
+            <div id="selected-info">
+                <p>Click any planet or the ISS to see details</p>
+            </div>
+        </div>
+
+        <!-- Help Button -->
+        <button id="help-button" class="floating-btn" title="Help & Controls">
+            ❓
+        </button>
+    </div>
+
+    <!-- Help Modal -->
+    <div id="help-modal" class="modal hidden">
+        <div class="modal-content">
+            <span class="close-modal">&times;</span>
+            <h2>🎮 Controls & Help</h2>
+
+            <h3>Camera Controls</h3>
+            <ul>
+                <li><strong>Left Click + Drag:</strong> Rotate camera</li>
+                <li><strong>Right Click + Drag:</strong> Pan camera</li>
+                <li><strong>Scroll Wheel:</strong> Zoom in/out</li>
+                <li><strong>Touch:</strong> One finger rotate, two finger zoom/pan</li>
+            </ul>
+
+            <h3>Interactions</h3>
+            <ul>
+                <li><strong>Click Objects:</strong> Focus camera on planets or ISS</li>
+                <li><strong>Time Speed:</strong> Adjust how fast time moves (1x to 50,000x)</li>
+                <li><strong>Visual Styles:</strong> Switch between 4 different visual themes</li>
+                <li><strong>Toggles:</strong> Show/hide orbits, labels, trails, and stars</li>
+            </ul>
+
+            <h3>Tips</h3>
+            <ul>
+                <li>Try <strong>2000x speed</strong> to see Earth complete an orbit in ~7 minutes</li>
+                <li>Use <strong>Neon style</strong> for dramatic orbital trails</li>
+                <li>Click <strong>Earth</strong> and zoom in to see the ISS orbit</li>
+                <li>At high speeds, the ISS becomes a ring around Earth</li>
+            </ul>
+
+            <h3>About</h3>
+            <p>This visualization uses real-time ISS position data from Open Notify API, updated every 5 seconds. The solar system uses simplified orbital mechanics for performance.</p>
+        </div>
+    </div>
+
+    <!-- Three.js Library (CDN) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r160/three.min.js"></script>
+
+    <!-- OrbitControls (for camera control) -->
+    <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/examples/js/controls/OrbitControls.js"></script>
+
+    <!-- Our Application Modules -->
+    <script type="module" src="src/utils/constants.js"></script>
+    <script type="module" src="src/utils/time.js"></script>
+    <script type="module" src="src/utils/coordinates.js"></script>
+    <script type="module" src="src/utils/orbital.js"></script>
+    <script type="module" src="src/utils/api.js"></script>
+    <script type="module" src="src/core/scene.js"></script>
+    <script type="module" src="src/core/camera.js"></script>
+    <script type="module" src="src/core/renderer.js"></script>
+    <script type="module" src="src/core/animation.js"></script>
+    <script type="module" src="src/modules/sun.js"></script>
+    <script type="module" src="src/modules/planets.js"></script>
+    <script type="module" src="src/modules/moon.js"></script>
+    <script type="module" src="src/modules/iss.js"></script>
+    <script type="module" src="src/modules/orbits.js"></script>
+    <script type="module" src="src/modules/styles.js"></script>
+    <script type="module" src="src/modules/ui.js"></script>
+    <script type="module" src="src/modules/solarSystem.js"></script>
+
+    <!-- Main Application Entry Point -->
+    <script type="module" src="src/main.js"></script>
+</body>
+</html>

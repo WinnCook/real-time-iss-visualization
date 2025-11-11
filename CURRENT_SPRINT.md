@@ -191,23 +191,38 @@
   - [x] 8.1.6: Adjust pixel ratio per preset (Quality: 2.0, Balanced: 1.5, Performance: 1.0)
   - [x] 8.1.7: Configure tone mapping per preset (ACESFilmic/Linear/None)
   - [x] 8.1.8: Test and document performance preset system
-- [ ] 8.2: Test in Chrome, Firefox, Safari
-- [ ] 8.3: Verify ISS API updates every 5 seconds
-- [ ] 8.4: Test all 4 visual styles
-- [ ] 8.5: Verify performance targets (Quality: 45fps, Balanced: 60fps, Performance: 60fps+)
-- [ ] 8.6: Test on mobile device
-- [ ] 8.7: Check for console errors
-- [ ] 8.8: Verify camera controls work smoothly
-- [ ] 8.9: Test time speed slider at all ranges
+- [ ] 8.2: Ultra-Low Performance Mode & Advanced Optimizations (PRIORITY - Eliminate glitching)
+  - [ ] 8.2.1: Add "Potato" preset (8 segments, 0.75 pixel ratio, no effects)
+  - [ ] 8.2.2: Implement render throttling (cap at 30fps for ultra-low mode)
+  - [ ] 8.2.3: Add object LOD (Level of Detail) - reduce segments with distance from camera
+  - [ ] 8.2.4: Implement geometry instancing for repeated objects (reuse geometries)
+  - [ ] 8.2.5: Add orbit path caching (pre-compute paths, don't recalculate each frame)
+  - [ ] 8.2.6: Optimize update loop - batch calculations, reduce per-frame trig operations
+  - [ ] 8.2.7: Add optional "pause rendering when idle/tab hidden" feature
+  - [ ] 8.2.8: Profile with Chrome DevTools Performance tab and identify remaining bottlenecks
+  - [ ] 8.2.9: Consider using BufferGeometry directly instead of SphereGeometry for lower overhead
+  - [ ] 8.2.10: Implement requestIdleCallback for non-critical updates
+  - [ ] 8.2.11: Test on low-end hardware (2015 laptop or older)
+- [ ] 8.3: Test in Chrome, Firefox, Safari
+- [ ] 8.4: Verify ISS API updates every 5 seconds
+- [ ] 8.5: Test all 4 visual styles
+- [ ] 8.6: Verify performance targets (Quality: 45fps, Balanced: 60fps, Performance: 60fps+, Potato: 30fps+)
+- [ ] 8.7: Test on mobile device
+- [ ] 8.8: Check for console errors
+- [ ] 8.9: Verify camera controls work smoothly
+- [ ] 8.10: Test time speed slider at all ranges
 
 **Priority:** P0 (Critical)
-**Estimated Effort:** 4 hours (increased from 2 hours due to performance system)
+**Estimated Effort:** 6 hours (increased to 6 hours: 2 hours for Task 8.2 ultra-low optimizations)
 **Dependencies:** Task #7
 
 **Performance Optimization Notes:**
 - Current bottlenecks identified: 32 sphere segments (6K triangles), ACESFilmic tone mapping, 2x pixel ratio
 - Performance preset system will allow users to choose based on their hardware
 - Target: 60fps on modern laptops (balanced), 60fps+ on older devices (performance mode)
+- **Issue identified**: Current Performance mode still showing glitching on some hardware
+- **Next priority**: Task 8.2 - Ultra-low "Potato" mode + clever optimizations (LOD, caching, throttling)
+- **Goal**: Achieve butter-smooth 30fps minimum on any hardware, even 2015 laptops
 
 **Task 8.1 Completion Notes:**
 - Created 3 performance presets: Quality (best visuals), Balanced (recommended), Performance (max FPS)
@@ -246,8 +261,8 @@
 - **Completed:** 3/9 (33%)
 - **In Progress:** 2/9 (Task 4: Solar System, Task 8: Testing & Optimization)
 - **Blocked:** 0/9
-- **Total Subtasks:** 70 (increased due to performance preset system)
-- **Completed Subtasks:** 31/70 (44%)
+- **Total Subtasks:** 81 (increased: +11 for ultra-low performance optimizations)
+- **Completed Subtasks:** 31/81 (38%)
 
 ---
 
@@ -373,6 +388,15 @@ A task is considered "Done" when:
 - ✅ Performance presets working (switchable in UI)
 - ✅ FPS counter visible and updating
 - ✅ No console errors
+- ⚠️ **Issue noted**: Some glitching still present on certain hardware
+
+### Next Action Items:
+1. **PRIORITY**: Task 8.2 - Implement ultra-low "Potato" mode (added to sprint)
+   - 8 sphere segments (vs current 12)
+   - FPS throttling to 30fps
+   - Advanced optimizations: LOD, geometry caching, render throttling
+   - Goal: Eliminate all glitching, even on 2015 laptops
+2. Continue with remaining solar system modules (ISS, Orbits)
 
 ---
 

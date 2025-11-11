@@ -3,7 +3,7 @@
  * Kepler orbital calculations for planetary motion
  */
 
-import { TWO_PI, daysToMs, auToScene, kmToScene } from './constants.js';
+import { TWO_PI, daysToMs, auToScene, kmToScene, SCALE } from './constants.js';
 
 /**
  * Calculate orbital position at given time for circular orbit
@@ -53,7 +53,9 @@ export function calculatePlanetPosition(simulationTime, planetData, startAngle =
  * @returns {Object} Position {x, y, z}
  */
 export function calculateMoonPosition(simulationTime, earthPosition, moonData, startAngle = 0) {
-    const orbitRadiusScene = kmToScene(moonData.orbitRadius);
+    // Apply MOON_ORBIT_SCALE to make Moon visible outside Earth's scaled-up surface
+    // Without this, Moon would be inside Earth since planets are scaled 1500x but orbit distance is real km
+    const orbitRadiusScene = kmToScene(moonData.orbitRadius) * SCALE.MOON_ORBIT_SCALE;
     const periodMs = daysToMs(moonData.orbitPeriod);
     const angle = startAngle + (simulationTime / periodMs) * TWO_PI;
 

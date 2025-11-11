@@ -9,7 +9,9 @@ import { initRenderer, onWindowResize as rendererResize } from './core/renderer.
 import { initAnimation, startAnimation, addUpdateCallback } from './core/animation.js';
 import { timeManager } from './utils/time.js';
 import { initSun, updateSun } from './modules/sun.js';
-import { initPlanets, updatePlanets } from './modules/planets.js';
+import { initPlanets, updatePlanets, getPlanetPosition } from './modules/planets.js';
+import { initMoon, updateMoon } from './modules/moon.js';
+import { initPerformance, switchPreset, getCurrentPresetConfig } from './modules/performance.js';
 import { STYLES } from './utils/constants.js';
 
 /**
@@ -23,6 +25,7 @@ const app = {
     animation: null,
     sun: null,
     planets: null,
+    moon: null,
     isInitialized: false
 };
 
@@ -59,11 +62,17 @@ async function init() {
         // Initialize planets with realistic style
         app.planets = initPlanets(STYLES.realistic);
 
+        // Initialize the moon with realistic style
+        app.moon = initMoon(STYLES.realistic);
+
         // Set up window resize handler
         window.addEventListener('resize', onWindowResize);
 
         // Initialize TimeManager
         timeManager.setTimeSpeed(100000); // Default 100,000x speed for visible orbits
+
+        // Initialize Performance System
+        initPerformance('BALANCED');
 
         // Register update callbacks
         addUpdateCallback((deltaTime, simulationTime) => {
@@ -75,6 +84,14 @@ async function init() {
             // Update planets animation
             if (app.planets) {
                 updatePlanets(deltaTime, simulationTime);
+            }
+
+            // Update moon animation (needs Earth's position)
+            if (app.moon) {
+                const earthPosition = getPlanetPosition('earth');
+                if (earthPosition) {
+                    updateMoon(deltaTime, simulationTime, earthPosition);
+                }
             }
         });
 
@@ -218,6 +235,33 @@ function setupUIHandlers() {
             }
         });
     }
+
+    // Performance Preset Buttons
+    const performancePresetButtons = document.querySelectorAll('.preset-btn');
+    const presetDescription = document.getElementById('preset-description');
+
+    performancePresetButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            const presetName = button.dataset.preset;
+
+            // Switch to the new preset
+            if (app.renderer) {
+                switchPreset(presetName, app.renderer);
+
+                // Update active button state
+                performancePresetButtons.forEach(btn => btn.classList.remove('active'));
+                button.classList.add('active');
+
+                // Update description
+                const presetConfig = getCurrentPresetConfig();
+                if (presetDescription && presetConfig) {
+                    presetDescription.textContent = presetConfig.description;
+                }
+
+                console.log(`🎨 Switched to ${presetConfig.name} preset`);
+            }
+        });
+    });
 }
 
 /**

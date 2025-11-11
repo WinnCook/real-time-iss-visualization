@@ -79,6 +79,10 @@ export const SCALE = {
     SUN_SIZE: 40, // Best compromise: Sun radius = 93 units, Mercury = 193 units (2.07x ratio - looks great!)
     ISS_SIZE: 50000, // Very large so it's visible as a dot
 
+    // Moon orbit scaling (needed because planets are scaled up 1500x but Moon orbit uses real km distance)
+    // This ensures Moon is visible outside Earth's scaled-up surface
+    MOON_ORBIT_SCALE: 50, // Makes Moon orbit ~64 units (vs Earth radius of ~32 units)
+
     // Orbit line thickness
     ORBIT_LINE_WIDTH: 2
 };
@@ -92,13 +96,13 @@ export const RENDER = {
     FAR: 10000, // Far clipping plane
     DEFAULT_CAMERA_POSITION: { x: 0, y: 500, z: 1200 }, // Camera position for optimal view of balanced system
 
-    // Performance
+    // Performance (default to BALANCED preset)
     TARGET_FPS: 60,
     ANTI_ALIASING: true,
-    PIXEL_RATIO: Math.min(window.devicePixelRatio, 2), // Cap at 2x for performance
+    PIXEL_RATIO: 1.5, // Default to balanced
 
-    // Geometry detail
-    SPHERE_SEGMENTS: 32, // Segments for sphere geometry (lower = better performance)
+    // Geometry detail (default to BALANCED preset)
+    SPHERE_SEGMENTS: 16, // Segments for sphere geometry (lower = better performance)
     ORBIT_SEGMENTS: 128, // Segments for orbital paths
 
     // Effects
@@ -106,6 +110,45 @@ export const RENDER = {
     ENABLE_BLOOM: true, // Glow effects
     ENABLE_PARTICLES: true // Particle systems
 };
+
+// ========== PERFORMANCE PRESETS ==========
+// Three performance modes: Quality (best visuals), Balanced (default), Performance (max FPS)
+
+export const PERFORMANCE_PRESETS = {
+    QUALITY: {
+        name: 'Quality',
+        description: 'Best visuals - For powerful PCs (45+ FPS)',
+        sphereSegments: 32,      // High detail spheres
+        orbitSegments: 128,      // Smooth orbit lines
+        antiAliasing: true,      // Smooth edges
+        pixelRatio: 2.0,         // High-DPI displays
+        toneMapping: 'ACESFilmic', // Cinematic tone mapping
+        targetFPS: 45
+    },
+    BALANCED: {
+        name: 'Balanced',
+        description: 'Good visuals + performance - Recommended (60 FPS)',
+        sphereSegments: 16,      // Medium detail spheres
+        orbitSegments: 96,       // Good orbit lines
+        antiAliasing: true,      // Smooth edges
+        pixelRatio: 1.5,         // Moderate high-DPI
+        toneMapping: 'Linear',   // Simple tone mapping
+        targetFPS: 60
+    },
+    PERFORMANCE: {
+        name: 'Performance',
+        description: 'Maximum FPS - For older devices (60+ FPS)',
+        sphereSegments: 12,      // Low detail spheres
+        orbitSegments: 64,       // Simplified orbit lines
+        antiAliasing: false,     // No anti-aliasing
+        pixelRatio: 1.0,         // Standard resolution
+        toneMapping: 'None',     // No tone mapping
+        targetFPS: 60
+    }
+};
+
+// Default performance preset
+export const DEFAULT_PERFORMANCE_PRESET = 'BALANCED';
 
 // ========== SIMULATION SETTINGS ==========
 
@@ -236,6 +279,8 @@ export default {
     MOON,
     SCALE,
     RENDER,
+    PERFORMANCE_PRESETS,
+    DEFAULT_PERFORMANCE_PRESET,
     SIMULATION,
     API,
     COLORS,

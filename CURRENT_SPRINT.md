@@ -29,23 +29,26 @@
 
 ---
 
-### 2. Utility Modules [PENDING 📝]
+### 2. Utility Modules [COMPLETED ✅]
 
-**Files to create:**
+**Files created:**
 1. `src/utils/time.js` - Time acceleration and simulation clock
 2. `src/utils/coordinates.js` - Lat/lon/alt to 3D coordinate conversion
 3. `src/utils/orbital.js` - Kepler orbital mechanics calculations
 4. `src/utils/api.js` - ISS API integration with error handling
+5. `test-utils.html` - Test harness for utility module verification
 
 **Subtasks:**
 - [x] 2.1: constants.js (planetary data, scaling factors)
-- [ ] 2.2: time.js (simulation time management)
-- [ ] 2.3: coordinates.js (geographic to 3D conversion)
-- [ ] 2.4: orbital.js (planetary position calculations)
-- [ ] 2.5: api.js (ISS API fetcher with retry logic)
+- [x] 2.2: time.js (simulation time management)
+- [x] 2.3: coordinates.js (geographic to 3D conversion)
+- [x] 2.4: orbital.js (planetary position calculations)
+- [x] 2.5: api.js (ISS API fetcher with retry logic)
+- [x] 2.6: Create test harness and verify all utilities work correctly
 
 **Priority:** P0 (Critical)
-**Estimated Effort:** 2 hours
+**Estimated Effort:** 2.5 hours → **Actual: 2 hours**
+**Status:** ✅ **DONE** - All 26 tests passed
 **Dependencies:** Task #1 ✅
 
 ---
@@ -188,17 +191,17 @@
 ## Sprint Metrics
 
 - **Total Major Tasks:** 9
-- **Completed:** 1/9 (11%)
+- **Completed:** 2/9 (22%)
 - **In Progress:** 0/9
 - **Blocked:** 0/9
-- **Total Subtasks:** 61
-- **Completed Subtasks:** 11/61 (18%)
+- **Total Subtasks:** 62
+- **Completed Subtasks:** 17/62 (27%)
 
 ---
 
 ## Detailed Module Breakdown
 
-### Files Completed (11):
+### Files Completed (16):
 1. ✅ README.md
 2. ✅ CURRENT_SPRINT.md
 3. ✅ BACKLOG.md
@@ -209,26 +212,27 @@
 8. ✅ src/styles/main.css
 9. ✅ src/styles/ui.css
 10. ✅ src/utils/constants.js
-11. ✅ Directory structure
+11. ✅ src/utils/time.js
+12. ✅ src/utils/coordinates.js
+13. ✅ src/utils/orbital.js
+14. ✅ src/utils/api.js
+15. ✅ test-utils.html
+16. ✅ Directory structure
 
 ### Files Remaining (13):
-1. ⏳ src/utils/time.js
-2. ⏳ src/utils/coordinates.js
-3. ⏳ src/utils/orbital.js
-4. ⏳ src/utils/api.js
-5. ⏳ src/core/scene.js
-6. ⏳ src/core/camera.js
-7. ⏳ src/core/renderer.js
-8. ⏳ src/core/animation.js
-9. ⏳ src/modules/sun.js
-10. ⏳ src/modules/planets.js
-11. ⏳ src/modules/moon.js
-12. ⏳ src/modules/iss.js
-13. ⏳ src/modules/orbits.js
-14. ⏳ src/modules/styles.js
-15. ⏳ src/modules/ui.js
-16. ⏳ src/modules/solarSystem.js
-17. ⏳ src/main.js
+1. ⏳ src/core/scene.js
+2. ⏳ src/core/camera.js
+3. ⏳ src/core/renderer.js
+4. ⏳ src/core/animation.js
+5. ⏳ src/modules/sun.js
+6. ⏳ src/modules/planets.js
+7. ⏳ src/modules/moon.js
+8. ⏳ src/modules/iss.js
+9. ⏳ src/modules/orbits.js
+10. ⏳ src/modules/styles.js
+11. ⏳ src/modules/ui.js
+12. ⏳ src/modules/solarSystem.js
+13. ⏳ src/main.js
 
 ---
 

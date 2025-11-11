@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Utility Modules Test Harness</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #1a1a1a;
+            color: #e0e0e0;
+            padding: 20px;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            color: #4a90e2;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            color: #888;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+
+        .test-section {
+            background: #2a2a2a;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-left: 4px solid #4a90e2;
+        }
+
+        .test-section h2 {
+            color: #4a90e2;
+            margin-bottom: 15px;
+            font-size: 20px;
+        }
+
+        .test-item {
+            background: #333;
+            padding: 12px 15px;
+            margin-bottom: 10px;
+            border-radius: 4px;
+            border-left: 3px solid #555;
+        }
+
+        .test-item.pass {
+            border-left-color: #4caf50;
+        }
+
+        .test-item.fail {
+            border-left-color: #f44336;
+        }
+
+        .test-item.warning {
+            border-left-color: #ff9800;
+        }
+
+        .test-name {
+            font-weight: 600;
+            color: #fff;
+            margin-bottom: 5px;
+        }
+
+        .test-result {
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            color: #aaa;
+        }
+
+        .pass .test-result {
+            color: #4caf50;
+        }
+
+        .fail .test-result {
+            color: #f44336;
+        }
+
+        .warning .test-result {
+            color: #ff9800;
+        }
+
+        .summary {
+            background: #2a2a2a;
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 30px;
+            border: 2px solid #4a90e2;
+        }
+
+        .summary h2 {
+            color: #4a90e2;
+            margin-bottom: 15px;
+        }
+
+        .summary-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+        }
+
+        .stat {
+            text-align: center;
+            padding: 15px;
+            background: #333;
+            border-radius: 4px;
+        }
+
+        .stat-value {
+            font-size: 32px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: #888;
+            text-transform: uppercase;
+        }
+
+        .instructions {
+            background: #2a2a2a;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-left: 4px solid #ff9800;
+        }
+
+        .instructions strong {
+            color: #ff9800;
+        }
+
+        code {
+            background: #444;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+            color: #4a90e2;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Utility Modules Test Harness</h1>
+        <p class="subtitle">Task 2.6: Verification testing for time.js, coordinates.js, orbital.js, and api.js</p>
+
+        <div class="instructions">
+            <strong>Instructions:</strong> Open browser console (F12) for detailed logs. Tests run automatically on page load.
+        </div>
+
+        <div id="test-results"></div>
+
+        <div class="summary" id="summary" style="display: none;">
+            <h2>Test Summary</h2>
+            <div class="summary-stats">
+                <div class="stat">
+                    <div class="stat-value" style="color: #4caf50;" id="pass-count">0</div>
+                    <div class="stat-label">Passed</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-value" style="color: #f44336;" id="fail-count">0</div>
+                    <div class="stat-label">Failed</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-value" style="color: #ff9800;" id="warning-count">0</div>
+                    <div class="stat-label">Warnings</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-value" style="color: #4a90e2;" id="total-count">0</div>
+                    <div class="stat-label">Total Tests</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        // Import all utility modules
+        import { timeManager } from './src/utils/time.js';
+        import * as coords from './src/utils/coordinates.js';
+        import * as orbital from './src/utils/orbital.js';
+        import { issAPI } from './src/utils/api.js';
+        import { PLANETS, MOON, EARTH_RADIUS, ASTRONOMICAL_UNIT, daysToMs, DEG_TO_RAD, TWO_PI } from './src/utils/constants.js';
+
+        // Test tracking
+        let passCount = 0;
+        let failCount = 0;
+        let warningCount = 0;
+        const results = [];
+
+        /**
+         * Assert helper function
+         */
+        function assert(condition, testName, actualValue, expectedValue = null, isWarning = false) {
+            const passed = condition;
+            const result = {
+                name: testName,
+                passed,
+                isWarning,
+                actual: actualValue,
+                expected: expectedValue
+            };
+
+            if (passed) {
+                passCount++;
+                console.log(`✅ PASS: ${testName}`, actualValue);
+            } else if (isWarning) {
+                warningCount++;
+                console.warn(`⚠️ WARNING: ${testName}`, { actual: actualValue, expected: expectedValue });
+            } else {
+                failCount++;
+                console.error(`❌ FAIL: ${testName}`, { actual: actualValue, expected: expectedValue });
+            }
+
+            results.push(result);
+        }
+
+        /**
+         * Approximately equal for floating point comparison
+         */
+        function approxEqual(a, b, tolerance = 0.01) {
+            return Math.abs(a - b) < tolerance;
+        }
+
+        // ========== TIME MANAGER TESTS ==========
+        console.log('\n=== TIME MANAGER TESTS ===\n');
+
+        // Test 1: Time manager initialization
+        assert(
+            timeManager !== null && timeManager !== undefined,
+            'Time manager singleton exists',
+            'timeManager object created'
+        );
+
+        // Test 2: Default time speed
+        assert(
+            timeManager.getTimeSpeed() === 500,
+            'Default time speed is 500x',
+            timeManager.getTimeSpeed(),
+            500
+        );
+
+        // Test 3: Pause/Play functionality
+        timeManager.pause();
+        assert(
+            timeManager.isPausedState() === true,
+            'Time manager can pause',
+            timeManager.isPausedState()
+        );
+
+        timeManager.play();
+        assert(
+            timeManager.isPausedState() === false,
+            'Time manager can resume',
+            timeManager.isPausedState()
+        );
+
+        // Test 4: Time speed clamping
+        timeManager.setTimeSpeed(100000); // Above max
+        assert(
+            timeManager.getTimeSpeed() === 50000,
+            'Time speed clamped to max (50000)',
+            timeManager.getTimeSpeed(),
+            50000
+        );
+
+        timeManager.setTimeSpeed(-100); // Below min
+        assert(
+            timeManager.getTimeSpeed() === 1,
+            'Time speed clamped to min (1)',
+            timeManager.getTimeSpeed(),
+            1
+        );
+
+        timeManager.setTimeSpeed(500); // Reset to default
+
+        // Test 5: Simulation time updates
+        timeManager.reset();
+        timeManager.update();
+        const simTime1 = timeManager.getSimulationTime();
+        setTimeout(() => {
+            timeManager.update();
+            const simTime2 = timeManager.getSimulationTime();
+            assert(
+                simTime2 > simTime1,
+                'Simulation time increases on update',
+                `${simTime1}ms → ${simTime2}ms`
+            );
+        }, 50);
+
+        // ========== COORDINATE CONVERSION TESTS ==========
+        console.log('\n=== COORDINATE CONVERSION TESTS ===\n');
+
+        // Test 6: Equator at 0°,0° conversion
+        const pos1 = coords.geographicToCartesian(0, 0, 0);
+        assert(
+            pos1.y === 0 || approxEqual(pos1.y, 0, 0.001),
+            'Latitude 0° results in y=0 (on equatorial plane)',
+            pos1.y,
+            0
+        );
+
+        // Test 7: North pole conversion
+        const posNorthPole = coords.geographicToCartesian(90, 0, 0);
+        assert(
+            approxEqual(posNorthPole.x, 0, 0.001) && approxEqual(posNorthPole.z, 0, 0.001),
+            'North pole (90°N) has x≈0, z≈0',
+            `x=${posNorthPole.x.toFixed(3)}, z=${posNorthPole.z.toFixed(3)}`
+        );
+
+        // Test 8: Coordinate normalization
+        const normalizedLon = coords.normalizeLongitude(370);
+        assert(
+            normalizedLon === 10,
+            'Longitude 370° normalizes to 10°',
+            normalizedLon,
+            10
+        );
+
+        // Test 9: Latitude clamping
+        const clampedLat = coords.clampLatitude(100);
+        assert(
+            clampedLat === 90,
+            'Latitude 100° clamps to 90°',
+            clampedLat,
+            90
+        );
+
+        // Test 10: Distance calculation (known values)
+        // Distance from NYC (40.7128°N, 74.0060°W) to London (51.5074°N, 0.1278°W)
+        const distNYCLondon = coords.calculateDistance(40.7128, -74.0060, 51.5074, -0.1278);
+        assert(
+            distNYCLondon > 5500 && distNYCLondon < 5600,
+            'NYC to London distance ≈ 5570 km',
+            `${distNYCLondon.toFixed(0)} km`,
+            '~5570 km'
+        );
+
+        // Test 11: Formatting functions
+        const formattedLat = coords.formatLatitude(45.5);
+        assert(
+            formattedLat === '45.50°N',
+            'Latitude formatting works',
+            formattedLat,
+            '45.50°N'
+        );
+
+        const formattedLon = coords.formatLongitude(-122.3);
+        assert(
+            formattedLon === '122.30°W',
+            'Longitude formatting works',
+            formattedLon,
+            '122.30°W'
+        );
+
+        // ========== ORBITAL MECHANICS TESTS ==========
+        console.log('\n=== ORBITAL MECHANICS TESTS ===\n');
+
+        // Test 12: Earth's orbital position at t=0
+        const earthPos0 = orbital.calculatePlanetPosition(0, PLANETS.earth, 0);
+        assert(
+            approxEqual(earthPos0.x, 100, 1) && approxEqual(earthPos0.z, 0, 1),
+            'Earth starts at x=100 (1 AU), z=0',
+            `x=${earthPos0.x.toFixed(1)}, z=${earthPos0.z.toFixed(1)}`
+        );
+
+        // Test 13: Earth completes orbit in 365.25 days
+        const oneYearMs = daysToMs(365.25);
+        const earthPos1Year = orbital.calculatePlanetPosition(oneYearMs, PLANETS.earth, 0);
+        assert(
+            approxEqual(earthPos1Year.x, earthPos0.x, 1) && approxEqual(earthPos1Year.z, earthPos0.z, 1),
+            'Earth returns to starting position after 365.25 days',
+            `x=${earthPos1Year.x.toFixed(1)}, z=${earthPos1Year.z.toFixed(1)}`,
+            `x=${earthPos0.x.toFixed(1)}, z=${earthPos0.z.toFixed(1)}`
+        );
+
+        // Test 14: Orbital velocity calculation
+        const earthVelocity = orbital.calculateOrbitalVelocity(100, 365.25);
+        assert(
+            earthVelocity > 0,
+            'Earth orbital velocity is positive',
+            `${earthVelocity.toFixed(6)} scene units/ms`
+        );
+
+        // Test 15: Orbital angle calculation
+        const angle0 = orbital.calculateOrbitalAngle(0, 365.25, 0);
+        assert(
+            angle0 === 0,
+            'Orbital angle at t=0 is 0 radians',
+            angle0,
+            0
+        );
+
+        const angleHalfYear = orbital.calculateOrbitalAngle(daysToMs(182.625), 365.25, 0);
+        assert(
+            approxEqual(angleHalfYear, Math.PI, 0.01),
+            'Orbital angle at half year ≈ π radians',
+            angleHalfYear.toFixed(2),
+            Math.PI.toFixed(2)
+        );
+
+        // Test 16: Orbit path generation
+        const orbitPath = orbital.generateOrbitPath(100, 128);
+        assert(
+            orbitPath.length === 129, // 128 segments + 1 (closes the loop)
+            'Orbit path generates correct number of points',
+            orbitPath.length,
+            129
+        );
+
+        // Test 17: Conjunction detection
+        const isConj = orbital.isConjunction(0, 0.1, Math.PI / 12);
+        assert(
+            isConj === true,
+            'Conjunction detected for similar angles',
+            isConj
+        );
+
+        // Test 18: Opposition detection
+        const isOpp = orbital.isOpposition(0, Math.PI, Math.PI / 12);
+        assert(
+            isOpp === true,
+            'Opposition detected for opposite angles',
+            isOpp
+        );
+
+        // ========== ISS API TESTS ==========
+        console.log('\n=== ISS API TESTS ===\n');
+
+        // Test 19: ISS API manager exists
+        assert(
+            issAPI !== null && issAPI !== undefined,
+            'ISS API manager singleton exists',
+            'issAPI object created'
+        );
+
+        // Test 20: Mock position generation
+        const mockPos = issAPI.getMockPosition();
+        assert(
+            mockPos.latitude !== undefined && mockPos.longitude !== undefined,
+            'Mock ISS position generates valid data',
+            `lat=${mockPos.latitude.toFixed(2)}, lon=${mockPos.longitude.toFixed(2)}`
+        );
+
+        // Test 21: Mock position constraints
+        assert(
+            mockPos.latitude >= -90 && mockPos.latitude <= 90,
+            'Mock latitude is within valid range',
+            mockPos.latitude,
+            '[-90, 90]'
+        );
+
+        assert(
+            mockPos.longitude >= -180 && mockPos.longitude <= 180,
+            'Mock longitude is within valid range',
+            mockPos.longitude,
+            '[-180, 180]'
+        );
+
+        // Test 22: Real API fetch (async test)
+        console.log('Attempting to fetch real ISS data from API...');
+        issAPI.fetchISSPosition()
+            .then(position => {
+                assert(
+                    position !== null,
+                    'ISS API returns data',
+                    'Position object received'
+                );
+
+                assert(
+                    position.latitude !== undefined && position.longitude !== undefined,
+                    'ISS API response has latitude and longitude',
+                    `lat=${position.latitude}, lon=${position.longitude}`
+                );
+
+                assert(
+                    position.latitude >= -90 && position.latitude <= 90,
+                    'ISS latitude is within valid range',
+                    position.latitude,
+                    '[-90, 90]'
+                );
+
+                assert(
+                    position.longitude >= -180 && position.longitude <= 180,
+                    'ISS longitude is within valid range',
+                    position.longitude,
+                    '[-180, 180]'
+                );
+
+                assert(
+                    position.altitude > 0,
+                    'ISS altitude is positive',
+                    `${position.altitude} km`
+                );
+
+                // Log ISS position
+                console.log(`🛰️ Current ISS Position: ${coords.formatLatitude(position.latitude)}, ${coords.formatLongitude(position.longitude)}, ${position.altitude} km altitude`);
+                if (position.isMock) {
+                    console.warn('⚠️ Using mock data (API may be unavailable or blocked by CORS)');
+                }
+
+                renderResults();
+            })
+            .catch(error => {
+                assert(
+                    false,
+                    'ISS API fetch successful',
+                    `Error: ${error.message}`,
+                    'Valid ISS data',
+                    true // Warning, not critical failure
+                );
+                console.warn('Using mock ISS data for fallback testing');
+                renderResults();
+            });
+
+        // Wait a bit for API call, then render initial results
+        setTimeout(() => {
+            if (results.length < 26) { // If API hasn't completed yet
+                renderResults();
+            }
+        }, 1000);
+
+        /**
+         * Render test results to page
+         */
+        function renderResults() {
+            const container = document.getElementById('test-results');
+            container.innerHTML = '';
+
+            // Group by module
+            const modules = {
+                'Time Manager (time.js)': results.slice(0, 5),
+                'Coordinate Conversion (coordinates.js)': results.slice(5, 12),
+                'Orbital Mechanics (orbital.js)': results.slice(12, 18),
+                'ISS API Integration (api.js)': results.slice(18)
+            };
+
+            for (const [moduleName, tests] of Object.entries(modules)) {
+                if (tests.length === 0) continue;
+
+                const section = document.createElement('div');
+                section.className = 'test-section';
+                section.innerHTML = `<h2>${moduleName}</h2>`;
+
+                tests.forEach(test => {
+                    const item = document.createElement('div');
+                    item.className = `test-item ${test.passed ? 'pass' : (test.isWarning ? 'warning' : 'fail')}`;
+
+                    const resultText = test.passed
+                        ? `✅ ${test.actual}`
+                        : (test.expected
+                            ? `Expected: ${test.expected}, Got: ${test.actual}`
+                            : test.actual);
+
+                    item.innerHTML = `
+                        <div class="test-name">${test.name}</div>
+                        <div class="test-result">${resultText}</div>
+                    `;
+
+                    section.appendChild(item);
+                });
+
+                container.appendChild(section);
+            }
+
+            // Update summary
+            document.getElementById('pass-count').textContent = passCount;
+            document.getElementById('fail-count').textContent = failCount;
+            document.getElementById('warning-count').textContent = warningCount;
+            document.getElementById('total-count').textContent = passCount + failCount + warningCount;
+            document.getElementById('summary').style.display = 'block';
+
+            // Final console summary
+            console.log('\n=== TEST SUMMARY ===');
+            console.log(`✅ Passed: ${passCount}`);
+            console.log(`❌ Failed: ${failCount}`);
+            console.log(`⚠️ Warnings: ${warningCount}`);
+            console.log(`Total: ${passCount + failCount + warningCount}`);
+
+            if (failCount === 0) {
+                console.log('\n🎉 All critical tests passed! Utilities are ready for integration.');
+            } else {
+                console.error('\n⚠️ Some tests failed. Review errors before proceeding.');
+            }
+        }
+    </script>
+</body>
+</html>

@@ -242,6 +242,32 @@ function getPerformanceMessage(status, recommendation) {
     }
 }
 
+/**
+ * Check if FPS throttling is enabled for current preset
+ * @returns {boolean}
+ */
+export function isFPSThrottleEnabled() {
+    const preset = getCurrentPresetConfig();
+    return preset.fpsThrottle === true;
+}
+
+/**
+ * Get target FPS for throttling
+ * @returns {number}
+ */
+export function getTargetFPS() {
+    return getCurrentPresetConfig().targetFPS;
+}
+
+/**
+ * Calculate minimum frame time (in ms) for FPS throttling
+ * @returns {number} Minimum milliseconds per frame
+ */
+export function getMinFrameTime() {
+    const targetFPS = getTargetFPS();
+    return 1000 / targetFPS;
+}
+
 // Export default object
 export default {
     initPerformance,
@@ -253,5 +279,8 @@ export default {
     getAllPresets,
     getPreset,
     hasPreset,
-    analyzePerformance
+    analyzePerformance,
+    isFPSThrottleEnabled,
+    getTargetFPS,
+    getMinFrameTime
 };

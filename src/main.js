@@ -8,10 +8,12 @@ import { initCamera, onWindowResize as cameraResize } from './core/camera.js';
 import { initRenderer, onWindowResize as rendererResize } from './core/renderer.js';
 import { initAnimation, startAnimation, addUpdateCallback } from './core/animation.js';
 import { timeManager } from './utils/time.js';
-import { initSun, updateSun } from './modules/sun.js';
-import { initPlanets, updatePlanets, getPlanetPosition } from './modules/planets.js';
-import { initMoon, updateMoon } from './modules/moon.js';
-import { initPerformance, switchPreset, getCurrentPresetConfig } from './modules/performance.js';
+import { initSun, updateSun, disposeSun } from './modules/sun.js';
+import { initPlanets, updatePlanets, getPlanetPosition, disposePlanets } from './modules/planets.js';
+import { initMoon, updateMoon, disposeMoon } from './modules/moon.js';
+import { initISS, updateISS, disposeISS } from './modules/iss.js';
+import { clearGeometryCache } from './utils/geometryCache.js';
+import { initPerformanceSlider, setPerformanceLevel, getPerformanceSettings } from './modules/performanceSlider.js';
 import { STYLES } from './utils/constants.js';
 
 /**
@@ -26,6 +28,7 @@ const app = {
     sun: null,
     planets: null,
     moon: null,
+    iss: null,
     isInitialized: false
 };
 
@@ -65,14 +68,17 @@ async function init() {
         // Initialize the moon with realistic style
         app.moon = initMoon(STYLES.realistic);
 
+        // Initialize the ISS with realistic style
+        app.iss = initISS(STYLES.realistic);
+
         // Set up window resize handler
         window.addEventListener('resize', onWindowResize);
 
         // Initialize TimeManager
         timeManager.setTimeSpeed(100000); // Default 100,000x speed for visible orbits
 
-        // Initialize Performance System
-        initPerformance('BALANCED');
+        // Initialize Performance Slider System
+        initPerformanceSlider(50); // Default 50% (balanced)
 
         // Register update callbacks
         addUpdateCallback((deltaTime, simulationTime) => {
@@ -91,6 +97,14 @@ async function init() {
                 const earthPosition = getPlanetPosition('earth');
                 if (earthPosition) {
                     updateMoon(deltaTime, simulationTime, earthPosition);
+                }
+            }
+
+            // Update ISS animation (needs Earth's position)
+            if (app.iss) {
+                const earthPosition = getPlanetPosition('earth');
+                if (earthPosition) {
+                    updateISS(deltaTime, simulationTime, earthPosition);
                 }
             }
         });
@@ -120,6 +134,30 @@ async function init() {
 function onWindowResize() {
     cameraResize();
     rendererResize();
+}
+
+/**
+ * Recreate all celestial objects with new performance settings
+ */
+function recreateCelestialObjects() {
+    console.log('🔄 Recreating celestial objects with new settings...');
+
+    // Dispose existing objects
+    if (app.sun) disposeSun();
+    if (app.planets) disposePlanets();
+    if (app.moon) disposeMoon();
+    if (app.iss) disposeISS();
+
+    // Clear geometry cache to force recreation
+    clearGeometryCache();
+
+    // Recreate with current style
+    app.sun = initSun(STYLES.realistic);
+    app.planets = initPlanets(STYLES.realistic);
+    app.moon = initMoon(STYLES.realistic);
+    app.iss = initISS(STYLES.realistic);
+
+    console.log('✅ Celestial objects recreated');
 }
 
 /**
@@ -236,32 +274,36 @@ function setupUIHandlers() {
         });
     }
 
-    // Performance Preset Buttons
-    const performancePresetButtons = document.querySelectorAll('.preset-btn');
+    // Performance Slider with debouncing for object recreation
+    const performanceSlider = document.getElementById('performance-slider');
+    const performanceValue = document.getElementById('performance-value');
     const presetDescription = document.getElementById('preset-description');
+    let sliderDebounceTimer = null;
 
-    performancePresetButtons.forEach(button => {
-        button.addEventListener('click', () => {
-            const presetName = button.dataset.preset;
+    if (performanceSlider && performanceValue) {
+        performanceSlider.addEventListener('input', (e) => {
+            const level = parseInt(e.target.value);
 
-            // Switch to the new preset
+            // Update performance level immediately (renderer settings only)
             if (app.renderer) {
-                switchPreset(presetName, app.renderer);
+                const settings = setPerformanceLevel(level, app.renderer);
 
-                // Update active button state
-                performancePresetButtons.forEach(btn => btn.classList.remove('active'));
-                button.classList.add('active');
-
-                // Update description
-                const presetConfig = getCurrentPresetConfig();
-                if (presetDescription && presetConfig) {
-                    presetDescription.textContent = presetConfig.description;
-                }
-
-                console.log(`🎨 Switched to ${presetConfig.name} preset`);
+                // Update display
+                performanceValue.textContent = `${settings.description}`;
             }
+
+            // Debounce object recreation (wait 500ms after user stops moving slider)
+            clearTimeout(sliderDebounceTimer);
+            sliderDebounceTimer = setTimeout(() => {
+                console.log(`🎨 Recreating objects for performance level: ${level}%`);
+                recreateCelestialObjects();
+            }, 500);
         });
-    });
+
+        // Set initial value
+        const initialSettings = getPerformanceSettings(50);
+        performanceValue.textContent = `${initialSettings.description}`;
+    }
 }
 
 /**

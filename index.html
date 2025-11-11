@@ -65,21 +65,18 @@
                 </div>
             </div>
 
-            <!-- Performance Preset Switcher -->
+            <!-- Performance Slider -->
             <div class="control-group">
-                <label>Performance:</label>
-                <div class="performance-buttons">
-                    <button data-preset="PERFORMANCE" class="preset-btn" title="Maximum FPS - For older devices">
-                        ⚡ Performance
-                    </button>
-                    <button data-preset="BALANCED" class="preset-btn active" title="Good visuals + performance - Recommended">
-                        ⚖️ Balanced
-                    </button>
-                    <button data-preset="QUALITY" class="preset-btn" title="Best visuals - For powerful PCs">
-                        ✨ Quality
-                    </button>
+                <label for="performance-slider">Performance: <span id="performance-value">Medium (50%)</span></label>
+                <input type="range" id="performance-slider" min="0" max="100" value="50" step="1">
+                <div class="performance-markers">
+                    <span>🐌 Ultra Low</span>
+                    <span>⚡ Balanced</span>
+                    <span>✨ Ultra High</span>
                 </div>
-                <p class="preset-description" id="preset-description">Good visuals + performance - Recommended (60 FPS)</p>
+                <p class="preset-description" id="preset-description">
+                    Drag slider left for smoothness, right for quality
+                </p>
             </div>
 
             <!-- Feature Toggles -->

@@ -6,6 +6,7 @@
 import { MOON, RENDER, SCALE, scaleRadius, kmToScene, DEG_TO_RAD, TWO_PI, daysToMs } from '../utils/constants.js';
 import { calculateMoonPosition } from '../utils/orbital.js';
 import { addToScene, removeFromScene } from '../core/scene.js';
+import { getCachedSphereGeometry } from '../utils/geometryCache.js';
 
 /**
  * Moon mesh object
@@ -51,8 +52,8 @@ function createMoon(styleConfig) {
     // Calculate moon radius with scaling
     const moonRadius = scaleRadius(MOON.radius, 'moon');
 
-    // Create moon geometry
-    const geometry = new THREE.SphereGeometry(
+    // Get cached moon geometry (reuse if possible)
+    const geometry = getCachedSphereGeometry(
         moonRadius,
         RENDER.SPHERE_SEGMENTS,
         RENDER.SPHERE_SEGMENTS
@@ -206,7 +207,7 @@ export function getMoonStartAngle() {
 /**
  * Dispose of the Moon's resources
  */
-function disposeMoon() {
+export function disposeMoon() {
     if (moonMesh) {
         removeFromScene(moonMesh);
         moonMesh.geometry.dispose();

@@ -5,12 +5,18 @@
 
 import { RENDER } from '../utils/constants.js';
 import { timeManager } from '../utils/time.js';
+import { isFPSThrottleEnabled, getMinFrameTime } from '../modules/performanceSlider.js';
 
 /**
  * Animation loop state
  */
 let animationId = null;
 let isRunning = false;
+
+/**
+ * FPS throttling state
+ */
+let lastRenderTime = 0;
 
 /**
  * References to core objects (set during initialization)
@@ -146,8 +152,20 @@ function animate() {
     // Request next frame
     animationId = requestAnimationFrame(animate);
 
-    // Calculate delta time (time since last frame)
+    // FPS Throttling - Skip rendering if not enough time has passed
     const currentTime = Date.now();
+    if (isFPSThrottleEnabled()) {
+        const minFrameTime = getMinFrameTime();
+        const timeSinceLastRender = currentTime - lastRenderTime;
+
+        if (timeSinceLastRender < minFrameTime) {
+            // Not enough time has passed, skip this frame
+            return;
+        }
+    }
+    lastRenderTime = currentTime;
+
+    // Calculate delta time (time since last frame)
     deltaTime = currentTime - lastFrameTime;
     lastFrameTime = currentTime;
 

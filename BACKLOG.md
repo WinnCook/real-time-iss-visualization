@@ -6,12 +6,85 @@ All future features, enhancements, and ideas that haven't been scheduled yet.
 
 ## Sprint 2 - Visual Styles & Interactivity
 
+### Epic: Starfield Background ⭐ (USER REQUESTED)
+**Priority:** P0 | **Effort:** Small-Medium
+**Requested:** 2025-11-11 by User
+
+#### Tasks:
+- [ ] Create procedural starfield generator (10,000+ stars)
+- [ ] Implement star brightness variation (realistic magnitude distribution)
+- [ ] Add star twinkling/scintillation effect (optional, subtle)
+- [ ] Optimize rendering (use THREE.Points for performance)
+- [ ] Make starfield toggleable in settings
+- [ ] Add constellations (optional, fun easter egg)
+- [ ] Ensure stars visible in all 4 visual styles
+- [ ] Add Milky Way band effect (optional, realistic style only)
+
+**Notes:**
+- Critical for "Realistic" visual style
+- Simple point sprites should be sufficient (no need for complex star rendering)
+- Should be static (not rotating with camera) to give sense of scale
+- Consider using sphere map or cube map for background
+
+---
+
+### Epic: Outer Planets System 🪐 (USER REQUESTED)
+**Priority:** P1 | **Effort:** Medium
+**Requested:** 2025-11-11 by User
+
+#### Tasks:
+- [ ] Add Jupiter (largest planet, orbital mechanics, moons optional)
+- [ ] Add Saturn with ring system (rings are critical visual feature)
+- [ ] Add Uranus (tilted rotation axis)
+- [ ] Add Neptune (farthest planet, deep blue color)
+- [ ] Implement proper AU scaling for outer solar system
+- [ ] Add orbital period calculations (Jupiter: 11.86 years, Saturn: 29.46 years)
+- [ ] Optimize camera view to show full solar system
+- [ ] Add zoom levels (inner planets vs outer planets view)
+- [ ] Consider adding major moons (Titan, Europa, Ganymede, Io)
+
+**Technical Considerations:**
+- Outer planets are MUCH farther (Jupiter at 5.2 AU, Neptune at 30 AU)
+- May need camera presets: "Inner System" vs "Outer System" vs "Full System"
+- Larger radius planets will be more visible (Jupiter radius: 69,911 km)
+- Saturn's rings require special rendering (ring geometry or texture)
+
+---
+
+### Epic: Enhanced ISS Visualization 🛰️ (USER REQUESTED)
+**Priority:** P1 | **Effort:** Medium
+**Requested:** 2025-11-11 by User
+
+#### Tasks:
+- [x] Make ISS bigger for visibility (COMPLETED - 3x radius increase)
+- [ ] Replace sphere with detailed 3D ISS model (.glb or .obj format)
+- [ ] Add ISS solar panel animations (rotate to face sun)
+- [ ] Show ISS orientation (pitch, roll, yaw based on real data)
+- [ ] Add ISS module labels (Zvezda, Harmony, Columbus, etc.)
+- [ ] Implement ISS "chase camera" mode (follow ISS closely)
+- [ ] Add ISS pass prediction (when will ISS be over user location?)
+- [ ] Show ISS altitude changes (perigee/apogee visualization)
+
+**3D Model Resources:**
+- NASA provides official ISS 3D models (public domain)
+- Model should be ~10-50KB for reasonable load time
+- Consider LOD (Level of Detail) - detailed when close, simple when far
+- Model should have solar panels as separate mesh for animation
+
+**Current Implementation:**
+- ✅ Simple red sphere (3x radius for visibility)
+- ✅ Real-time position from API (updates every 5 seconds)
+- ✅ Trail showing last 50 positions
+- ⏳ Need: Detailed model, orientation, solar panel animation
+
+---
+
 ### Epic: Multi-Style Rendering System
 **Priority:** P0 | **Effort:** Large
 
 #### Tasks:
 - [ ] Design material/shader system for style switching
-- [ ] Implement "Realistic" style (photo textures, starfield)
+- [ ] Implement "Realistic" style (photo textures, starfield) ⭐ Starfield now separate epic
 - [ ] Implement "Stylized/Cartoon" style (flat colors, cel-shading)
 - [ ] Implement "Neon/Cyberpunk" style (glowing lines, particles)
 - [ ] Implement "Minimalist/Abstract" style (geometric, clean)

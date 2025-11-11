@@ -135,6 +135,22 @@ input[type="range"]::-moz-range-thumb:hover {
     transform: scale(1.2);
 }
 
+/* Performance Markers */
+.performance-markers {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.75rem;
+    color: rgba(255, 255, 255, 0.6);
+    margin-top: -0.25rem;
+    margin-bottom: 0.5rem;
+}
+
+.preset-description {
+    font-size: 0.85rem;
+    color: rgba(255, 255, 255, 0.7);
+    margin-top: 0.5rem;
+}
+
 /* Preset Speed Buttons */
 .preset-speeds {
     display: flex;

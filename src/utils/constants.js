@@ -144,6 +144,17 @@ export const PERFORMANCE_PRESETS = {
         pixelRatio: 1.0,         // Standard resolution
         toneMapping: 'None',     // No tone mapping
         targetFPS: 60
+    },
+    POTATO: {
+        name: 'Potato',
+        description: 'Ultra-low mode - For ancient hardware (30 FPS)',
+        sphereSegments: 8,       // Minimal detail spheres
+        orbitSegments: 32,       // Minimal orbit lines
+        antiAliasing: false,     // No anti-aliasing
+        pixelRatio: 0.75,        // Lower resolution
+        toneMapping: 'None',     // No tone mapping
+        targetFPS: 30,
+        fpsThrottle: true        // Enable FPS throttling
     }
 };
 

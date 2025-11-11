@@ -5,6 +5,7 @@
 
 import { SUN_RADIUS, COLORS, RENDER, scaleRadius } from '../utils/constants.js';
 import { addToScene, removeFromScene } from '../core/scene.js';
+import { getCachedSphereGeometry } from '../utils/geometryCache.js';
 
 /**
  * The sun mesh object
@@ -40,8 +41,8 @@ export function initSun(styleConfig = {}) {
     // Calculate sun radius with scaling
     const sunRadius = scaleRadius(SUN_RADIUS, 'sun');
 
-    // Create sun geometry
-    const geometry = new THREE.SphereGeometry(
+    // Get cached sun geometry (reuse if possible)
+    const geometry = getCachedSphereGeometry(
         sunRadius,
         RENDER.SPHERE_SEGMENTS,
         RENDER.SPHERE_SEGMENTS
@@ -222,7 +223,7 @@ export function getSunRadius() {
 /**
  * Dispose of sun resources
  */
-function disposeSun() {
+export function disposeSun() {
     if (sunMesh) {
         removeFromScene(sunMesh);
         sunMesh.geometry.dispose();

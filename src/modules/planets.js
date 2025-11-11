@@ -3,9 +3,11 @@
  * Creates and manages Mercury, Venus, Earth, and Mars
  */
 
-import { PLANETS, RENDER, scaleRadius, auToScene, DEG_TO_RAD } from '../utils/constants.js';
+import { PLANETS, RENDER, scaleRadius, auToScene, DEG_TO_RAD, TWO_PI, daysToMs } from '../utils/constants.js';
 import { calculatePlanetPosition } from '../utils/orbital.js';
 import { addToScene, removeFromScene } from '../core/scene.js';
+import { getCachedSphereGeometry } from '../utils/geometryCache.js';
+import { isRotationEnabled } from './performanceSlider.js';
 
 /**
  * Planet mesh objects keyed by planet name
@@ -31,6 +33,13 @@ const startAngles = {
 let currentStyle = null;
 
 /**
+ * Cached orbital data for performance optimization
+ * Avoids recalculating constant values every frame
+ * @type {Object}
+ */
+const cachedOrbitalData = {};
+
+/**
  * Initialize all planets
  * @param {Object} styleConfig - Visual style configuration
  * @returns {Object} Object containing all planet meshes
@@ -45,6 +54,13 @@ export function initPlanets(styleConfig = {}) {
     Object.keys(PLANETS).forEach(planetKey => {
         const planetData = PLANETS[planetKey];
         createPlanet(planetKey, planetData, styleConfig);
+
+        // Pre-calculate and cache orbital data for this planet (OPTIMIZATION)
+        cachedOrbitalData[planetKey] = {
+            orbitRadiusScene: auToScene(planetData.orbitRadius),
+            periodMs: daysToMs(planetData.orbitPeriod),
+            rotationSpeedPerSec: (Math.PI * 2) / (planetData.rotationPeriod * 24 * 60 * 60)
+        };
     });
 
     console.log('✅ Planets initialized: Mercury, Venus, Earth, Mars');
@@ -61,8 +77,8 @@ function createPlanet(planetKey, planetData, styleConfig) {
     // Calculate planet radius with scaling
     const planetRadius = scaleRadius(planetData.radius, 'planet');
 
-    // Create planet geometry
-    const geometry = new THREE.SphereGeometry(
+    // Get cached planet geometry (reuse if possible)
+    const geometry = getCachedSphereGeometry(
         planetRadius,
         RENDER.SPHERE_SEGMENTS,
         RENDER.SPHERE_SEGMENTS
@@ -121,7 +137,7 @@ function createPlanetMaterial(planetData, styleConfig) {
 }
 
 /**
- * Update all planet positions and rotations
+ * Update all planet positions and rotations (OPTIMIZED)
  * @param {number} deltaTime - Time since last frame in milliseconds
  * @param {number} simulationTime - Current simulation time in milliseconds
  */
@@ -130,25 +146,25 @@ export function updatePlanets(deltaTime, simulationTime) {
     const deltaTimeSeconds = deltaTime / 1000;
 
     Object.keys(PLANETS).forEach(planetKey => {
-        const planetData = PLANETS[planetKey];
         const planetMesh = planetMeshes[planetKey];
-
         if (!planetMesh) return;
 
-        // Calculate orbital position based on simulation time
-        const position = calculatePlanetPosition(
-            simulationTime,
-            planetData,
-            startAngles[planetKey]
-        );
+        // Use cached orbital data (OPTIMIZED - avoids recalculating constants)
+        const cached = cachedOrbitalData[planetKey];
+        const angle = startAngles[planetKey] + (simulationTime / cached.periodMs) * TWO_PI;
+
+        // Calculate position on circular orbit (XZ plane)
+        const x = Math.cos(angle) * cached.orbitRadiusScene;
+        const z = Math.sin(angle) * cached.orbitRadiusScene;
 
         // Update mesh position
-        planetMesh.position.set(position.x, position.y, position.z);
+        planetMesh.position.set(x, 0, z);
 
-        // Update planet rotation on its axis
-        // Rotation speed is based on rotation period
-        const rotationSpeed = (Math.PI * 2) / (planetData.rotationPeriod * 24 * 60 * 60); // radians per second
-        planetMesh.rotation.y += rotationSpeed * deltaTimeSeconds;
+        // Update planet rotation on its axis (using cached rotation speed)
+        // Skip rotation if performance level is ultra-low (optimization)
+        if (isRotationEnabled()) {
+            planetMesh.rotation.y += cached.rotationSpeedPerSec * deltaTimeSeconds;
+        }
     });
 }
 
@@ -258,7 +274,7 @@ function disposePlanet(planetKey) {
 /**
  * Dispose of all planet resources
  */
-function disposePlanets() {
+export function disposePlanets() {
     Object.keys(planetMeshes).forEach(planetKey => {
         disposePlanet(planetKey);
     });

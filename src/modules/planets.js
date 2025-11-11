@@ -1,0 +1,317 @@
+/**
+ * Planets Module - Planet orbital mechanics and rendering
+ * Creates and manages Mercury, Venus, Earth, and Mars
+ */
+
+import { PLANETS, RENDER, scaleRadius, auToScene, DEG_TO_RAD } from '../utils/constants.js';
+import { calculatePlanetPosition } from '../utils/orbital.js';
+import { addToScene, removeFromScene } from '../core/scene.js';
+
+/**
+ * Planet mesh objects keyed by planet name
+ * @type {Object<string, THREE.Mesh>}
+ */
+const planetMeshes = {};
+
+/**
+ * Starting angles for each planet (for visual distribution)
+ * @type {Object<string, number>}
+ */
+const startAngles = {
+    mercury: 0,
+    venus: Math.PI / 2,
+    earth: Math.PI,
+    mars: (3 * Math.PI) / 2
+};
+
+/**
+ * Current visual style configuration
+ * @type {Object}
+ */
+let currentStyle = null;
+
+/**
+ * Initialize all planets
+ * @param {Object} styleConfig - Visual style configuration
+ * @returns {Object} Object containing all planet meshes
+ */
+export function initPlanets(styleConfig = {}) {
+    currentStyle = styleConfig;
+
+    // Clean up existing planets if any
+    disposePlanets();
+
+    // Create each planet
+    Object.keys(PLANETS).forEach(planetKey => {
+        const planetData = PLANETS[planetKey];
+        createPlanet(planetKey, planetData, styleConfig);
+    });
+
+    console.log('✅ Planets initialized: Mercury, Venus, Earth, Mars');
+    return planetMeshes;
+}
+
+/**
+ * Create a single planet mesh
+ * @param {string} planetKey - Planet identifier (e.g., 'mercury')
+ * @param {Object} planetData - Planet configuration data
+ * @param {Object} styleConfig - Visual style configuration
+ */
+function createPlanet(planetKey, planetData, styleConfig) {
+    // Calculate planet radius with scaling
+    const planetRadius = scaleRadius(planetData.radius, 'planet');
+
+    // Create planet geometry
+    const geometry = new THREE.SphereGeometry(
+        planetRadius,
+        RENDER.SPHERE_SEGMENTS,
+        RENDER.SPHERE_SEGMENTS
+    );
+
+    // Create planet material based on style
+    const material = createPlanetMaterial(planetData, styleConfig);
+
+    // Create planet mesh
+    const planetMesh = new THREE.Mesh(geometry, material);
+    planetMesh.name = planetData.name;
+
+    // Apply axial tilt if specified
+    if (planetData.tilt) {
+        planetMesh.rotation.z = planetData.tilt * DEG_TO_RAD;
+    }
+
+    // Add to scene
+    addToScene(planetMesh);
+
+    // Store reference
+    planetMeshes[planetKey] = planetMesh;
+}
+
+/**
+ * Create planet material based on visual style
+ * @param {Object} planetData - Planet configuration data
+ * @param {Object} styleConfig - Visual style configuration
+ * @returns {THREE.Material}
+ */
+function createPlanetMaterial(planetData, styleConfig) {
+    const color = planetData.color;
+
+    // Check style-specific properties
+    const flatShading = styleConfig.flatShading || false;
+    const wireframe = styleConfig.wireframe || false;
+
+    // For neon style, add some emissive glow
+    const emissive = styleConfig.name === 'Neon/Cyberpunk' ? color : 0x000000;
+    const emissiveIntensity = styleConfig.name === 'Neon/Cyberpunk' ? 0.3 : 0;
+
+    // Create material
+    // For realistic style with textures, we would load texture maps here
+    // For now, using solid colors for all styles
+    const material = new THREE.MeshStandardMaterial({
+        color: color,
+        emissive: emissive,
+        emissiveIntensity: emissiveIntensity,
+        flatShading: flatShading,
+        wireframe: wireframe,
+        roughness: 0.8,
+        metalness: 0.2
+    });
+
+    return material;
+}
+
+/**
+ * Update all planet positions and rotations
+ * @param {number} deltaTime - Time since last frame in milliseconds
+ * @param {number} simulationTime - Current simulation time in milliseconds
+ */
+export function updatePlanets(deltaTime, simulationTime) {
+    // Convert deltaTime from milliseconds to seconds for rotation calculations
+    const deltaTimeSeconds = deltaTime / 1000;
+
+    Object.keys(PLANETS).forEach(planetKey => {
+        const planetData = PLANETS[planetKey];
+        const planetMesh = planetMeshes[planetKey];
+
+        if (!planetMesh) return;
+
+        // Calculate orbital position based on simulation time
+        const position = calculatePlanetPosition(
+            simulationTime,
+            planetData,
+            startAngles[planetKey]
+        );
+
+        // Update mesh position
+        planetMesh.position.set(position.x, position.y, position.z);
+
+        // Update planet rotation on its axis
+        // Rotation speed is based on rotation period
+        const rotationSpeed = (Math.PI * 2) / (planetData.rotationPeriod * 24 * 60 * 60); // radians per second
+        planetMesh.rotation.y += rotationSpeed * deltaTimeSeconds;
+    });
+}
+
+/**
+ * Update planet appearance based on visual style
+ * @param {Object} styleConfig - New style configuration
+ */
+export function updatePlanetsStyle(styleConfig) {
+    currentStyle = styleConfig;
+
+    Object.keys(PLANETS).forEach(planetKey => {
+        const planetData = PLANETS[planetKey];
+        const planetMesh = planetMeshes[planetKey];
+
+        if (!planetMesh) return;
+
+        // Update material
+        const newMaterial = createPlanetMaterial(planetData, styleConfig);
+        planetMesh.material.dispose();
+        planetMesh.material = newMaterial;
+    });
+
+    console.log(`✅ Planets style updated to: ${styleConfig.name}`);
+}
+
+/**
+ * Get a specific planet mesh
+ * @param {string} planetKey - Planet identifier (e.g., 'earth')
+ * @returns {THREE.Mesh|null}
+ */
+export function getPlanet(planetKey) {
+    return planetMeshes[planetKey] || null;
+}
+
+/**
+ * Get all planet meshes
+ * @returns {Object<string, THREE.Mesh>}
+ */
+export function getAllPlanets() {
+    return planetMeshes;
+}
+
+/**
+ * Get current position of a planet
+ * @param {string} planetKey - Planet identifier (e.g., 'earth')
+ * @returns {THREE.Vector3|null}
+ */
+export function getPlanetPosition(planetKey) {
+    const planet = planetMeshes[planetKey];
+    return planet ? planet.position.clone() : null;
+}
+
+/**
+ * Get planet data by key
+ * @param {string} planetKey - Planet identifier (e.g., 'earth')
+ * @returns {Object|null}
+ */
+export function getPlanetData(planetKey) {
+    return PLANETS[planetKey] || null;
+}
+
+/**
+ * Get planet radius in scene units
+ * @param {string} planetKey - Planet identifier (e.g., 'earth')
+ * @returns {number}
+ */
+export function getPlanetRadius(planetKey) {
+    const planetData = PLANETS[planetKey];
+    return planetData ? scaleRadius(planetData.radius, 'planet') : 0;
+}
+
+/**
+ * Get planet orbit radius in scene units
+ * @param {string} planetKey - Planet identifier (e.g., 'earth')
+ * @returns {number}
+ */
+export function getPlanetOrbitRadius(planetKey) {
+    const planetData = PLANETS[planetKey];
+    return planetData ? auToScene(planetData.orbitRadius) : 0;
+}
+
+/**
+ * Set custom starting angle for a planet
+ * @param {string} planetKey - Planet identifier
+ * @param {number} angle - Starting angle in radians
+ */
+export function setPlanetStartAngle(planetKey, angle) {
+    if (startAngles.hasOwnProperty(planetKey)) {
+        startAngles[planetKey] = angle;
+    }
+}
+
+/**
+ * Dispose of a single planet's resources
+ * @param {string} planetKey - Planet identifier
+ */
+function disposePlanet(planetKey) {
+    const planetMesh = planetMeshes[planetKey];
+    if (planetMesh) {
+        removeFromScene(planetMesh);
+        planetMesh.geometry.dispose();
+        planetMesh.material.dispose();
+        delete planetMeshes[planetKey];
+    }
+}
+
+/**
+ * Dispose of all planet resources
+ */
+function disposePlanets() {
+    Object.keys(planetMeshes).forEach(planetKey => {
+        disposePlanet(planetKey);
+    });
+}
+
+/**
+ * Clean up and remove all planets
+ */
+export function removePlanets() {
+    disposePlanets();
+    console.log('✅ All planets removed');
+}
+
+/**
+ * Remove a specific planet
+ * @param {string} planetKey - Planet identifier
+ */
+export function removePlanet(planetKey) {
+    disposePlanet(planetKey);
+    console.log(`✅ Planet removed: ${planetKey}`);
+}
+
+/**
+ * Check if a planet exists
+ * @param {string} planetKey - Planet identifier
+ * @returns {boolean}
+ */
+export function hasPlanet(planetKey) {
+    return planetMeshes.hasOwnProperty(planetKey) && planetMeshes[planetKey] !== null;
+}
+
+/**
+ * Get number of planets currently rendered
+ * @returns {number}
+ */
+export function getPlanetCount() {
+    return Object.keys(planetMeshes).length;
+}
+
+// Export default object
+export default {
+    initPlanets,
+    updatePlanets,
+    updatePlanetsStyle,
+    getPlanet,
+    getAllPlanets,
+    getPlanetPosition,
+    getPlanetData,
+    getPlanetRadius,
+    getPlanetOrbitRadius,
+    setPlanetStartAngle,
+    removePlanets,
+    removePlanet,
+    hasPlanet,
+    getPlanetCount
+};

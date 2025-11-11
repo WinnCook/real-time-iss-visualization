@@ -80,21 +80,29 @@
 
 **Files to create:**
 1. ✅ `src/modules/sun.js` - Sun rendering with glow effects
-2. `src/modules/planets.js` - Planet orbital mechanics and rendering
+2. ✅ `src/modules/planets.js` - Planet orbital mechanics and rendering
 3. `src/modules/moon.js` - Moon orbit around Earth
 4. `src/modules/iss.js` - ISS real-time tracking and rendering
 5. `src/modules/orbits.js` - Orbital path visualization
 
 **Subtasks:**
 - [x] 4.1: sun.js (sun sphere, glow shader, light source)
-- [ ] 4.2: planets.js (Mercury, Venus, Earth, Mars with orbits)
+- [x] 4.2: planets.js (Mercury, Venus, Earth, Mars with orbits) ✅ **COMPLETED 2025-11-11**
 - [ ] 4.3: moon.js (moon orbit mechanics, tidal locking)
 - [ ] 4.4: iss.js (API integration, position update, trail)
 - [ ] 4.5: orbits.js (draw orbital paths, toggle visibility)
 
 **Priority:** P0 (Critical)
-**Estimated Effort:** 5 hours → **1 hour spent**
+**Estimated Effort:** 5 hours → **4 hours spent**
 **Dependencies:** Task #2 ✅, #3 ✅
+
+**Task 4.2 Completion Notes:**
+- Implemented full orbital mechanics for Mercury, Venus, Earth, Mars
+- Fixed critical TimeManager initialization bug causing time jump
+- Researched real astronomical data and calculated proper scaling
+- Final optimal scale: AU_TO_SCENE=500, SUN_SIZE=40, PLANET_SIZE=1500
+- Mercury orbits at 2x sun radius for perfect visual balance
+- All 4 planets visible and orbiting smoothly at 100,000x default speed
 
 ---
 

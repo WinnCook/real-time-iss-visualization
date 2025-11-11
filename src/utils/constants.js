@@ -21,7 +21,7 @@ export const ISS_ORBITAL_PERIOD = 92.68; // minutes per orbit
 export const PLANETS = {
     mercury: {
         name: "Mercury",
-        color: 0x8c7853,
+        color: 0xaaaaaa, // Light gray (visible against dark space)
         radius: 2439.7, // km
         orbitRadius: 0.387, // AU
         orbitPeriod: 87.97, // days
@@ -71,12 +71,12 @@ export const MOON = {
 
 export const SCALE = {
     // Scene units per AU (makes solar system fit in view)
-    AU_TO_SCENE: 100,
+    AU_TO_SCENE: 500, // Optimal spacing: Mercury orbit at 193 units
 
     // Planet size multipliers (for visibility)
-    PLANET_SIZE: 1000,
+    PLANET_SIZE: 1500, // Balanced planet visibility
     MOON_SIZE: 1000,
-    SUN_SIZE: 200, // Less exaggerated since it's already huge
+    SUN_SIZE: 40, // Best compromise: Sun radius = 93 units, Mercury = 193 units (2.07x ratio - looks great!)
     ISS_SIZE: 50000, // Very large so it's visible as a dot
 
     // Orbit line thickness
@@ -90,7 +90,7 @@ export const RENDER = {
     FOV: 45, // Field of view in degrees
     NEAR: 0.1, // Near clipping plane
     FAR: 10000, // Far clipping plane
-    DEFAULT_CAMERA_POSITION: { x: 0, y: 50, z: 150 }, // Initial camera position
+    DEFAULT_CAMERA_POSITION: { x: 0, y: 500, z: 1200 }, // Camera position for optimal view of balanced system
 
     // Performance
     TARGET_FPS: 60,
@@ -110,9 +110,9 @@ export const RENDER = {
 // ========== SIMULATION SETTINGS ==========
 
 export const SIMULATION = {
-    DEFAULT_TIME_SPEED: 500, // 500x real-time
+    DEFAULT_TIME_SPEED: 100000, // 100,000x real-time (very fast orbits for testing)
     MIN_TIME_SPEED: 1,
-    MAX_TIME_SPEED: 50000,
+    MAX_TIME_SPEED: 500000,
     PAUSED_SPEED: 0
 };
 

@@ -174,21 +174,24 @@ export function updateSunStyle(styleConfig) {
 
 /**
  * Update sun animation (e.g., rotation)
- * @param {number} deltaTime - Time since last frame in seconds
- * @param {number} simulationTime - Current simulation time
+ * @param {number} deltaTime - Time since last frame in milliseconds
+ * @param {number} simulationTime - Current simulation time in milliseconds
  */
 export function updateSun(deltaTime, simulationTime) {
     if (!sunMesh) return;
 
+    // Convert deltaTime from milliseconds to seconds
+    const deltaTimeSeconds = deltaTime / 1000;
+
     // The sun rotates very slowly (about 25 days for one rotation)
     // This is mostly cosmetic and can be adjusted
     const rotationSpeed = 0.05; // Radians per second
-    sunMesh.rotation.y += rotationSpeed * deltaTime;
+    sunMesh.rotation.y += rotationSpeed * deltaTimeSeconds;
 
     // Also rotate the glow slightly differently for visual interest
     if (sunGlow) {
-        sunGlow.rotation.y -= rotationSpeed * 0.5 * deltaTime;
-        sunGlow.rotation.x += rotationSpeed * 0.3 * deltaTime;
+        sunGlow.rotation.y -= rotationSpeed * 0.5 * deltaTimeSeconds;
+        sunGlow.rotation.x += rotationSpeed * 0.3 * deltaTimeSeconds;
     }
 }
 

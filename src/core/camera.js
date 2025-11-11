@@ -70,9 +70,11 @@ export function initControls(domElement) {
     controls.enableDamping = true; // Smooth camera movements
     controls.dampingFactor = 0.05;
     controls.screenSpacePanning = false;
-    controls.minDistance = 10; // Minimum zoom
-    controls.maxDistance = 500; // Maximum zoom
+    controls.minDistance = 10; // Minimum zoom (close to sun)
+    controls.maxDistance = 1000; // Maximum zoom (see entire solar system)
     controls.maxPolarAngle = Math.PI; // Allow full vertical rotation
+    controls.enableZoom = true; // Enable mouse wheel zoom
+    controls.zoomSpeed = 1.0; // Zoom sensitivity
 
     // Set initial target (look at origin)
     controls.target.set(0, 0, 0);

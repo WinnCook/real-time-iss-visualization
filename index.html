@@ -37,14 +37,14 @@
 
             <!-- Time Speed Slider -->
             <div class="control-group">
-                <label for="time-speed">Time Speed: <span id="speed-value">500x</span></label>
-                <input type="range" id="time-speed" min="1" max="50000" value="500" step="1">
+                <label for="time-speed">Time Speed: <span id="speed-value">100000x</span></label>
+                <input type="range" id="time-speed" min="1" max="500000" value="100000" step="1000">
                 <div class="preset-speeds">
-                    <button data-speed="1">1x</button>
-                    <button data-speed="100">100x</button>
-                    <button data-speed="500">500x</button>
-                    <button data-speed="2000">2000x</button>
-                    <button data-speed="10000">10000x</button>
+                    <button data-speed="1000">1kx</button>
+                    <button data-speed="10000">10kx</button>
+                    <button data-speed="50000">50kx</button>
+                    <button data-speed="100000">100kx</button>
+                    <button data-speed="500000">500kx</button>
                 </div>
             </div>
 
@@ -159,16 +159,23 @@
     </div>
 
     <!-- Load Three.js from CDN (using known working version) -->
-    <script src="https://unpkg.com/three@0.152.0/build/three.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 
     <!-- Load OrbitControls from CDN -->
-    <script src="https://unpkg.com/three@0.152.0/examples/js/controls/OrbitControls.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
 
     <!-- Verify Three.js loaded and make it globally available -->
     <script>
         if (typeof THREE !== 'undefined') {
             window.THREE = THREE;
             console.log('✅ Three.js library loaded (version:', THREE.REVISION, ')');
+
+            // Verify OrbitControls loaded
+            if (THREE.OrbitControls) {
+                console.log('✅ OrbitControls loaded');
+            } else {
+                console.error('❌ OrbitControls failed to load');
+            }
         } else {
             console.error('❌ Failed to load Three.js from CDN');
             alert('Failed to load Three.js library. Please check your internet connection and refresh the page.');

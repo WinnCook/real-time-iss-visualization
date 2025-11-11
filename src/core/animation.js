@@ -85,6 +85,9 @@ export function startAnimation() {
     lastFpsUpdate = Date.now();
     frameCount = 0;
 
+    // Reset TimeManager to prevent time jump from initialization delay
+    timeManager.reset();
+
     console.log('▶️ Animation loop started');
     animate();
 }

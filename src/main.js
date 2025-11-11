@@ -9,6 +9,7 @@ import { initRenderer, onWindowResize as rendererResize } from './core/renderer.
 import { initAnimation, startAnimation, addUpdateCallback } from './core/animation.js';
 import { timeManager } from './utils/time.js';
 import { initSun, updateSun } from './modules/sun.js';
+import { initPlanets, updatePlanets } from './modules/planets.js';
 import { STYLES } from './utils/constants.js';
 
 /**
@@ -21,6 +22,7 @@ const app = {
     controls: null,
     animation: null,
     sun: null,
+    planets: null,
     isInitialized: false
 };
 
@@ -54,17 +56,25 @@ async function init() {
         // Initialize the sun with realistic style
         app.sun = initSun(STYLES.realistic);
 
+        // Initialize planets with realistic style
+        app.planets = initPlanets(STYLES.realistic);
+
         // Set up window resize handler
         window.addEventListener('resize', onWindowResize);
 
         // Initialize TimeManager
-        timeManager.setTimeSpeed(500); // Default 500x speed
+        timeManager.setTimeSpeed(100000); // Default 100,000x speed for visible orbits
 
         // Register update callbacks
         addUpdateCallback((deltaTime, simulationTime) => {
             // Update sun animation
             if (app.sun) {
                 updateSun(deltaTime, simulationTime);
+            }
+
+            // Update planets animation
+            if (app.planets) {
+                updatePlanets(deltaTime, simulationTime);
             }
         });
 
@@ -150,6 +160,10 @@ function setupUIHandlers() {
     const timeSpeedSlider = document.getElementById('time-speed');
     const speedValue = document.getElementById('speed-value');
     if (timeSpeedSlider && speedValue) {
+        // Set initial values
+        timeSpeedSlider.value = 100000;
+        speedValue.textContent = '100000x';
+
         timeSpeedSlider.addEventListener('input', (e) => {
             const speed = parseFloat(e.target.value);
             timeManager.setTimeSpeed(speed);

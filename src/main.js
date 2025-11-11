@@ -8,6 +8,8 @@ import { initCamera, onWindowResize as cameraResize } from './core/camera.js';
 import { initRenderer, onWindowResize as rendererResize } from './core/renderer.js';
 import { initAnimation, startAnimation, addUpdateCallback } from './core/animation.js';
 import { timeManager } from './utils/time.js';
+import { initSun, updateSun } from './modules/sun.js';
+import { STYLES } from './utils/constants.js';
 
 /**
  * Application state
@@ -18,6 +20,7 @@ const app = {
     renderer: null,
     controls: null,
     animation: null,
+    sun: null,
     isInitialized: false
 };
 
@@ -48,8 +51,8 @@ async function init() {
             controls: app.controls
         });
 
-        // Add a test sphere to verify rendering works
-        addTestSphere();
+        // Initialize the sun with realistic style
+        app.sun = initSun(STYLES.realistic);
 
         // Set up window resize handler
         window.addEventListener('resize', onWindowResize);
@@ -57,10 +60,12 @@ async function init() {
         // Initialize TimeManager
         timeManager.setTimeSpeed(500); // Default 500x speed
 
-        // Register update callbacks (placeholder for now)
+        // Register update callbacks
         addUpdateCallback((deltaTime, simulationTime) => {
-            // Update logic will go here when modules are ready
-            // For now, this is just a placeholder
+            // Update sun animation
+            if (app.sun) {
+                updateSun(deltaTime, simulationTime);
+            }
         });
 
         // Hide loading screen
@@ -80,24 +85,6 @@ async function init() {
         console.error('❌ Initialization failed:', error);
         showError('Failed to initialize application. Please refresh the page.');
     }
-}
-
-/**
- * Add a test sphere to verify rendering
- */
-function addTestSphere() {
-    const geometry = new THREE.SphereGeometry(10, 32, 32);
-    const material = new THREE.MeshStandardMaterial({
-        color: 0x4a90e2,
-        metalness: 0.3,
-        roughness: 0.7
-    });
-    const testSphere = new THREE.Mesh(geometry, material);
-    testSphere.name = 'TestSphere';
-    testSphere.position.set(0, 0, 0);
-
-    addToScene(testSphere);
-    console.log('✅ Test sphere added to scene');
 }
 
 /**

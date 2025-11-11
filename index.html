@@ -158,32 +158,24 @@
         </div>
     </div>
 
-    <!-- Three.js Library (CDN) -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r160/three.min.js"></script>
+    <!-- Load Three.js from CDN (using known working version) -->
+    <script src="https://unpkg.com/three@0.152.0/build/three.min.js"></script>
 
-    <!-- OrbitControls (for camera control) -->
-    <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/examples/js/controls/OrbitControls.js"></script>
+    <!-- Load OrbitControls from CDN -->
+    <script src="https://unpkg.com/three@0.152.0/examples/js/controls/OrbitControls.js"></script>
 
-    <!-- Our Application Modules -->
-    <script type="module" src="src/utils/constants.js"></script>
-    <script type="module" src="src/utils/time.js"></script>
-    <script type="module" src="src/utils/coordinates.js"></script>
-    <script type="module" src="src/utils/orbital.js"></script>
-    <script type="module" src="src/utils/api.js"></script>
-    <script type="module" src="src/core/scene.js"></script>
-    <script type="module" src="src/core/camera.js"></script>
-    <script type="module" src="src/core/renderer.js"></script>
-    <script type="module" src="src/core/animation.js"></script>
-    <script type="module" src="src/modules/sun.js"></script>
-    <script type="module" src="src/modules/planets.js"></script>
-    <script type="module" src="src/modules/moon.js"></script>
-    <script type="module" src="src/modules/iss.js"></script>
-    <script type="module" src="src/modules/orbits.js"></script>
-    <script type="module" src="src/modules/styles.js"></script>
-    <script type="module" src="src/modules/ui.js"></script>
-    <script type="module" src="src/modules/solarSystem.js"></script>
+    <!-- Verify Three.js loaded and make it globally available -->
+    <script>
+        if (typeof THREE !== 'undefined') {
+            window.THREE = THREE;
+            console.log('✅ Three.js library loaded (version:', THREE.REVISION, ')');
+        } else {
+            console.error('❌ Failed to load Three.js from CDN');
+            alert('Failed to load Three.js library. Please check your internet connection and refresh the page.');
+        }
+    </script>
 
-    <!-- Main Application Entry Point -->
+    <!-- Main Application Entry Point (will load other modules as needed) -->
     <script type="module" src="src/main.js"></script>
 </body>
 </html>

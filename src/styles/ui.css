@@ -776,3 +776,154 @@ input[type="range"]::-moz-range-thumb:hover {
         font-size: 0.9rem;
     }
 }
+
+/* ===================================
+   Touch Indicator Styles (Mobile)
+   =================================== */
+
+/* Touch indicator overlay */
+.touch-indicator {
+    position: fixed;
+    bottom: 100px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 9999;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    pointer-events: none;
+}
+
+.touch-indicator.visible {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+/* Touch indicator content box */
+.touch-indicator-content {
+    background: linear-gradient(135deg, rgba(30, 60, 114, 0.95), rgba(42, 82, 152, 0.95));
+    border-radius: 12px;
+    padding: 1.5rem;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    max-width: 350px;
+    animation: slideUpFade 0.4s ease-out;
+}
+
+@keyframes slideUpFade {
+    from {
+        transform: translateY(20px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+.touch-indicator-content h3 {
+    margin: 0 0 1rem 0;
+    font-size: 1.3rem;
+    color: #fff;
+    text-align: center;
+    text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+}
+
+/* Touch gestures grid */
+.touch-gestures {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+}
+
+.gesture {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    background: rgba(0, 0, 0, 0.3);
+    padding: 0.75rem;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.gesture-icon {
+    font-size: 2rem;
+    min-width: 40px;
+    text-align: center;
+}
+
+.gesture-text {
+    flex: 1;
+}
+
+.gesture-text strong {
+    display: block;
+    color: #4a90e2;
+    font-size: 0.95rem;
+    margin-bottom: 0.25rem;
+}
+
+.gesture-text p {
+    margin: 0;
+    font-size: 0.85rem;
+    color: rgba(255, 255, 255, 0.8);
+    line-height: 1.4;
+}
+
+/* Touch indicator button */
+.touch-indicator-btn {
+    width: 100%;
+    padding: 0.75rem;
+    background: linear-gradient(135deg, #4a90e2, #7e22ce);
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 4px 15px rgba(74, 144, 226, 0.4);
+}
+
+.touch-indicator-btn:active {
+    transform: scale(0.98);
+    box-shadow: 0 2px 10px rgba(74, 144, 226, 0.6);
+}
+
+/* Mobile responsive */
+@media (max-width: 480px) {
+    .touch-indicator {
+        bottom: 80px;
+        left: 10px;
+        right: 10px;
+        transform: none;
+        width: calc(100% - 20px);
+    }
+
+    .touch-indicator-content {
+        max-width: 100%;
+        padding: 1.25rem;
+    }
+
+    .touch-indicator-content h3 {
+        font-size: 1.2rem;
+    }
+
+    .gesture {
+        gap: 0.75rem;
+        padding: 0.6rem;
+    }
+
+    .gesture-icon {
+        font-size: 1.75rem;
+        min-width: 35px;
+    }
+
+    .gesture-text strong {
+        font-size: 0.9rem;
+    }
+
+    .gesture-text p {
+        font-size: 0.8rem;
+    }
+}

@@ -76,6 +76,15 @@ export function initControls(domElement) {
     controls.enableZoom = true; // Enable mouse wheel zoom
     controls.zoomSpeed = 1.0; // Zoom sensitivity
 
+    // Enhanced touch controls for mobile
+    controls.touches = {
+        ONE: THREE.TOUCH.ROTATE,        // One finger: rotate
+        TWO: THREE.TOUCH.DOLLY_PAN      // Two fingers: pinch zoom + pan
+    };
+    controls.enablePan = true;           // Enable panning with two fingers
+    controls.panSpeed = 1.0;             // Pan sensitivity
+    controls.rotateSpeed = 0.8;          // Rotation sensitivity (slightly slower for better control)
+
     // Set initial target (look at origin)
     controls.target.set(0, 0, 0);
     controls.update();

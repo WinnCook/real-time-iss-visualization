@@ -49,7 +49,7 @@ export function initOrbits(styleConfig = {}) {
         createOrbit(planetKey, planetData, styleConfig);
     });
 
-    console.log('✅ Orbital paths initialized for: Mercury, Venus, Earth, Mars');
+    console.log('✅ Orbital paths initialized for: Mercury, Venus, Earth, Mars, Jupiter, Saturn, Uranus, Neptune');
     return orbitLines;
 }
 

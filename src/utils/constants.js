@@ -54,6 +54,50 @@ export const PLANETS = {
         orbitPeriod: 686.98, // days
         rotationPeriod: 1.026, // days
         tilt: 25.19 // degrees
+    },
+    jupiter: {
+        name: "Jupiter",
+        color: 0xc88b3a, // Orange-tan with bands
+        radius: 69911, // km (largest planet)
+        orbitRadius: 5.2, // AU
+        orbitPeriod: 4333, // days (11.86 years)
+        rotationPeriod: 0.41, // days (fastest rotation - 9.9 hours)
+        tilt: 3.13 // degrees
+    },
+    saturn: {
+        name: "Saturn",
+        color: 0xead6b8, // Pale golden yellow
+        radius: 58232, // km (second largest)
+        orbitRadius: 9.54, // AU
+        orbitPeriod: 10759, // days (29.46 years)
+        rotationPeriod: 0.45, // days (10.7 hours)
+        tilt: 26.73, // degrees
+        // Ring system (unique to Saturn in our visualization)
+        rings: {
+            innerRadius: 74500, // km (inner edge of visible rings)
+            outerRadius: 140220, // km (outer edge of A ring)
+            thickness: 30, // km (very thin!)
+            color: 0xc9b18f, // Dusty tan color
+            opacity: 0.8
+        }
+    },
+    uranus: {
+        name: "Uranus",
+        color: 0x4fd0e7, // Cyan/ice blue
+        radius: 25362, // km
+        orbitRadius: 19.19, // AU
+        orbitPeriod: 30687, // days (84 years)
+        rotationPeriod: -0.72, // days (17.2 hours, retrograde)
+        tilt: 97.77 // degrees (extreme tilt - rotates on its side!)
+    },
+    neptune: {
+        name: "Neptune",
+        color: 0x4166f5, // Deep blue
+        radius: 24622, // km
+        orbitRadius: 30.07, // AU (farthest planet)
+        orbitPeriod: 60190, // days (164.8 years)
+        rotationPeriod: 0.67, // days (16.1 hours)
+        tilt: 28.32 // degrees
     }
 };
 
@@ -93,8 +137,8 @@ export const RENDER = {
     // Camera
     FOV: 45, // Field of view in degrees
     NEAR: 0.1, // Near clipping plane
-    FAR: 10000, // Far clipping plane
-    DEFAULT_CAMERA_POSITION: { x: 0, y: 500, z: 1200 }, // Camera position for optimal view of balanced system
+    FAR: 20000, // Far clipping plane (increased for outer planets)
+    DEFAULT_CAMERA_POSITION: { x: 0, y: 2000, z: 4000 }, // Camera position for full solar system view
 
     // Performance (default to BALANCED preset)
     TARGET_FPS: 60,
@@ -160,6 +204,36 @@ export const PERFORMANCE_PRESETS = {
 
 // Default performance preset
 export const DEFAULT_PERFORMANCE_PRESET = 'BALANCED';
+
+// ========== CAMERA PRESETS ==========
+// Different camera positions for viewing different regions of the solar system
+
+export const CAMERA_PRESETS = {
+    INNER_SYSTEM: {
+        name: 'Inner System',
+        description: 'View Sun to Mars (inner planets)',
+        position: { x: 0, y: 500, z: 1200 },
+        target: { x: 0, y: 0, z: 0 }
+    },
+    OUTER_SYSTEM: {
+        name: 'Outer System',
+        description: 'View Jupiter to Neptune (outer planets)',
+        position: { x: 0, y: 3000, z: 8000 },
+        target: { x: 2500, y: 0, z: 0 }
+    },
+    FULL_SYSTEM: {
+        name: 'Full System',
+        description: 'View entire solar system (all 8 planets)',
+        position: { x: 0, y: 2000, z: 4000 },
+        target: { x: 0, y: 0, z: 0 }
+    },
+    TOP_DOWN: {
+        name: 'Top Down',
+        description: 'Bird\'s eye view of orbital plane',
+        position: { x: 0, y: 5000, z: 0 },
+        target: { x: 0, y: 0, z: 0 }
+    }
+};
 
 // ========== SIMULATION SETTINGS ==========
 

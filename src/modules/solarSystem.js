@@ -96,6 +96,10 @@ function registerAllObjects() {
     registerObject('venus', getPlanet('venus'));
     registerObject('earth', getPlanet('earth'));
     registerObject('mars', getPlanet('mars'));
+    registerObject('jupiter', getPlanet('jupiter'));
+    registerObject('saturn', getPlanet('saturn'));
+    registerObject('uranus', getPlanet('uranus'));
+    registerObject('neptune', getPlanet('neptune'));
     registerObject('moon', getMoon());
     registerObject('iss', getISSMesh());
 }

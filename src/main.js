@@ -82,6 +82,10 @@ async function init() {
         registerClickableObject('venus', getCelestialObject('venus'), { type: 'planet', name: 'Venus' });
         registerClickableObject('earth', getCelestialObject('earth'), { type: 'planet', name: 'Earth' });
         registerClickableObject('mars', getCelestialObject('mars'), { type: 'planet', name: 'Mars' });
+        registerClickableObject('jupiter', getCelestialObject('jupiter'), { type: 'planet', name: 'Jupiter' });
+        registerClickableObject('saturn', getCelestialObject('saturn'), { type: 'planet', name: 'Saturn' });
+        registerClickableObject('uranus', getCelestialObject('uranus'), { type: 'planet', name: 'Uranus' });
+        registerClickableObject('neptune', getCelestialObject('neptune'), { type: 'planet', name: 'Neptune' });
         registerClickableObject('moon', getCelestialObject('moon'), { type: 'moon', name: 'Moon' });
         registerClickableObject('iss', getCelestialObject('iss'), { type: 'spacecraft', name: 'ISS' });
 

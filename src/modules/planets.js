@@ -23,7 +23,11 @@ const startAngles = {
     mercury: 0,
     venus: Math.PI / 2,
     earth: Math.PI,
-    mars: (3 * Math.PI) / 2
+    mars: (3 * Math.PI) / 2,
+    jupiter: Math.PI / 4,
+    saturn: (3 * Math.PI) / 4,
+    uranus: (5 * Math.PI) / 4,
+    neptune: (7 * Math.PI) / 4
 };
 
 /**
@@ -55,6 +59,11 @@ export function initPlanets(styleConfig = {}) {
         const planetData = PLANETS[planetKey];
         createPlanet(planetKey, planetData, styleConfig);
 
+        // Add rings to Saturn
+        if (planetKey === 'saturn' && planetData.rings) {
+            createSaturnRings(planetKey, planetData, styleConfig);
+        }
+
         // Pre-calculate and cache orbital data for this planet (OPTIMIZATION)
         cachedOrbitalData[planetKey] = {
             orbitRadiusScene: auToScene(planetData.orbitRadius),
@@ -63,7 +72,7 @@ export function initPlanets(styleConfig = {}) {
         };
     });
 
-    console.log('✅ Planets initialized: Mercury, Venus, Earth, Mars');
+    console.log('✅ Planets initialized: Mercury, Venus, Earth, Mars, Jupiter, Saturn (with rings), Uranus, Neptune');
     return planetMeshes;
 }
 
@@ -134,6 +143,64 @@ function createPlanetMaterial(planetData, styleConfig) {
     });
 
     return material;
+}
+
+/**
+ * Create Saturn's ring system
+ * @param {string} planetKey - Should be 'saturn'
+ * @param {Object} planetData - Saturn configuration data with rings property
+ * @param {Object} styleConfig - Visual style configuration
+ */
+function createSaturnRings(planetKey, planetData, styleConfig) {
+    const planetMesh = planetMeshes[planetKey];
+    if (!planetMesh || !planetData.rings) return;
+
+    const ringData = planetData.rings;
+
+    // Convert ring radii from km to scene units
+    const kmToScene = (km) => scaleRadius(km, 'planet');
+    const innerRadius = kmToScene(ringData.innerRadius);
+    const outerRadius = kmToScene(ringData.outerRadius);
+
+    // Create ring geometry (flat ring in XY plane)
+    const ringGeometry = new THREE.RingGeometry(
+        innerRadius,
+        outerRadius,
+        64 // segments for smooth ring
+    );
+
+    // Create ring material
+    const ringMaterial = new THREE.MeshBasicMaterial({
+        color: ringData.color,
+        opacity: ringData.opacity,
+        transparent: true,
+        side: THREE.DoubleSide, // Visible from both sides
+        depthWrite: false // Prevent z-fighting issues
+    });
+
+    // For neon style, add some glow
+    if (styleConfig.name === 'Neon/Cyberpunk') {
+        ringMaterial.emissive = new THREE.Color(ringData.color);
+        ringMaterial.emissiveIntensity = 0.5;
+    }
+
+    // Create ring mesh
+    const ringMesh = new THREE.Mesh(ringGeometry, ringMaterial);
+    ringMesh.name = 'Saturn-Rings';
+
+    // Rotate rings to lie in planet's equatorial plane
+    // Saturn's rings are aligned with its equatorial plane, tilted by Saturn's axial tilt
+    ringMesh.rotation.x = Math.PI / 2; // Rotate from XY plane to XZ plane
+
+    // Apply same axial tilt as Saturn
+    if (planetData.tilt) {
+        ringMesh.rotation.z = planetData.tilt * DEG_TO_RAD;
+    }
+
+    // Add rings as child of Saturn (so they follow Saturn's position)
+    planetMesh.add(ringMesh);
+
+    console.log('✅ Saturn rings created');
 }
 
 /**

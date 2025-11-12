@@ -83,8 +83,8 @@ export function initPlanets(styleConfig = {}) {
  * @param {Object} styleConfig - Visual style configuration
  */
 function createPlanet(planetKey, planetData, styleConfig) {
-    // Calculate planet radius with scaling
-    const planetRadius = scaleRadius(planetData.radius, 'planet');
+    // Calculate planet radius with scaling (using tiered scaling based on planet category)
+    const planetRadius = scaleRadius(planetData.radius, 'planet', planetKey);
 
     // Get cached planet geometry (reuse if possible)
     const geometry = getCachedSphereGeometry(
@@ -157,8 +157,8 @@ function createSaturnRings(planetKey, planetData, styleConfig) {
 
     const ringData = planetData.rings;
 
-    // Convert ring radii from km to scene units
-    const kmToScene = (km) => scaleRadius(km, 'planet');
+    // Convert ring radii from km to scene units (using saturn's tiered scaling)
+    const kmToScene = (km) => scaleRadius(km, 'planet', 'saturn');
     const innerRadius = kmToScene(ringData.innerRadius);
     const outerRadius = kmToScene(ringData.outerRadius);
 
@@ -300,7 +300,7 @@ export function getPlanetData(planetKey) {
  */
 export function getPlanetRadius(planetKey) {
     const planetData = PLANETS[planetKey];
-    return planetData ? scaleRadius(planetData.radius, 'planet') : 0;
+    return planetData ? scaleRadius(planetData.radius, 'planet', planetKey) : 0;
 }
 
 /**

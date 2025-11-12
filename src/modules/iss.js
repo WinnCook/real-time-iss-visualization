@@ -45,16 +45,16 @@ export function initISS(styleConfig) {
 }
 
 /**
- * Create ISS mesh (simple sphere for now, can be replaced with detailed model)
+ * Create ISS mesh with iconic geometry (cylinder body + solar panels)
  * @param {Object} styleConfig - Visual style configuration
- * @returns {THREE.Mesh} ISS mesh
+ * @returns {THREE.Group} ISS mesh group
  */
 function createISSMesh(styleConfig) {
-    // Get sphere geometry from cache (larger radius for better visibility)
-    const geometry = getCachedSphereGeometry(3, 4, 4);
+    // Create a group to hold all ISS components
+    const issGroup = new THREE.Group();
 
     // Create material based on visual style
-    const material = new THREE.MeshStandardMaterial({
+    const bodyMaterial = new THREE.MeshStandardMaterial({
         color: COLORS.ISS_COLOR,
         emissive: COLORS.ISS_COLOR,
         emissiveIntensity: styleConfig.name === 'Neon/Cyberpunk' ? 2.0 : 0.5,
@@ -62,19 +62,58 @@ function createISSMesh(styleConfig) {
         roughness: 0.2
     });
 
-    const mesh = new THREE.Mesh(geometry, material);
+    // Solar panel material (slightly different - more golden/blue)
+    const panelMaterial = new THREE.MeshStandardMaterial({
+        color: 0x4a90e2, // Blue tint for solar panels
+        emissive: 0x4a90e2,
+        emissiveIntensity: styleConfig.name === 'Neon/Cyberpunk' ? 1.5 : 0.3,
+        metalness: 0.6,
+        roughness: 0.4
+    });
 
-    // Scale ISS for visibility (massively enlarged)
-    const issRadius = scaleRadius(10, 'iss'); // Approximate ISS size ~10m → scaled up
-    mesh.scale.set(issRadius, issRadius, issRadius);
+    // CENTRAL CYLINDER BODY (ISS modules)
+    // Real ISS is ~73m long, we'll use proportional dimensions
+    const bodyLength = 12;
+    const bodyRadius = 2;
+    const bodyGeometry = new THREE.CylinderGeometry(bodyRadius, bodyRadius, bodyLength, 8);
+    const bodyMesh = new THREE.Mesh(bodyGeometry, bodyMaterial);
 
-    mesh.name = 'ISS';
-    mesh.userData = {
+    // Rotate cylinder to align along X axis (default is Y axis)
+    bodyMesh.rotation.z = Math.PI / 2;
+    bodyMesh.name = 'ISS-Body';
+    issGroup.add(bodyMesh);
+
+    // SOLAR PANELS (wings on both sides)
+    // Real ISS solar arrays are ~73m wide
+    const panelWidth = 20;  // Wide wingspan
+    const panelHeight = 6;  // Tall panels
+    const panelDepth = 0.3; // Very thin (solar panels are flat)
+    const panelGeometry = new THREE.BoxGeometry(panelWidth, panelHeight, panelDepth);
+
+    // Left solar panel wing
+    const leftPanel = new THREE.Mesh(panelGeometry, panelMaterial);
+    leftPanel.position.set(-bodyLength * 0.4, 0, 0); // Position to left side of body
+    leftPanel.name = 'ISS-Panel-Left';
+    issGroup.add(leftPanel);
+
+    // Right solar panel wing
+    const rightPanel = new THREE.Mesh(panelGeometry, panelMaterial);
+    rightPanel.position.set(bodyLength * 0.4, 0, 0); // Position to right side of body
+    rightPanel.name = 'ISS-Panel-Right';
+    issGroup.add(rightPanel);
+
+    // Scale entire ISS for visibility (massively enlarged)
+    const issScale = scaleRadius(10, 'iss'); // Approximate ISS size ~10m → scaled up
+    issGroup.scale.set(issScale, issScale, issScale);
+
+    // Set group properties
+    issGroup.name = 'ISS';
+    issGroup.userData = {
         type: 'iss',
         isTrackable: true
     };
 
-    return mesh;
+    return issGroup;
 }
 
 /**
@@ -248,11 +287,30 @@ export function updateISS(deltaTime, simulationTime, earthPos) {
     // Recalculate ISS position relative to new Earth position
     if (currentPosition && issMesh) {
         updateISSVisualization();
-    }
 
-    // Optional: Add slow rotation for visual interest
-    if (issMesh) {
-        issMesh.rotation.y += deltaTime * 0.5; // Slow rotation
+        // Orient ISS to stay parallel to Earth's surface (point "forward" in orbit)
+        // Calculate vector from Earth to ISS
+        const toISS = new THREE.Vector3(
+            issMesh.position.x - earthPosition.x,
+            issMesh.position.y - earthPosition.y,
+            issMesh.position.z - earthPosition.z
+        ).normalize();
+
+        // Calculate orbital tangent (perpendicular to radial direction in XZ plane)
+        // The ISS orbits in a plane, we want it to face "forward" in its motion
+        const forward = new THREE.Vector3(-toISS.z, 0, toISS.x).normalize();
+
+        // Make ISS look in the direction of orbital motion
+        // The cylinder body should point forward, solar panels should be perpendicular
+        issMesh.lookAt(
+            issMesh.position.x + forward.x,
+            issMesh.position.y + forward.y,
+            issMesh.position.z + forward.z
+        );
+
+        // Adjust rotation so solar panels face up/down (perpendicular to Earth's surface)
+        // The ISS body cylinder is along X axis, panels are along X, so this should work
+        issMesh.rotateOnAxis(new THREE.Vector3(1, 0, 0), Math.PI / 2);
     }
 }
 
@@ -342,8 +400,17 @@ export function disposeISS() {
     // Remove from scene
     if (issMesh) {
         removeFromScene(issMesh);
-        // Don't dispose cached geometry - it's shared and managed by geometryCache
-        issMesh.material.dispose();
+
+        // Dispose of ISS group and all its children (body + solar panels)
+        issMesh.traverse((child) => {
+            if (child.geometry) {
+                child.geometry.dispose();
+            }
+            if (child.material) {
+                child.material.dispose();
+            }
+        });
+
         issMesh = null;
     }
 

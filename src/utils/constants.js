@@ -117,10 +117,14 @@ export const SCALE = {
     // Scene units per AU (makes solar system fit in view)
     AU_TO_SCENE: 500, // Optimal spacing: Mercury orbit at 193 units
 
-    // Planet size multipliers (for visibility)
-    PLANET_SIZE: 1500, // Balanced planet visibility
+    // Planet size multipliers (for visibility with realistic proportions)
+    // Tiered scaling: smaller multiplier for larger planets to show size differences
+    PLANET_SIZE_ROCKY: 1500,      // Rocky planets (Mercury, Venus, Earth, Mars) - keep visible
+    PLANET_SIZE_GAS_GIANT: 250,   // Gas giants (Jupiter, Saturn) - scaled down so they don't dominate
+    PLANET_SIZE_ICE_GIANT: 450,   // Ice giants (Uranus, Neptune) - medium scaling
+    PLANET_SIZE: 1500,             // Legacy - still used by scaleRadius for backward compatibility
     MOON_SIZE: 1000,
-    SUN_SIZE: 40, // Best compromise: Sun radius = 93 units, Mercury = 193 units (2.07x ratio - looks great!)
+    SUN_SIZE: 60, // Increased from 40 for better prominence
     ISS_SIZE: 50000, // Very large so it's visible as a dot
 
     // Moon orbit scaling (needed because planets are scaled up 1500x but Moon orbit uses real km distance)
@@ -128,7 +132,19 @@ export const SCALE = {
     MOON_ORBIT_SCALE: 50, // Makes Moon orbit ~64 units (vs Earth radius of ~32 units)
 
     // Orbit line thickness
-    ORBIT_LINE_WIDTH: 2
+    ORBIT_LINE_WIDTH: 2,
+
+    // Planet size categories for realistic proportional scaling
+    PLANET_CATEGORIES: {
+        mercury: 'rocky',
+        venus: 'rocky',
+        earth: 'rocky',
+        mars: 'rocky',
+        jupiter: 'gas_giant',
+        saturn: 'gas_giant',
+        uranus: 'ice_giant',
+        neptune: 'ice_giant'
+    }
 };
 
 // ========== RENDERING SETTINGS ==========
@@ -342,11 +358,30 @@ export function kmToScene(km) {
 /**
  * Scale radius for visibility
  */
-export function scaleRadius(radiusKm, type = 'planet') {
-    const scale = type === 'sun' ? SCALE.SUN_SIZE :
-                  type === 'moon' ? SCALE.MOON_SIZE :
-                  type === 'iss' ? SCALE.ISS_SIZE :
-                  SCALE.PLANET_SIZE;
+export function scaleRadius(radiusKm, type = 'planet', planetKey = null) {
+    let scale;
+
+    if (type === 'sun') {
+        scale = SCALE.SUN_SIZE;
+    } else if (type === 'moon') {
+        scale = SCALE.MOON_SIZE;
+    } else if (type === 'iss') {
+        scale = SCALE.ISS_SIZE;
+    } else if (type === 'planet' && planetKey) {
+        // Use tiered scaling based on planet category
+        const category = SCALE.PLANET_CATEGORIES[planetKey];
+        if (category === 'rocky') {
+            scale = SCALE.PLANET_SIZE_ROCKY;
+        } else if (category === 'gas_giant') {
+            scale = SCALE.PLANET_SIZE_GAS_GIANT;
+        } else if (category === 'ice_giant') {
+            scale = SCALE.PLANET_SIZE_ICE_GIANT;
+        } else {
+            scale = SCALE.PLANET_SIZE; // fallback
+        }
+    } else {
+        scale = SCALE.PLANET_SIZE; // fallback
+    }
 
     return kmToScene(radiusKm * scale);
 }

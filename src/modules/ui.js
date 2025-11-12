@@ -455,7 +455,7 @@ function setupSizeModeButtons() {
                 // Show helpful notification for real mode
                 if (mode === 'real') {
                     showNotification('🔬 Real Proportions Active',
-                        'Planets are now at actual scale! Zoom in close to see them - they\'re tiny compared to orbital distances.');
+                        'Planets now show accurate size ratios! The Sun is massive (~230 units radius), Earth is ~2 units. Zoom in to see them. Note: ISS marker is not to scale.');
                 }
             }
         });

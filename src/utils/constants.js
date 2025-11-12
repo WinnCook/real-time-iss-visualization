@@ -386,31 +386,43 @@ export function getPlanetSizeMode() {
 export function scaleRadius(radiusKm, type = 'planet', planetKey = null) {
     let scale;
 
-    // In 'real' mode, use minimal scaling for planets/sun/moon to show true proportions
-    if (planetSizeMode === 'real' && (type === 'planet' || type === 'sun' || type === 'moon')) {
-        // Use same scale as AU_TO_SCENE for consistent proportions
-        // This makes planets tiny but proportionally accurate
-        scale = SCALE.AU_TO_SCENE / 20000; // ~0.025 - very small but visible when zoomed in
-    } else if (type === 'sun') {
-        scale = SCALE.SUN_SIZE;
-    } else if (type === 'moon') {
-        scale = SCALE.MOON_SIZE;
-    } else if (type === 'iss') {
-        scale = SCALE.ISS_SIZE; // Always keep ISS exaggerated for visibility
-    } else if (type === 'planet' && planetKey) {
-        // Use tiered scaling based on planet category (enlarged mode)
-        const category = SCALE.PLANET_CATEGORIES[planetKey];
-        if (category === 'rocky') {
-            scale = SCALE.PLANET_SIZE_ROCKY;
-        } else if (category === 'gas_giant') {
-            scale = SCALE.PLANET_SIZE_GAS_GIANT;
-        } else if (category === 'ice_giant') {
-            scale = SCALE.PLANET_SIZE_ICE_GIANT;
+    // In 'real' mode, use accurate proportional scaling
+    if (planetSizeMode === 'real') {
+        if (type === 'planet' || type === 'sun' || type === 'moon') {
+            // Use 100x scale for real mode - makes Earth ~2 scene units radius
+            // This shows accurate proportions while keeping objects visible when zoomed in
+            scale = 100;
+        } else if (type === 'iss') {
+            // ISS real size would be ~100m (0.1 km)
+            // At 100x scale: (0.1 / 149597870.7) * 500 * 100 = 0.0000334 scene units (invisible!)
+            // Instead, use fixed minimum size of 0.3 scene units for visibility as a marker
+            // Note: This is NOT to scale - real ISS would be microscopic
+            const baseSize = kmToScene(radiusKm * 100);
+            return Math.max(baseSize, 0.3); // Minimum 0.3 scene units for visibility
+        }
+    } else {
+        // Enlarged mode - use exaggerated scaling for visibility
+        if (type === 'sun') {
+            scale = SCALE.SUN_SIZE;
+        } else if (type === 'moon') {
+            scale = SCALE.MOON_SIZE;
+        } else if (type === 'iss') {
+            scale = SCALE.ISS_SIZE; // Keep ISS very exaggerated in enlarged mode
+        } else if (type === 'planet' && planetKey) {
+            // Use tiered scaling based on planet category
+            const category = SCALE.PLANET_CATEGORIES[planetKey];
+            if (category === 'rocky') {
+                scale = SCALE.PLANET_SIZE_ROCKY;
+            } else if (category === 'gas_giant') {
+                scale = SCALE.PLANET_SIZE_GAS_GIANT;
+            } else if (category === 'ice_giant') {
+                scale = SCALE.PLANET_SIZE_ICE_GIANT;
+            } else {
+                scale = SCALE.PLANET_SIZE; // fallback
+            }
         } else {
             scale = SCALE.PLANET_SIZE; // fallback
         }
-    } else {
-        scale = SCALE.PLANET_SIZE; // fallback
     }
 
     return kmToScene(radiusKm * scale);

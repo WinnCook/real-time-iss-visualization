@@ -520,16 +520,17 @@ export function toggleOrbitalMode() {
 export function updatePlanetSizeMode(mode) {
     setPlanetSizeMode(mode);
 
-    // Rebuild planets with new sizes
+    // Rebuild all celestial objects with new sizes
     if (currentStyle) {
         initPlanets(currentStyle);
 
-        // Also rebuild Sun and Moon with new sizes
+        // Also rebuild Sun, Moon, and ISS with new sizes
         import('./sun.js').then(({ initSun }) => initSun(currentStyle));
         import('./moon.js').then(({ initMoon }) => initMoon(currentStyle));
+        import('./iss.js').then(({ initISS }) => initISS(currentStyle));
     }
 
-    console.log(`🔄 Objects rebuilt with ${mode.toUpperCase()} sizes`);
+    console.log(`🔄 Celestial objects rebuilt with ${mode.toUpperCase()} sizes`);
 }
 
 // Export default object

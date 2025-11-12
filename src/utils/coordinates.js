@@ -51,8 +51,11 @@ export function geographicToScenePosition(latitude, longitude, altitude) {
     // Get Earth's scaled radius in scene (for visual consistency)
     const earthSceneRadius = scaleRadius(EARTH_RADIUS, 'planet');
 
-    // Calculate altitude in scene units (ISS is massively scaled for visibility)
-    const altitudeScene = scaleRadius(altitude, 'iss') / 50; // Scale down altitude proportionally
+    // Calculate altitude in scene units
+    // ISS orbits at ~408km, Earth radius is ~6371km
+    // So ISS is at about 6% above Earth's surface
+    // Scale altitude proportionally to Earth's scaled radius for visual clarity
+    const altitudeScene = earthSceneRadius * 0.15; // 15% above Earth's surface for visibility
 
     // Total distance from Earth's center in scene units
     const distanceFromCenter = earthSceneRadius + altitudeScene;

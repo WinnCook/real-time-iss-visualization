@@ -77,24 +77,29 @@
 
 ---
 
-### 4. Solar System Modules [IN PROGRESS 🔄]
+### 4. Solar System Modules [COMPLETED ✅]
 
-**Files to create:**
+**Files created:**
 1. ✅ `src/modules/sun.js` - Sun rendering with glow effects
 2. ✅ `src/modules/planets.js` - Planet orbital mechanics and rendering
 3. ✅ `src/modules/moon.js` - Moon orbit around Earth
 4. ✅ `src/modules/iss.js` - ISS real-time tracking and rendering
-5. `src/modules/orbits.js` - Orbital path visualization
+5. ✅ `src/modules/orbits.js` - Orbital path visualization
+6. ✅ `src/modules/starfield.js` - Background starfield (15,000 stars)
+7. ✅ `src/modules/labels.js` - 2D labels for 3D objects
 
 **Subtasks:**
-- [x] 4.1: sun.js (sun sphere, glow shader, light source)
+- [x] 4.1: sun.js (sun sphere, glow shader, light source) ✅ **COMPLETED 2025-11-11**
 - [x] 4.2: planets.js (Mercury, Venus, Earth, Mars with orbits) ✅ **COMPLETED 2025-11-11**
 - [x] 4.3: moon.js (moon orbit mechanics, tidal locking) ✅ **COMPLETED 2025-11-11**
 - [x] 4.4: iss.js (API integration, position update, trail) ✅ **COMPLETED 2025-11-11**
-- [ ] 4.5: orbits.js (draw orbital paths, toggle visibility)
+- [x] 4.5: orbits.js (draw orbital paths, toggle visibility) ✅ **COMPLETED 2025-11-11**
+- [x] 4.6: starfield.js (background stars) ✅ **COMPLETED 2025-11-11**
+- [x] 4.7: labels.js (object labels system) ✅ **COMPLETED 2025-11-11**
 
 **Priority:** P0 (Critical)
-**Estimated Effort:** 5 hours → **6.5 hours spent** (ISS took 1.5 hours)
+**Estimated Effort:** 5 hours → **8 hours spent**
+**Status:** ✅ **DONE**
 **Dependencies:** Task #2 ✅, #3 ✅
 
 **Task 4.2 Completion Notes:**
@@ -134,6 +139,44 @@
 - Fully integrated into main.js with update callback
 - ISS disposed and recreated when performance settings change
 - Tested successfully - server running at http://localhost:8000
+- **Bug Fix:** Fixed ISS altitude scaling - now orbits at 15% above Earth's surface for visibility
+- ISS properly separated from Earth (was merged before fix)
+
+**Task 4.5 Completion Notes:**
+- Created `src/modules/orbits.js` (270 lines) - Orbital path visualization system
+- Circular orbital paths for all 4 planets (Mercury, Venus, Earth, Mars)
+- Uses THREE.LineLoop with 128 segments for smooth circles
+- Color-coded paths matching each planet's color (semi-transparent)
+- Style-aware opacity: Realistic (20%), Neon (60%), Minimalist (50%), Cartoon (40%)
+- Toggle visibility functionality via setOrbitsVisible()
+- Static geometry (no per-frame updates needed for performance)
+- Fully integrated into main.js lifecycle (init, dispose, recreate)
+- Connected to "Orbits" checkbox in UI - fully functional ✅
+
+**Task 4.6 Completion Notes:**
+- Created `src/modules/starfield.js` (270 lines) - Background starfield system
+- 15,000 procedurally generated stars distributed in sphere (radius: 8000 units)
+- Realistic star distribution: 70% white, 15% blue-white, 15% yellow-white
+- Brightness variation using cubic distribution (most stars small, few bright)
+- Star sizes range from 1-4 based on magnitude
+- Uses THREE.Points with additive blending for glowing effect
+- Style-aware rendering (bigger/glowier in Neon, subtle in Minimalist)
+- depthWrite: false ensures stars remain as background
+- Connected to "Stars" checkbox in UI - fully functional ✅
+- Creates immersive space environment backdrop
+
+**Task 4.7 Completion Notes:**
+- Created `src/modules/labels.js` (270 lines) - 2D labels for 3D objects system
+- HTML-based labels that follow 3D objects on screen
+- Projects 3D world positions to 2D screen coordinates every frame
+- Labels for all objects: Sun, Mercury, Venus, Earth, Mars, Moon, ISS
+- Color-coded borders matching each object's color
+- Auto-fades based on distance (fades when too close or too far from camera)
+- Hides labels when objects are behind camera (z > 1 check)
+- Positioned with CSS transform for smooth rendering
+- Updates every frame in animation loop via updateLabels()
+- Connected to "Labels" checkbox in UI - fully functional ✅
+- All 4 display checkboxes now operational: Orbits, Labels, Trails, Stars
 
 ---
 
@@ -291,17 +334,17 @@
 ## Sprint Metrics
 
 - **Total Major Tasks:** 9
-- **Completed:** 3/9 (33%)
-- **In Progress:** 2/9 (Task 4: Solar System, Task 8: Testing & Optimization)
+- **Completed:** 4/9 (44%) - Tasks 1, 2, 3, 4 ✅
+- **In Progress:** 1/9 (Task 8: Testing & Optimization)
 - **Blocked:** 0/9
-- **Total Subtasks:** 89 (increased: +8 for performance slider system)
-- **Completed Subtasks:** 40/89 (45%)
+- **Total Subtasks:** 92 (Task 4 added 3 more: orbits, starfield, labels)
+- **Completed Subtasks:** 47/92 (51%)
 
 ---
 
 ## Detailed Module Breakdown
 
-### Files Completed (27):
+### Files Completed (30):
 1. ✅ README.md
 2. ✅ CURRENT_SPRINT.md
 3. ✅ BACKLOG.md
@@ -313,31 +356,37 @@
 9. ✅ src/styles/ui.css (updated with slider styles)
 10. ✅ src/utils/constants.js (updated with POTATO preset)
 11. ✅ src/utils/time.js
-12. ✅ src/utils/coordinates.js
+12. ✅ src/utils/coordinates.js (fixed ISS altitude scaling)
 13. ✅ src/utils/orbital.js
 14. ✅ src/utils/api.js
-15. ✅ src/utils/geometryCache.js **NEW**
+15. ✅ src/utils/geometryCache.js
 16. ✅ test-utils.html
-17. ✅ Directory structure
+17. ✅ test-orbits.html
+18. ✅ Directory structure
 19. ✅ src/core/camera.js
 20. ✅ src/core/renderer.js
 21. ✅ src/core/animation.js (updated with FPS throttling)
-22. ✅ src/main.js (updated with slider logic)
+22. ✅ src/main.js (updated with slider logic, labels, starfield, orbits)
 23. ✅ src/modules/sun.js (updated with geometry caching)
 24. ✅ src/modules/planets.js (updated with geometry caching + orbital optimization)
 25. ✅ src/modules/moon.js (updated with geometry caching)
-26. ✅ src/modules/performanceSlider.js **NEW**
-27. ✅ src/modules/iss.js **NEW** - Real-time ISS tracking with API integration
+26. ✅ src/modules/performanceSlider.js
+27. ✅ src/modules/iss.js - Real-time ISS tracking with API integration
+28. ✅ src/modules/orbits.js - Orbital path visualization ✨ **NEW**
+29. ✅ src/modules/starfield.js - Background starfield (15,000 stars) ✨ **NEW**
+30. ✅ src/modules/labels.js - 2D labels for 3D objects ✨ **NEW**
 
-### Files Remaining (3):
-1. ⏳ src/modules/orbits.js
-2. ⏳ src/modules/styles.js
-3. ⏳ src/modules/ui.js
+### Files Remaining (2):
+1. ⏳ src/modules/styles.js
+2. ⏳ src/modules/ui.js
 
 ### Files Recently Added (Not in original plan):
 1. ✅ src/modules/performance.js - Performance preset system (Quality/Balanced/Performance) - DEPRECATED
 2. ✅ src/modules/performanceSlider.js - Continuous performance slider (0-100%) with dynamic quality
 3. ✅ src/utils/geometryCache.js - Geometry caching system for object reuse
+4. ✅ src/modules/orbits.js - Orbital path visualization (added to Task 4.5)
+5. ✅ src/modules/starfield.js - Background starfield system (added to Task 4.6)
+6. ✅ src/modules/labels.js - 2D labels for 3D objects (added to Task 4.7)
 
 ---
 

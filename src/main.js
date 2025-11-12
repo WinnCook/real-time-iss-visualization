@@ -8,10 +8,13 @@ import { initCamera, onWindowResize as cameraResize } from './core/camera.js';
 import { initRenderer, onWindowResize as rendererResize } from './core/renderer.js';
 import { initAnimation, startAnimation, addUpdateCallback } from './core/animation.js';
 import { timeManager } from './utils/time.js';
-import { initSun, updateSun, disposeSun } from './modules/sun.js';
-import { initPlanets, updatePlanets, getPlanetPosition, disposePlanets } from './modules/planets.js';
-import { initMoon, updateMoon, disposeMoon } from './modules/moon.js';
-import { initISS, updateISS, disposeISS } from './modules/iss.js';
+import { initSun, updateSun, disposeSun, getSun } from './modules/sun.js';
+import { initPlanets, updatePlanets, getPlanetPosition, disposePlanets, getPlanet } from './modules/planets.js';
+import { initMoon, updateMoon, disposeMoon, getMoon } from './modules/moon.js';
+import { initISS, updateISS, disposeISS, setISSTrailVisible, getISSMesh } from './modules/iss.js';
+import { initOrbits, updateOrbits, disposeOrbits, setOrbitsVisible } from './modules/orbits.js';
+import { initStarfield, updateStarfield, disposeStarfield, setStarfieldVisible } from './modules/starfield.js';
+import { initLabels, registerObject, updateLabels, setLabelsVisible, disposeLabels } from './modules/labels.js';
 import { clearGeometryCache } from './utils/geometryCache.js';
 import { initPerformanceSlider, setPerformanceLevel, getPerformanceSettings } from './modules/performanceSlider.js';
 import { STYLES } from './utils/constants.js';
@@ -29,6 +32,9 @@ const app = {
     planets: null,
     moon: null,
     iss: null,
+    orbits: null,
+    starfield: null,
+    labels: null,
     isInitialized: false
 };
 
@@ -59,17 +65,35 @@ async function init() {
             controls: app.controls
         });
 
+        // Initialize starfield background (first, as it's the backdrop)
+        app.starfield = initStarfield(STYLES.realistic);
+
         // Initialize the sun with realistic style
         app.sun = initSun(STYLES.realistic);
 
         // Initialize planets with realistic style
         app.planets = initPlanets(STYLES.realistic);
 
+        // Initialize orbital paths
+        app.orbits = initOrbits(STYLES.realistic);
+
         // Initialize the moon with realistic style
         app.moon = initMoon(STYLES.realistic);
 
         // Initialize the ISS with realistic style
         app.iss = initISS(STYLES.realistic);
+
+        // Initialize labels system (after all objects are created)
+        app.labels = initLabels(app.camera, app.renderer);
+
+        // Register all objects with labels system
+        registerObject('sun', getSun());
+        registerObject('mercury', getPlanet('mercury'));
+        registerObject('venus', getPlanet('venus'));
+        registerObject('earth', getPlanet('earth'));
+        registerObject('mars', getPlanet('mars'));
+        registerObject('moon', getMoon());
+        registerObject('iss', getISSMesh());
 
         // Set up window resize handler
         window.addEventListener('resize', onWindowResize);
@@ -92,6 +116,11 @@ async function init() {
                 updatePlanets(deltaTime, simulationTime);
             }
 
+            // Update orbital paths (static, but included for consistency)
+            if (app.orbits) {
+                updateOrbits(deltaTime, simulationTime);
+            }
+
             // Update moon animation (needs Earth's position)
             if (app.moon) {
                 const earthPosition = getPlanetPosition('earth');
@@ -106,6 +135,11 @@ async function init() {
                 if (earthPosition) {
                     updateISS(deltaTime, simulationTime, earthPosition);
                 }
+            }
+
+            // Update labels positions (project 3D to 2D screen coordinates)
+            if (app.labels) {
+                updateLabels();
             }
         });
 
@@ -143,8 +177,11 @@ function recreateCelestialObjects() {
     console.log('🔄 Recreating celestial objects with new settings...');
 
     // Dispose existing objects
+    if (app.labels) disposeLabels();
+    if (app.starfield) disposeStarfield();
     if (app.sun) disposeSun();
     if (app.planets) disposePlanets();
+    if (app.orbits) disposeOrbits();
     if (app.moon) disposeMoon();
     if (app.iss) disposeISS();
 
@@ -152,10 +189,22 @@ function recreateCelestialObjects() {
     clearGeometryCache();
 
     // Recreate with current style
+    app.starfield = initStarfield(STYLES.realistic);
     app.sun = initSun(STYLES.realistic);
     app.planets = initPlanets(STYLES.realistic);
+    app.orbits = initOrbits(STYLES.realistic);
     app.moon = initMoon(STYLES.realistic);
     app.iss = initISS(STYLES.realistic);
+
+    // Recreate labels and re-register objects
+    app.labels = initLabels(app.camera, app.renderer);
+    registerObject('sun', getSun());
+    registerObject('mercury', getPlanet('mercury'));
+    registerObject('venus', getPlanet('venus'));
+    registerObject('earth', getPlanet('earth'));
+    registerObject('mars', getPlanet('mars'));
+    registerObject('moon', getMoon());
+    registerObject('iss', getISSMesh());
 
     console.log('✅ Celestial objects recreated');
 }
@@ -303,6 +352,44 @@ function setupUIHandlers() {
         // Set initial value
         const initialSettings = getPerformanceSettings(50);
         performanceValue.textContent = `${initialSettings.description}`;
+    }
+
+    // Display Toggle Checkboxes
+
+    // Orbits toggle
+    const toggleOrbits = document.getElementById('toggle-orbits');
+    if (toggleOrbits) {
+        toggleOrbits.addEventListener('change', (e) => {
+            setOrbitsVisible(e.target.checked);
+            console.log(`🌐 Orbits ${e.target.checked ? 'shown' : 'hidden'}`);
+        });
+    }
+
+    // Trails toggle (ISS trail)
+    const toggleTrails = document.getElementById('toggle-trails');
+    if (toggleTrails) {
+        toggleTrails.addEventListener('change', (e) => {
+            setISSTrailVisible(e.target.checked);
+            console.log(`✨ Trails ${e.target.checked ? 'shown' : 'hidden'}`);
+        });
+    }
+
+    // Labels toggle
+    const toggleLabels = document.getElementById('toggle-labels');
+    if (toggleLabels) {
+        toggleLabels.addEventListener('change', (e) => {
+            setLabelsVisible(e.target.checked);
+            console.log(`🏷️ Labels ${e.target.checked ? 'shown' : 'hidden'}`);
+        });
+    }
+
+    // Stars toggle
+    const toggleStars = document.getElementById('toggle-stars');
+    if (toggleStars) {
+        toggleStars.addEventListener('change', (e) => {
+            setStarfieldVisible(e.target.checked);
+            console.log(`⭐ Stars ${e.target.checked ? 'shown' : 'hidden'}`);
+        });
     }
 }
 

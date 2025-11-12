@@ -16,7 +16,15 @@
         <div class="loading-content">
             <h1>🚀 ISS Tracker</h1>
             <div class="loading-spinner"></div>
-            <p>Initializing solar system...</p>
+            <div class="progress-container">
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progress-fill"></div>
+                </div>
+                <div class="progress-text">
+                    <span id="progress-percent">0%</span>
+                </div>
+            </div>
+            <p id="loading-status">Initializing solar system...</p>
         </div>
     </div>
 

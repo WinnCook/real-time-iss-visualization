@@ -12,6 +12,7 @@ import { initSolarSystem, updateSolarSystem, recreateSolarSystem, getCelestialOb
 import { initPerformanceSlider } from './modules/performanceSlider.js';
 import { initStyles, getCurrentStyle } from './modules/styles.js';
 import { initUI, registerClickableObject, updateFPS, updateISSInfo, updateCameraFollow } from './modules/ui.js';
+import { initLoadingManager, completeTask, hideLoadingScreen } from './core/loadingManager.js';
 
 /**
  * Application state
@@ -33,14 +34,20 @@ async function init() {
     console.log('🚀 Initializing Real-Time ISS Tracker...');
 
     try {
+        // Initialize loading manager
+        initLoadingManager();
+
         // Initialize core Three.js infrastructure
+        completeTask('Creating scene');
         app.scene = initScene();
 
         // Get canvas container
         const container = document.getElementById('canvas-container');
+        completeTask('Initializing renderer');
         app.renderer = initRenderer(container);
 
         // Initialize camera (needs renderer's domElement for controls)
+        completeTask('Setting up camera');
         const cameraResult = initCamera(app.renderer.domElement);
         app.camera = cameraResult.camera;
         app.controls = cameraResult.controls;
@@ -62,6 +69,12 @@ async function init() {
         const initialStyle = getCurrentStyle();
 
         // Initialize solar system with all celestial objects
+        completeTask('Loading starfield');
+        completeTask('Creating sun');
+        completeTask('Creating planets');
+        completeTask('Creating orbits');
+        completeTask('Creating moon');
+        completeTask('Initializing ISS');
         app.solarSystem = initSolarSystem({
             camera: app.camera,
             renderer: app.renderer,
@@ -69,6 +82,7 @@ async function init() {
         });
 
         // Initialize UI system (after all objects created)
+        completeTask('Setting up labels');
         initUI({
             renderer: app.renderer,
             camera: app.camera,
@@ -101,6 +115,7 @@ async function init() {
         timeManager.setTimeSpeed(100000); // Default 100,000x speed for visible orbits
 
         // Initialize Performance Slider System
+        completeTask('Configuring controls');
         initPerformanceSlider(50); // Default 50% (balanced)
 
         // Register update callbacks
@@ -120,7 +135,10 @@ async function init() {
             updateFPS(getFPS());
         });
 
-        // Hide loading screen
+        // Finalize setup
+        completeTask('Finalizing setup');
+
+        // Hide loading screen with progress complete
         hideLoadingScreen();
 
         // Start animation loop
@@ -151,19 +169,6 @@ function onWindowResize() {
 // The function is imported and called from the solar system orchestrator module
 
 /**
- * Hide loading screen with fade out
- */
-function hideLoadingScreen() {
-    const loadingScreen = document.getElementById('loading-screen');
-    if (loadingScreen) {
-        loadingScreen.style.opacity = '0';
-        setTimeout(() => {
-            loadingScreen.style.display = 'none';
-        }, 500);
-    }
-}
-
-/**
  * Show error message to user
  * @param {string} message - Error message to display
  */
@@ -189,11 +194,13 @@ function showError(message) {
 function waitForThree() {
     return new Promise((resolve) => {
         if (typeof THREE !== 'undefined') {
+            completeTask('Loading Three.js library');
             resolve();
         } else {
             const checkInterval = setInterval(() => {
                 if (typeof THREE !== 'undefined') {
                     clearInterval(checkInterval);
+                    completeTask('Loading Three.js library');
                     resolve();
                 }
             }, 50);

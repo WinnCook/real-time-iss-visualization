@@ -125,7 +125,7 @@ export const SCALE = {
     PLANET_SIZE: 1500,             // Legacy - still used by scaleRadius for backward compatibility
     MOON_SIZE: 1000,
     SUN_SIZE: 60, // Increased from 40 for better prominence
-    ISS_SIZE: 50000, // Very large so it's visible as a dot
+    ISS_SIZE: 30000, // Reduced from 50000 - large enough to be visible but not overwhelming
 
     // Moon orbit scaling (needed because planets are scaled up 1500x but Moon orbit uses real km distance)
     // This ensures Moon is visible outside Earth's scaled-up surface

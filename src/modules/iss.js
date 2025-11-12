@@ -288,29 +288,32 @@ export function updateISS(deltaTime, simulationTime, earthPos) {
     if (currentPosition && issMesh) {
         updateISSVisualization();
 
-        // Orient ISS to stay parallel to Earth's surface (point "forward" in orbit)
-        // Calculate vector from Earth to ISS
-        const toISS = new THREE.Vector3(
+        // Orient ISS to stay parallel to Earth's surface
+        // Calculate vector from Earth to ISS (radial direction - "up" from Earth's surface)
+        const radial = new THREE.Vector3(
             issMesh.position.x - earthPosition.x,
             issMesh.position.y - earthPosition.y,
             issMesh.position.z - earthPosition.z
         ).normalize();
 
-        // Calculate orbital tangent (perpendicular to radial direction in XZ plane)
-        // The ISS orbits in a plane, we want it to face "forward" in its motion
-        const forward = new THREE.Vector3(-toISS.z, 0, toISS.x).normalize();
+        // Calculate orbital tangent (direction of motion, perpendicular to radial in XZ plane)
+        // ISS moves counterclockwise when viewed from above (positive Y)
+        const tangent = new THREE.Vector3(-radial.z, 0, radial.x).normalize();
 
-        // Make ISS look in the direction of orbital motion
-        // The cylinder body should point forward, solar panels should be perpendicular
-        issMesh.lookAt(
-            issMesh.position.x + forward.x,
-            issMesh.position.y + forward.y,
-            issMesh.position.z + forward.z
-        );
+        // Set ISS orientation: body points in direction of orbital motion, panels face radially
+        // We want the cylinder body (which is along local X axis after rotation) to point tangentially
+        // Create a rotation matrix that aligns the ISS with orbital motion
+        const up = new THREE.Vector3(0, 1, 0); // World up
+        const quaternion = new THREE.Quaternion();
 
-        // Adjust rotation so solar panels face up/down (perpendicular to Earth's surface)
-        // The ISS body cylinder is along X axis, panels are along X, so this should work
-        issMesh.rotateOnAxis(new THREE.Vector3(1, 0, 0), Math.PI / 2);
+        // Make ISS "look" in the tangent direction with "up" being world up
+        // This keeps it flying forward with solar panels perpendicular to Earth
+        const matrix = new THREE.Matrix4();
+        matrix.lookAt(issMesh.position,
+                     new THREE.Vector3().addVectors(issMesh.position, tangent),
+                     radial);
+        quaternion.setFromRotationMatrix(matrix);
+        issMesh.quaternion.copy(quaternion);
     }
 }
 

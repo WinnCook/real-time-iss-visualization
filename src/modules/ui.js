@@ -13,6 +13,7 @@ import { setStarfieldVisible } from './starfield.js';
 import { setPerformanceLevel, getPerformanceSettings } from './performanceSlider.js';
 import { showTutorial } from './tutorial.js';
 import { captureScreenshot } from '../utils/screenshot.js';
+import { copyShareableURL } from '../utils/urlState.js';
 
 /**
  * References to app state (set during initialization)
@@ -112,6 +113,9 @@ function setupAllEventListeners() {
 
     // Screenshot button
     setupScreenshotButton();
+
+    // Share button
+    setupShareButton();
 
     console.log('✅ All UI event listeners attached');
 }
@@ -323,6 +327,21 @@ function setupScreenshotButton() {
     if (screenshotButton) {
         screenshotButton.addEventListener('click', () => {
             captureScreenshot();
+        });
+    }
+}
+
+/**
+ * Setup share button
+ */
+function setupShareButton() {
+    const shareButton = document.getElementById('share-button');
+    if (shareButton) {
+        shareButton.addEventListener('click', () => {
+            // Get app state from global window.APP
+            if (window.APP) {
+                copyShareableURL(window.APP);
+            }
         });
     }
 }

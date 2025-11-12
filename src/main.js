@@ -16,6 +16,7 @@ import { initLoadingManager, completeTask, hideLoadingScreen } from './core/load
 import { initTutorial } from './modules/tutorial.js';
 import { initTouchIndicator } from './modules/touchIndicator.js';
 import { initScreenshot } from './utils/screenshot.js';
+import { initURLState, decodeStateFromURL, applyStateFromURL } from './utils/urlState.js';
 
 /**
  * Application state
@@ -150,8 +151,26 @@ async function init() {
         // Start animation loop
         app.animation.start();
 
-        // Initialize tutorial for first-time users
-        initTutorial();
+        // Initialize URL state system
+        initURLState();
+
+        // Check for shared view state in URL
+        const urlState = decodeStateFromURL();
+        if (urlState) {
+            // Wait a moment for everything to be ready, then apply state
+            setTimeout(() => {
+                applyStateFromURL(urlState, {
+                    camera: app.camera,
+                    controls: app.controls,
+                    timeManager: timeManager
+                });
+            }, 500);
+        }
+
+        // Initialize tutorial for first-time users (skip if URL has shared state)
+        if (!urlState) {
+            initTutorial();
+        }
 
         // Initialize touch indicator for mobile devices
         initTouchIndicator();
@@ -234,7 +253,10 @@ window.addEventListener('DOMContentLoaded', async () => {
     init();
 });
 
-// Export app state for debugging
-window.APP = app;
+// Export app state for debugging and URL sharing
+window.APP = {
+    ...app,
+    timeManager: timeManager
+};
 
 console.log('✅ Main.js loaded');

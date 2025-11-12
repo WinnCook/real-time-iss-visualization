@@ -102,6 +102,9 @@ function setupAllEventListeners() {
     // Click-to-focus
     setupClickToFocus();
 
+    // Object dropdown selector
+    setupObjectDropdown();
+
     console.log('✅ All UI event listeners attached');
 }
 
@@ -335,6 +338,43 @@ function setupClickToFocus() {
     });
 
     console.log('✅ Click-to-focus raycasting enabled');
+}
+
+/**
+ * Setup object dropdown selector
+ */
+function setupObjectDropdown() {
+    const dropdown = document.getElementById('object-dropdown');
+    if (!dropdown) {
+        console.warn('⚠️ Cannot setup object dropdown: element not found');
+        return;
+    }
+
+    dropdown.addEventListener('change', (e) => {
+        const selectedKey = e.target.value;
+
+        if (!selectedKey) {
+            // User selected the placeholder option
+            return;
+        }
+
+        console.log(`🎯 Dropdown selected: ${selectedKey}`);
+
+        // Get the object from clickableObjects
+        const object = clickableObjects.get(selectedKey);
+
+        if (object) {
+            // Trigger the same click handler
+            handleObjectClick(object);
+        } else {
+            console.warn(`⚠️ Object not found in clickableObjects: ${selectedKey}`);
+        }
+
+        // Reset dropdown to placeholder after selection (optional)
+        // e.target.value = '';
+    });
+
+    console.log('✅ Object dropdown selector enabled');
 }
 
 /**

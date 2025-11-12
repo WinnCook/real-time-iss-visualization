@@ -505,3 +505,45 @@ input[type="range"]::-moz-range-thumb:hover {
         margin-right: 0;
     }
 }
+
+/* Object Selector Dropdown */
+.object-selector {
+    margin-bottom: 1rem;
+}
+
+.object-selector label {
+    display: block;
+    font-size: 0.85rem;
+    color: rgba(255, 255, 255, 0.7);
+    margin-bottom: 0.5rem;
+}
+
+.object-selector select {
+    width: 100%;
+    padding: 0.6rem;
+    background: rgba(0, 0, 0, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 6px;
+    color: #ffffff;
+    font-size: 0.9rem;
+    font-family: 'Courier New', monospace;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.object-selector select:hover {
+    background: rgba(0, 0, 0, 0.6);
+    border-color: rgba(255, 255, 255, 0.4);
+}
+
+.object-selector select:focus {
+    outline: none;
+    border-color: #7e22ce;
+    box-shadow: 0 0 0 2px rgba(126, 34, 206, 0.2);
+}
+
+.object-selector select option {
+    background: #1a1a1a;
+    color: #ffffff;
+    padding: 0.5rem;
+}

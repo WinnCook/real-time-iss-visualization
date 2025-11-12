@@ -237,6 +237,10 @@ export function getCelestialObject(name) {
         case 'venus':
         case 'earth':
         case 'mars':
+        case 'jupiter':
+        case 'saturn':
+        case 'uranus':
+        case 'neptune':
             return getPlanet(name.toLowerCase());
         case 'moon':
             return getMoon();
@@ -257,7 +261,11 @@ export function getAllPlanets() {
         mercury: getPlanet('mercury'),
         venus: getPlanet('venus'),
         earth: getPlanet('earth'),
-        mars: getPlanet('mars')
+        mars: getPlanet('mars'),
+        jupiter: getPlanet('jupiter'),
+        saturn: getPlanet('saturn'),
+        uranus: getPlanet('uranus'),
+        neptune: getPlanet('neptune')
     };
 }
 

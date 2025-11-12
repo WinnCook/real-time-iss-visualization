@@ -14,6 +14,7 @@ import { setPerformanceLevel, getPerformanceSettings } from './performanceSlider
 import { showTutorial } from './tutorial.js';
 import { captureScreenshot } from '../utils/screenshot.js';
 import { copyShareableURL } from '../utils/urlState.js';
+import { initSounds, setSoundsEnabled, isSoundsEnabled, playClickSound, playFocusSound, playToggleSound, playScreenshotSound, playStyleChangeSound } from '../utils/sounds.js';
 
 /**
  * References to app state (set during initialization)
@@ -74,8 +75,17 @@ export function initUI(options) {
     // Initialize raycaster for click detection
     raycaster = new THREE.Raycaster();
 
+    // Initialize sound system
+    initSounds();
+
     // Set up all event listeners
     setupAllEventListeners();
+
+    // Update sound toggle checkbox state
+    const soundToggle = document.getElementById('toggle-sounds');
+    if (soundToggle) {
+        soundToggle.checked = isSoundsEnabled();
+    }
 
     console.log('✅ UI system initialized');
 }
@@ -247,6 +257,7 @@ function setupDisplayToggles() {
     if (toggleOrbits) {
         toggleOrbits.addEventListener('change', (e) => {
             setOrbitsVisible(e.target.checked);
+            playToggleSound();
             console.log(`🌐 Orbits ${e.target.checked ? 'shown' : 'hidden'}`);
         });
     }
@@ -256,6 +267,7 @@ function setupDisplayToggles() {
     if (toggleTrails) {
         toggleTrails.addEventListener('change', (e) => {
             setISSTrailVisible(e.target.checked);
+            playToggleSound();
             console.log(`✨ Trails ${e.target.checked ? 'shown' : 'hidden'}`);
         });
     }
@@ -265,6 +277,7 @@ function setupDisplayToggles() {
     if (toggleLabels) {
         toggleLabels.addEventListener('change', (e) => {
             setLabelsVisible(e.target.checked);
+            playToggleSound();
             console.log(`🏷️ Labels ${e.target.checked ? 'shown' : 'hidden'}`);
         });
     }
@@ -274,7 +287,21 @@ function setupDisplayToggles() {
     if (toggleStars) {
         toggleStars.addEventListener('change', (e) => {
             setStarfieldVisible(e.target.checked);
+            playToggleSound();
             console.log(`⭐ Stars ${e.target.checked ? 'shown' : 'hidden'}`);
+        });
+    }
+
+    // Sounds toggle
+    const toggleSounds = document.getElementById('toggle-sounds');
+    if (toggleSounds) {
+        toggleSounds.addEventListener('change', (e) => {
+            setSoundsEnabled(e.target.checked);
+            if (e.target.checked) {
+                // Play a test sound when enabling
+                playClickSound();
+            }
+            console.log(`🔊 Sounds ${e.target.checked ? 'enabled' : 'muted'}`);
         });
     }
 }
@@ -326,6 +353,7 @@ function setupScreenshotButton() {
     const screenshotButton = document.getElementById('screenshot-button');
     if (screenshotButton) {
         screenshotButton.addEventListener('click', () => {
+            playScreenshotSound();
             captureScreenshot();
         });
     }
@@ -338,6 +366,7 @@ function setupShareButton() {
     const shareButton = document.getElementById('share-button');
     if (shareButton) {
         shareButton.addEventListener('click', () => {
+            playClickSound();
             // Get app state from global window.APP
             if (window.APP) {
                 copyShareableURL(window.APP);
@@ -668,6 +697,7 @@ function handleObjectClick(object) {
     if (!key) return;
 
     console.log(`🎯 Clicked: ${key}`);
+    playFocusSound();
 
     // Focus camera on object
     if (appCamera && cameraControls && object.position) {

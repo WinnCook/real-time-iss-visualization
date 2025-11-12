@@ -393,12 +393,12 @@ export function scaleRadius(radiusKm, type = 'planet', planetKey = null) {
             // This shows accurate proportions while keeping objects visible when zoomed in
             scale = 100;
         } else if (type === 'iss') {
-            // ISS real size would be ~100m (0.1 km)
-            // At 100x scale: (0.1 / 149597870.7) * 500 * 100 = 0.0000334 scene units (invisible!)
-            // Instead, use fixed minimum size of 0.3 scene units for visibility as a marker
-            // Note: This is NOT to scale - real ISS would be microscopic
-            const baseSize = kmToScene(radiusKm * 100);
-            return Math.max(baseSize, 0.3); // Minimum 0.3 scene units for visibility
+            // ISS real size: ~109m long (0.109 km)
+            // Earth diameter in real mode: ~4.26 scene units
+            // Real ratio: ISS / Earth = 109m / 12,742,000m = 0.0000085 (microscopic!)
+            // Use small fixed size of 0.02 scene units as a marker (~1/200th Earth diameter)
+            // This makes ISS visible but clearly tiny compared to Earth
+            return 0.02; // Fixed small marker size - NOT to scale
         }
     } else {
         // Enlarged mode - use exaggerated scaling for visibility

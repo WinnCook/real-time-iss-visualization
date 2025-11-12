@@ -3,7 +3,7 @@
  * Kepler orbital calculations for planetary motion
  */
 
-import { TWO_PI, daysToMs, auToScene, kmToScene, SCALE } from './constants.js';
+import { TWO_PI, daysToMs, auToScene, kmToScene, SCALE, getPlanetSizeMode } from './constants.js';
 
 /**
  * Calculate orbital position at given time for circular orbit
@@ -53,9 +53,21 @@ export function calculatePlanetPosition(simulationTime, planetData, startAngle =
  * @returns {Object} Position {x, y, z}
  */
 export function calculateMoonPosition(simulationTime, earthPosition, moonData, startAngle = 0) {
-    // Apply MOON_ORBIT_SCALE to make Moon visible outside Earth's scaled-up surface
-    // Without this, Moon would be inside Earth since planets are scaled 1500x but orbit distance is real km
-    const orbitRadiusScene = kmToScene(moonData.orbitRadius) * SCALE.MOON_ORBIT_SCALE;
+    // Moon orbit distance depends on planet size mode
+    const planetSizeMode = getPlanetSizeMode();
+    let orbitRadiusScene;
+
+    if (planetSizeMode === 'real') {
+        // Real mode: Use actual distance without extra scaling
+        // Moon: 384,400 km from Earth, Earth radius: 6,371 km
+        // Ratio: 60.3x Earth radius (accurate!)
+        orbitRadiusScene = kmToScene(moonData.orbitRadius) * 100; // Same 100x scale as planets
+    } else {
+        // Enlarged mode: Apply MOON_ORBIT_SCALE to make Moon visible outside Earth's scaled-up surface
+        // Without this, Moon would be inside Earth since planets are scaled 1500x but orbit distance is real km
+        orbitRadiusScene = kmToScene(moonData.orbitRadius) * SCALE.MOON_ORBIT_SCALE;
+    }
+
     const periodMs = daysToMs(moonData.orbitPeriod);
     const angle = startAngle + (simulationTime / periodMs) * TWO_PI;
 

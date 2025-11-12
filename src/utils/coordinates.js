@@ -3,7 +3,7 @@
  * Converts between geographic coordinates (lat/lon/alt) and 3D Cartesian coordinates
  */
 
-import { EARTH_RADIUS, DEG_TO_RAD, kmToScene, scaleRadius } from './constants.js';
+import { EARTH_RADIUS, DEG_TO_RAD, kmToScene, scaleRadius, getPlanetSizeMode, ISS_ORBIT_ALTITUDE } from './constants.js';
 
 /**
  * Convert geographic coordinates to 3D Cartesian coordinates
@@ -51,11 +51,20 @@ export function geographicToScenePosition(latitude, longitude, altitude) {
     // Get Earth's scaled radius in scene (for visual consistency)
     const earthSceneRadius = scaleRadius(EARTH_RADIUS, 'planet');
 
-    // Calculate altitude in scene units
-    // ISS orbits at ~408km, Earth radius is ~6371km
-    // So ISS is at about 6% above Earth's surface
-    // Scale altitude proportionally to Earth's scaled radius for visual clarity
-    const altitudeScene = earthSceneRadius * 0.15; // 15% above Earth's surface for visibility
+    // Calculate altitude in scene units based on size mode
+    const planetSizeMode = getPlanetSizeMode();
+    let altitudeScene;
+
+    if (planetSizeMode === 'real') {
+        // Real mode: Use actual ISS orbital altitude with same scaling as Earth
+        // ISS altitude: 408 km, Earth radius: 6,371 km
+        // Real ratio: 408 / 6,371 = 0.064 (6.4% above surface)
+        altitudeScene = scaleRadius(altitude, 'planet');
+    } else {
+        // Enlarged mode: Use exaggerated altitude for visibility
+        // Scale altitude proportionally to Earth's scaled radius
+        altitudeScene = earthSceneRadius * 0.15; // 15% above Earth's surface for visibility
+    }
 
     // Total distance from Earth's center in scene units
     const distanceFromCenter = earthSceneRadius + altitudeScene;

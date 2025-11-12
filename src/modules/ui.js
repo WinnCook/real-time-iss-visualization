@@ -316,12 +316,21 @@ function setupClickToFocus() {
         // Get all clickable objects
         const objects = Array.from(clickableObjects.values());
 
-        // Calculate intersections
-        const intersects = raycaster.intersectObjects(objects, false);
+        // Calculate intersections (recursive: true to detect child meshes like Saturn's rings)
+        const intersects = raycaster.intersectObjects(objects, true);
 
         if (intersects.length > 0) {
-            const clickedObject = intersects[0].object;
-            handleObjectClick(clickedObject);
+            // Find the registered parent object (traverse up if we hit a child mesh)
+            let clickedObject = intersects[0].object;
+
+            // If we hit a child object (like Saturn's rings), find the registered parent
+            while (clickedObject && !clickedObject.userData.key) {
+                clickedObject = clickedObject.parent;
+            }
+
+            if (clickedObject && clickedObject.userData.key) {
+                handleObjectClick(clickedObject);
+            }
         }
     });
 

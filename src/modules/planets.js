@@ -110,6 +110,11 @@ function createPlanet(planetKey, planetData, styleConfig) {
 
     // Store reference
     planetMeshes[planetKey] = planetMesh;
+
+    // Add atmospheric glow for Earth (if enabled in style)
+    if (planetKey === 'earth' && styleConfig.atmosphereGlow) {
+        createEarthAtmosphere(planetKey, planetRadius, styleConfig);
+    }
 }
 
 /**
@@ -143,6 +148,74 @@ function createPlanetMaterial(planetData, styleConfig) {
     });
 
     return material;
+}
+
+/**
+ * Create Earth's atmospheric glow effect using Fresnel shader
+ * @param {string} planetKey - Should be 'earth'
+ * @param {number} planetRadius - Earth's radius in scene units
+ * @param {Object} styleConfig - Visual style configuration
+ */
+function createEarthAtmosphere(planetKey, planetRadius, styleConfig) {
+    const planetMesh = planetMeshes[planetKey];
+    if (!planetMesh) return;
+
+    // Create atmosphere geometry (slightly larger than planet)
+    const atmosphereRadius = planetRadius * 1.15; // 15% larger than Earth
+    const atmosphereGeometry = getCachedSphereGeometry(
+        atmosphereRadius,
+        RENDER.SPHERE_SEGMENTS,
+        RENDER.SPHERE_SEGMENTS
+    );
+
+    // Create Fresnel glow shader material
+    const atmosphereMaterial = new THREE.ShaderMaterial({
+        vertexShader: `
+            varying vec3 vNormal;
+            void main() {
+                vNormal = normalize(normalMatrix * normal);
+                gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+            }
+        `,
+        fragmentShader: `
+            varying vec3 vNormal;
+            uniform vec3 glowColor;
+            uniform float glowIntensity;
+            void main() {
+                // Fresnel effect: stronger glow at edges
+                float intensity = pow(0.6 - dot(vNormal, vec3(0.0, 0.0, 1.0)), 2.0);
+                intensity *= glowIntensity;
+                gl_FragColor = vec4(glowColor, 1.0) * intensity;
+            }
+        `,
+        uniforms: {
+            glowColor: {
+                value: new THREE.Color(0x4a90e2) // Blue atmospheric color
+            },
+            glowIntensity: {
+                value: styleConfig.name === 'Neon/Cyberpunk' ? 2.0 : 1.0
+            }
+        },
+        blending: THREE.AdditiveBlending,
+        side: THREE.BackSide, // Only render from outside
+        transparent: true,
+        depthWrite: false
+    });
+
+    // Create atmosphere mesh
+    const atmosphereMesh = new THREE.Mesh(atmosphereGeometry, atmosphereMaterial);
+    atmosphereMesh.name = 'Earth-Atmosphere';
+
+    // Apply same tilt as Earth
+    const earthData = PLANETS['earth'];
+    if (earthData.tilt) {
+        atmosphereMesh.rotation.z = earthData.tilt * DEG_TO_RAD;
+    }
+
+    // Add atmosphere as child of Earth (so it follows Earth's position)
+    planetMesh.add(atmosphereMesh);
+
+    console.log('✅ Earth atmosphere glow created');
 }
 
 /**

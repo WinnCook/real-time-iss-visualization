@@ -20,6 +20,12 @@ let sunMesh = null;
 let sunGlow = null;
 
 /**
+ * The sun corona particle system
+ * @type {THREE.Points}
+ */
+let coronaParticles = null;
+
+/**
  * Current visual style configuration
  * @type {Object}
  */
@@ -62,6 +68,11 @@ export function initSun(styleConfig = {}) {
     // Create glow effect if enabled in style
     if (styleConfig.sunGlow !== false) {
         createSunGlow(sunRadius, styleConfig);
+    }
+
+    // Create corona particle system (realistic and neon styles)
+    if (styleConfig.name === 'Realistic' || styleConfig.name === 'Neon/Cyberpunk') {
+        createCoronaParticles(sunRadius, styleConfig);
     }
 
     console.log('✅ Sun initialized at origin with glow effects');
@@ -136,6 +147,73 @@ function createSunGlow(sunRadius, styleConfig) {
 }
 
 /**
+ * Create corona particle system around the sun
+ * @param {number} sunRadius - Radius of the sun
+ * @param {Object} styleConfig - Visual style configuration
+ */
+function createCoronaParticles(sunRadius, styleConfig) {
+    const particleCount = 2000; // Number of corona particles
+    const coronaRadius = sunRadius * 2.5; // Particles extend well beyond sun
+
+    // Create geometry for particles
+    const geometry = new THREE.BufferGeometry();
+    const positions = new Float32Array(particleCount * 3);
+    const colors = new Float32Array(particleCount * 3);
+    const sizes = new Float32Array(particleCount);
+
+    // Generate particles in spherical shell around sun
+    for (let i = 0; i < particleCount; i++) {
+        // Random position in spherical shell
+        const theta = Math.random() * Math.PI * 2; // Azimuth angle
+        const phi = Math.acos((Math.random() * 2) - 1); // Polar angle (uniform distribution)
+        const distance = sunRadius * (1.2 + Math.random() * 1.3); // Between 1.2x and 2.5x sun radius
+
+        // Convert spherical to Cartesian coordinates
+        const x = distance * Math.sin(phi) * Math.cos(theta);
+        const y = distance * Math.sin(phi) * Math.sin(theta);
+        const z = distance * Math.cos(phi);
+
+        positions[i * 3] = x;
+        positions[i * 3 + 1] = y;
+        positions[i * 3 + 2] = z;
+
+        // Color variation: orange to yellow
+        const colorVariation = 0.8 + Math.random() * 0.2;
+        colors[i * 3] = 1.0 * colorVariation; // R
+        colors[i * 3 + 1] = 0.7 * colorVariation; // G
+        colors[i * 3 + 2] = 0.1 * colorVariation; // B
+
+        // Size variation: most small, some large
+        sizes[i] = Math.random() * 3 + 1; // 1-4 units
+    }
+
+    geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+    geometry.setAttribute('size', new THREE.BufferAttribute(sizes, 1));
+
+    // Create particle material
+    const material = new THREE.PointsMaterial({
+        size: 2,
+        vertexColors: true,
+        transparent: true,
+        opacity: styleConfig.name === 'Neon/Cyberpunk' ? 0.9 : 0.6,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false,
+        sizeAttenuation: true
+    });
+
+    // Create particle system
+    coronaParticles = new THREE.Points(geometry, material);
+    coronaParticles.name = 'SunCorona';
+    coronaParticles.position.set(0, 0, 0);
+
+    // Add to scene
+    addToScene(coronaParticles);
+
+    console.log('✅ Sun corona particles created');
+}
+
+/**
  * Update sun appearance based on visual style
  * @param {Object} styleConfig - New style configuration
  */
@@ -170,6 +248,25 @@ export function updateSunStyle(styleConfig) {
         }
     }
 
+    // Handle corona particles (only for realistic and neon styles)
+    if (styleConfig.name === 'Realistic' || styleConfig.name === 'Neon/Cyberpunk') {
+        if (!coronaParticles) {
+            const sunRadius = scaleRadius(SUN_RADIUS, 'sun');
+            createCoronaParticles(sunRadius, styleConfig);
+        } else {
+            // Update opacity based on style
+            coronaParticles.material.opacity = styleConfig.name === 'Neon/Cyberpunk' ? 0.9 : 0.6;
+        }
+    } else {
+        // Remove corona particles for other styles
+        if (coronaParticles) {
+            removeFromScene(coronaParticles);
+            coronaParticles.geometry.dispose();
+            coronaParticles.material.dispose();
+            coronaParticles = null;
+        }
+    }
+
     console.log(`✅ Sun style updated to: ${styleConfig.name}`);
 }
 
@@ -193,6 +290,12 @@ export function updateSun(deltaTime, simulationTime) {
     if (sunGlow) {
         sunGlow.rotation.y -= rotationSpeed * 0.5 * deltaTimeSeconds;
         sunGlow.rotation.x += rotationSpeed * 0.3 * deltaTimeSeconds;
+    }
+
+    // Animate corona particles (slow rotation for dynamic effect)
+    if (coronaParticles) {
+        coronaParticles.rotation.y += rotationSpeed * 0.2 * deltaTimeSeconds;
+        coronaParticles.rotation.x -= rotationSpeed * 0.1 * deltaTimeSeconds;
     }
 }
 
@@ -236,6 +339,13 @@ export function disposeSun() {
         sunGlow.geometry.dispose();
         sunGlow.material.dispose();
         sunGlow = null;
+    }
+
+    if (coronaParticles) {
+        removeFromScene(coronaParticles);
+        coronaParticles.geometry.dispose();
+        coronaParticles.material.dispose();
+        coronaParticles = null;
     }
 }
 

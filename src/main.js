@@ -3,21 +3,13 @@
  * Initializes the entire visualization system
  */
 
-import { initScene, addToScene } from './core/scene.js';
+import { initScene } from './core/scene.js';
 import { initCamera, onWindowResize as cameraResize } from './core/camera.js';
 import { initRenderer, onWindowResize as rendererResize } from './core/renderer.js';
-import { initAnimation, startAnimation, addUpdateCallback, getFPS } from './core/animation.js';
+import { initAnimation, addUpdateCallback, getFPS } from './core/animation.js';
 import { timeManager } from './utils/time.js';
-import { initSun, updateSun, disposeSun, getSun } from './modules/sun.js';
-import { initPlanets, updatePlanets, getPlanetPosition, disposePlanets, getPlanet } from './modules/planets.js';
-import { initMoon, updateMoon, disposeMoon, getMoon } from './modules/moon.js';
-import { initISS, updateISS, disposeISS, setISSTrailVisible, getISSMesh, registerUICallback } from './modules/iss.js';
-import { initOrbits, updateOrbits, disposeOrbits, setOrbitsVisible } from './modules/orbits.js';
-import { initStarfield, updateStarfield, disposeStarfield, setStarfieldVisible } from './modules/starfield.js';
-import { initLabels, registerObject, updateLabels, setLabelsVisible, disposeLabels } from './modules/labels.js';
-import { clearGeometryCache } from './utils/geometryCache.js';
-import { initPerformanceSlider, setPerformanceLevel, getPerformanceSettings } from './modules/performanceSlider.js';
-import { STYLES } from './utils/constants.js';
+import { initSolarSystem, updateSolarSystem, recreateSolarSystem, getCelestialObject, registerISSCallback } from './modules/solarSystem.js';
+import { initPerformanceSlider } from './modules/performanceSlider.js';
 import { initStyles, getCurrentStyle } from './modules/styles.js';
 import { initUI, registerClickableObject, updateFPS, updateISSInfo, updateCameraFollow } from './modules/ui.js';
 
@@ -30,13 +22,7 @@ const app = {
     renderer: null,
     controls: null,
     animation: null,
-    sun: null,
-    planets: null,
-    moon: null,
-    iss: null,
-    orbits: null,
-    starfield: null,
-    labels: null,
+    solarSystem: null,
     isInitialized: false
 };
 
@@ -69,61 +55,38 @@ async function init() {
 
         // Initialize styles system (before creating any visual objects)
         initStyles('realistic', (newStyleConfig) => {
-            recreateCelestialObjects(newStyleConfig);
+            recreateSolarSystem(newStyleConfig);
         });
 
         // Get initial style config
         const initialStyle = getCurrentStyle();
 
-        // Initialize starfield background (first, as it's the backdrop)
-        app.starfield = initStarfield(initialStyle);
-
-        // Initialize the sun with current style
-        app.sun = initSun(initialStyle);
-
-        // Initialize planets with current style
-        app.planets = initPlanets(initialStyle);
-
-        // Initialize orbital paths
-        app.orbits = initOrbits(initialStyle);
-
-        // Initialize the moon with current style
-        app.moon = initMoon(initialStyle);
-
-        // Initialize the ISS with current style
-        app.iss = initISS(initialStyle);
-
-        // Initialize labels system (after all objects are created)
-        app.labels = initLabels(app.camera, app.renderer);
-
-        // Register all objects with labels system
-        registerObject('sun', getSun());
-        registerObject('mercury', getPlanet('mercury'));
-        registerObject('venus', getPlanet('venus'));
-        registerObject('earth', getPlanet('earth'));
-        registerObject('mars', getPlanet('mars'));
-        registerObject('moon', getMoon());
-        registerObject('iss', getISSMesh());
+        // Initialize solar system with all celestial objects
+        app.solarSystem = initSolarSystem({
+            camera: app.camera,
+            renderer: app.renderer,
+            styleConfig: initialStyle
+        });
 
         // Initialize UI system (after all objects created)
         initUI({
             renderer: app.renderer,
             camera: app.camera,
             scene: app.scene,
-            recreateObjects: () => recreateCelestialObjects()
+            recreateObjects: () => recreateSolarSystem()
         });
 
         // Register clickable objects for click-to-focus
-        registerClickableObject('sun', getSun(), { type: 'star', name: 'Sun' });
-        registerClickableObject('mercury', getPlanet('mercury'), { type: 'planet', name: 'Mercury' });
-        registerClickableObject('venus', getPlanet('venus'), { type: 'planet', name: 'Venus' });
-        registerClickableObject('earth', getPlanet('earth'), { type: 'planet', name: 'Earth' });
-        registerClickableObject('mars', getPlanet('mars'), { type: 'planet', name: 'Mars' });
-        registerClickableObject('moon', getMoon(), { type: 'moon', name: 'Moon' });
-        registerClickableObject('iss', getISSMesh(), { type: 'spacecraft', name: 'ISS' });
+        registerClickableObject('sun', getCelestialObject('sun'), { type: 'star', name: 'Sun' });
+        registerClickableObject('mercury', getCelestialObject('mercury'), { type: 'planet', name: 'Mercury' });
+        registerClickableObject('venus', getCelestialObject('venus'), { type: 'planet', name: 'Venus' });
+        registerClickableObject('earth', getCelestialObject('earth'), { type: 'planet', name: 'Earth' });
+        registerClickableObject('mars', getCelestialObject('mars'), { type: 'planet', name: 'Mars' });
+        registerClickableObject('moon', getCelestialObject('moon'), { type: 'moon', name: 'Moon' });
+        registerClickableObject('iss', getCelestialObject('iss'), { type: 'spacecraft', name: 'ISS' });
 
         // Register ISS data callback for UI updates
-        registerUICallback((issData) => {
+        registerISSCallback((issData) => {
             updateISSInfo(issData);
         });
 
@@ -138,44 +101,13 @@ async function init() {
 
         // Register update callbacks
         addUpdateCallback((deltaTime, simulationTime) => {
-            // Update sun animation
-            if (app.sun) {
-                updateSun(deltaTime, simulationTime);
-            }
-
-            // Update planets animation
-            if (app.planets) {
-                updatePlanets(deltaTime, simulationTime);
-            }
-
-            // Update orbital paths (static, but included for consistency)
-            if (app.orbits) {
-                updateOrbits(deltaTime, simulationTime);
-            }
-
-            // Update moon animation (needs Earth's position)
-            if (app.moon) {
-                const earthPosition = getPlanetPosition('earth');
-                if (earthPosition) {
-                    updateMoon(deltaTime, simulationTime, earthPosition);
-                }
-            }
-
-            // Update ISS animation (needs Earth's position)
-            if (app.iss) {
-                const earthPosition = getPlanetPosition('earth');
-                if (earthPosition) {
-                    updateISS(deltaTime, simulationTime, earthPosition);
-                }
-            }
-
-            // Update labels positions (project 3D to 2D screen coordinates)
-            if (app.labels) {
-                updateLabels();
+            // Update entire solar system (all celestial objects)
+            if (app.solarSystem) {
+                updateSolarSystem(deltaTime, simulationTime);
             }
 
             // Update camera following for locked objects and selected object info
-            const earthObject = getPlanet('earth');
+            const earthObject = getCelestialObject('earth');
             if (earthObject) {
                 updateCameraFollow(earthObject);
             }
@@ -211,57 +143,8 @@ function onWindowResize() {
     rendererResize();
 }
 
-/**
- * Recreate all celestial objects with new performance settings or style
- * @param {Object} styleConfig - Optional style configuration (uses current style if not provided)
- */
-function recreateCelestialObjects(styleConfig = null) {
-    console.log('🔄 Recreating celestial objects with new settings...');
-
-    // Dispose existing objects
-    if (app.labels) disposeLabels();
-    if (app.starfield) disposeStarfield();
-    if (app.sun) disposeSun();
-    if (app.planets) disposePlanets();
-    if (app.orbits) disposeOrbits();
-    if (app.moon) disposeMoon();
-    if (app.iss) disposeISS();
-
-    // Clear geometry cache to force recreation
-    clearGeometryCache();
-
-    // Get current style if not provided
-    const currentStyle = styleConfig || getCurrentStyle();
-
-    // Recreate with current style
-    app.starfield = initStarfield(currentStyle);
-    app.sun = initSun(currentStyle);
-    app.planets = initPlanets(currentStyle);
-    app.orbits = initOrbits(currentStyle);
-    app.moon = initMoon(currentStyle);
-    app.iss = initISS(currentStyle);
-
-    // Recreate labels and re-register objects
-    app.labels = initLabels(app.camera, app.renderer);
-    registerObject('sun', getSun());
-    registerObject('mercury', getPlanet('mercury'));
-    registerObject('venus', getPlanet('venus'));
-    registerObject('earth', getPlanet('earth'));
-    registerObject('mars', getPlanet('mars'));
-    registerObject('moon', getMoon());
-    registerObject('iss', getISSMesh());
-
-    // Re-register clickable objects for click-to-focus
-    registerClickableObject('sun', getSun(), { type: 'star', name: 'Sun' });
-    registerClickableObject('mercury', getPlanet('mercury'), { type: 'planet', name: 'Mercury' });
-    registerClickableObject('venus', getPlanet('venus'), { type: 'planet', name: 'Venus' });
-    registerClickableObject('earth', getPlanet('earth'), { type: 'planet', name: 'Earth' });
-    registerClickableObject('mars', getPlanet('mars'), { type: 'planet', name: 'Mars' });
-    registerClickableObject('moon', getMoon(), { type: 'moon', name: 'Moon' });
-    registerClickableObject('iss', getISSMesh(), { type: 'spacecraft', name: 'ISS' });
-
-    console.log('✅ Celestial objects recreated');
-}
+// Note: recreateCelestialObjects is now handled by recreateSolarSystem() in solarSystem.js
+// The function is imported and called from the solar system orchestrator module
 
 /**
  * Hide loading screen with fade out

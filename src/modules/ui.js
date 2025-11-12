@@ -12,6 +12,7 @@ import { setISSTrailVisible } from './iss.js';
 import { setStarfieldVisible } from './starfield.js';
 import { setPerformanceLevel, getPerformanceSettings } from './performanceSlider.js';
 import { showTutorial } from './tutorial.js';
+import { captureScreenshot } from '../utils/screenshot.js';
 
 /**
  * References to app state (set during initialization)
@@ -108,6 +109,9 @@ function setupAllEventListeners() {
 
     // Keyboard shortcuts
     setupKeyboardShortcuts();
+
+    // Screenshot button
+    setupScreenshotButton();
 
     console.log('✅ All UI event listeners attached');
 }
@@ -307,6 +311,18 @@ function setupHelpModal() {
             helpModal.classList.add('hidden');
             showTutorial();
             console.log('🎓 Tutorial restarted from help menu');
+        });
+    }
+}
+
+/**
+ * Setup screenshot button
+ */
+function setupScreenshotButton() {
+    const screenshotButton = document.getElementById('screenshot-button');
+    if (screenshotButton) {
+        screenshotButton.addEventListener('click', () => {
+            captureScreenshot();
         });
     }
 }
@@ -519,6 +535,12 @@ function setupKeyboardShortcuts() {
             case 'i': // I - Focus on ISS
                 event.preventDefault();
                 focusOnObject('iss');
+                break;
+
+            case 'p': // P - Take Screenshot
+                event.preventDefault();
+                captureScreenshot();
+                console.log('⌨️ Keyboard: Screenshot captured');
                 break;
         }
     });

@@ -15,6 +15,7 @@ import { initUI, registerClickableObject, updateFPS, updateISSInfo, updateCamera
 import { initLoadingManager, completeTask, hideLoadingScreen } from './core/loadingManager.js';
 import { initTutorial } from './modules/tutorial.js';
 import { initTouchIndicator } from './modules/touchIndicator.js';
+import { initScreenshot } from './utils/screenshot.js';
 
 /**
  * Application state
@@ -47,6 +48,9 @@ async function init() {
         const container = document.getElementById('canvas-container');
         completeTask('Initializing renderer');
         app.renderer = initRenderer(container);
+
+        // Initialize screenshot system (needs renderer)
+        initScreenshot(app.renderer);
 
         // Initialize camera (needs renderer's domElement for controls)
         completeTask('Setting up camera');

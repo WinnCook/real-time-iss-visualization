@@ -927,3 +927,92 @@ input[type="range"]::-moz-range-thumb:hover {
         font-size: 0.8rem;
     }
 }
+
+/* ===================================
+   Screenshot Flash & Notification
+   =================================== */
+
+/* Screenshot flash effect */
+.screenshot-flash {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: #fff;
+    opacity: 0;
+    pointer-events: none;
+    z-index: 99999;
+    transition: opacity 0.1s ease-out;
+}
+
+.screenshot-flash.active {
+    opacity: 0.8;
+    transition: opacity 0.05s ease-in, opacity 0.3s ease-out 0.05s;
+}
+
+/* Screenshot notification */
+.screenshot-notification {
+    position: fixed;
+    top: 80px;
+    left: 50%;
+    transform: translateX(-50%) translateY(-20px);
+    background: linear-gradient(135deg, rgba(74, 144, 226, 0.95), rgba(126, 34, 206, 0.95));
+    color: #fff;
+    padding: 1rem 1.5rem;
+    border-radius: 8px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+    font-size: 1rem;
+    font-weight: 600;
+    opacity: 0;
+    pointer-events: none;
+    z-index: 10001;
+    transition: all 0.3s ease;
+}
+
+.screenshot-notification.visible {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+}
+
+/* Screenshot button (floating) */
+#screenshot-button {
+    position: fixed;
+    bottom: 90px;
+    right: 20px;
+    width: 60px;
+    height: 60px;
+    background: linear-gradient(135deg, #4a90e2, #7e22ce);
+    color: #fff;
+    border: none;
+    border-radius: 50%;
+    font-size: 1.5rem;
+    cursor: pointer;
+    box-shadow: 0 4px 20px rgba(74, 144, 226, 0.4);
+    transition: all 0.3s ease;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+#screenshot-button:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 25px rgba(74, 144, 226, 0.6);
+}
+
+#screenshot-button:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 15px rgba(74, 144, 226, 0.5);
+}
+
+/* Mobile responsive screenshot button */
+@media (max-width: 768px) {
+    #screenshot-button {
+        width: 50px;
+        height: 50px;
+        font-size: 1.2rem;
+        bottom: 80px;
+        right: 15px;
+    }
+}

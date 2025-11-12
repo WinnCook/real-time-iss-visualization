@@ -11,6 +11,7 @@ import { setLabelsVisible } from './labels.js';
 import { setISSTrailVisible } from './iss.js';
 import { setStarfieldVisible } from './starfield.js';
 import { setPerformanceLevel, getPerformanceSettings } from './performanceSlider.js';
+import { showTutorial } from './tutorial.js';
 
 /**
  * References to app state (set during initialization)
@@ -296,6 +297,16 @@ function setupHelpModal() {
             if (e.target === helpModal) {
                 helpModal.classList.add('hidden');
             }
+        });
+    }
+
+    // Restart Tutorial button
+    const restartTutorialBtn = document.getElementById('restart-tutorial-btn');
+    if (restartTutorialBtn && helpModal) {
+        restartTutorialBtn.addEventListener('click', () => {
+            helpModal.classList.add('hidden');
+            showTutorial();
+            console.log('🎓 Tutorial restarted from help menu');
         });
     }
 }

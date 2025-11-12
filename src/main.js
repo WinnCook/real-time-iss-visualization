@@ -13,6 +13,7 @@ import { initPerformanceSlider } from './modules/performanceSlider.js';
 import { initStyles, getCurrentStyle } from './modules/styles.js';
 import { initUI, registerClickableObject, updateFPS, updateISSInfo, updateCameraFollow } from './modules/ui.js';
 import { initLoadingManager, completeTask, hideLoadingScreen } from './core/loadingManager.js';
+import { initTutorial } from './modules/tutorial.js';
 
 /**
  * Application state
@@ -143,6 +144,9 @@ async function init() {
 
         // Start animation loop
         app.animation.start();
+
+        // Initialize tutorial for first-time users
+        initTutorial();
 
         app.isInitialized = true;
         console.log('✅ Application initialized successfully!');

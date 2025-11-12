@@ -356,19 +356,49 @@ export function kmToScene(km) {
 }
 
 /**
+ * Planet size mode: 'enlarged' (exaggerated for visibility) or 'real' (actual proportions)
+ * @type {string}
+ */
+let planetSizeMode = 'enlarged';
+
+/**
+ * Set planet size mode
+ * @param {string} mode - 'enlarged' or 'real'
+ */
+export function setPlanetSizeMode(mode) {
+    if (mode === 'enlarged' || mode === 'real') {
+        planetSizeMode = mode;
+        console.log(`🌍 Planet size mode: ${mode.toUpperCase()}`);
+    }
+}
+
+/**
+ * Get current planet size mode
+ * @returns {string} 'enlarged' or 'real'
+ */
+export function getPlanetSizeMode() {
+    return planetSizeMode;
+}
+
+/**
  * Scale radius for visibility
  */
 export function scaleRadius(radiusKm, type = 'planet', planetKey = null) {
     let scale;
 
-    if (type === 'sun') {
+    // In 'real' mode, use minimal scaling for planets/sun/moon to show true proportions
+    if (planetSizeMode === 'real' && (type === 'planet' || type === 'sun' || type === 'moon')) {
+        // Use same scale as AU_TO_SCENE for consistent proportions
+        // This makes planets tiny but proportionally accurate
+        scale = SCALE.AU_TO_SCENE / 20000; // ~0.025 - very small but visible when zoomed in
+    } else if (type === 'sun') {
         scale = SCALE.SUN_SIZE;
     } else if (type === 'moon') {
         scale = SCALE.MOON_SIZE;
     } else if (type === 'iss') {
-        scale = SCALE.ISS_SIZE;
+        scale = SCALE.ISS_SIZE; // Always keep ISS exaggerated for visibility
     } else if (type === 'planet' && planetKey) {
-        // Use tiered scaling based on planet category
+        // Use tiered scaling based on planet category (enlarged mode)
         const category = SCALE.PLANET_CATEGORIES[planetKey];
         if (category === 'rocky') {
             scale = SCALE.PLANET_SIZE_ROCKY;

@@ -15,7 +15,7 @@ import { showTutorial } from './tutorial.js';
 import { captureScreenshot } from '../utils/screenshot.js';
 import { copyShareableURL } from '../utils/urlState.js';
 import { initSounds, setSoundsEnabled, isSoundsEnabled, playClickSound, playFocusSound, playToggleSound, playScreenshotSound, playStyleChangeSound } from '../utils/sounds.js';
-import { setAccurateOrbits, isUsingAccurateOrbits } from './planets.js';
+import { setAccurateOrbits, isUsingAccurateOrbits, updatePlanetSizeMode } from './planets.js';
 
 /**
  * References to app state (set during initialization)
@@ -130,6 +130,9 @@ function setupAllEventListeners() {
 
     // Real-Time View button
     setupRealTimeViewButton();
+
+    // Planet size mode buttons
+    setupSizeModeButtons();
 
     console.log('✅ All UI event listeners attached');
 }
@@ -423,6 +426,52 @@ function setupRealTimeViewButton() {
                 'Showing actual planet positions right now at 1x speed. Planets will appear stationary.');
         });
     }
+}
+
+/**
+ * Setup planet size mode radio buttons
+ */
+function setupSizeModeButtons() {
+    const sizeModeBtns = document.querySelectorAll('.size-mode-btn');
+    const radioButtons = document.querySelectorAll('input[name="size-mode"]');
+
+    // Handle radio button changes
+    radioButtons.forEach(radio => {
+        radio.addEventListener('change', (e) => {
+            if (e.target.checked) {
+                const mode = e.target.value; // 'enlarged' or 'real'
+
+                playToggleSound();
+
+                // Update visual state of buttons
+                sizeModeBtns.forEach(btn => btn.classList.remove('active'));
+                e.target.closest('.size-mode-btn').classList.add('active');
+
+                // Update planet sizes
+                updatePlanetSizeMode(mode);
+
+                console.log(`📏 Planet size mode: ${mode.toUpperCase()}`);
+
+                // Show helpful notification for real mode
+                if (mode === 'real') {
+                    showNotification('🔬 Real Proportions Active',
+                        'Planets are now at actual scale! Zoom in close to see them - they\'re tiny compared to orbital distances.');
+                }
+            }
+        });
+    });
+
+    // Also handle label clicks
+    sizeModeBtns.forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            if (e.target.tagName !== 'INPUT') {
+                const radio = btn.querySelector('input[type="radio"]');
+                if (radio && !radio.checked) {
+                    radio.click();
+                }
+            }
+        });
+    });
 }
 
 /**

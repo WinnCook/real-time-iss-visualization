@@ -3,7 +3,7 @@
  * Creates and manages Mercury, Venus, Earth, and Mars
  */
 
-import { PLANETS, RENDER, scaleRadius, auToScene, DEG_TO_RAD, TWO_PI, daysToMs, ASTRONOMICAL_UNIT } from '../utils/constants.js';
+import { PLANETS, RENDER, scaleRadius, auToScene, DEG_TO_RAD, TWO_PI, daysToMs, ASTRONOMICAL_UNIT, setPlanetSizeMode } from '../utils/constants.js';
 import { calculatePlanetPosition } from '../utils/orbitalElements.js';
 import { addToScene, removeFromScene } from '../core/scene.js';
 import { getCachedSphereGeometry } from '../utils/geometryCache.js';
@@ -513,6 +513,25 @@ export function toggleOrbitalMode() {
     return useAccurateOrbits;
 }
 
+/**
+ * Update planet size mode (enlarged vs real proportions)
+ * @param {string} mode - 'enlarged' or 'real'
+ */
+export function updatePlanetSizeMode(mode) {
+    setPlanetSizeMode(mode);
+
+    // Rebuild planets with new sizes
+    if (currentStyle) {
+        initPlanets(currentStyle);
+
+        // Also rebuild Sun and Moon with new sizes
+        import('./sun.js').then(({ initSun }) => initSun(currentStyle));
+        import('./moon.js').then(({ initMoon }) => initMoon(currentStyle));
+    }
+
+    console.log(`🔄 Objects rebuilt with ${mode.toUpperCase()} sizes`);
+}
+
 // Export default object
 export default {
     initPlanets,
@@ -531,5 +550,6 @@ export default {
     getPlanetCount,
     setAccurateOrbits,
     isUsingAccurateOrbits,
-    toggleOrbitalMode
+    toggleOrbitalMode,
+    updatePlanetSizeMode
 };

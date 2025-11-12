@@ -11,6 +11,7 @@ import { initISS, updateISS, disposeISS, getISSMesh, registerUICallback } from '
 import { initOrbits, updateOrbits, disposeOrbits } from './orbits.js';
 import { initStarfield, updateStarfield, disposeStarfield } from './starfield.js';
 import { initLabels, registerObject, updateLabels, disposeLabels } from './labels.js';
+import { initShootingStars, updateShootingStars, disposeShootingStars } from './shootingStars.js';
 import { clearGeometryCache } from '../utils/geometryCache.js';
 import { getCurrentStyle } from './styles.js';
 
@@ -53,6 +54,10 @@ export function initSolarSystem(config) {
     // Initialize starfield background (first, as it's the backdrop)
     solarSystemState.starfield = initStarfield(currentStyle);
     console.log('  ✓ Starfield initialized');
+
+    // Initialize shooting stars (occasional meteors)
+    initShootingStars(currentStyle);
+    console.log('  ✓ Shooting stars initialized');
 
     // Initialize the sun
     solarSystemState.sun = initSun(currentStyle);
@@ -117,6 +122,9 @@ export function updateSolarSystem(deltaTime, simulationTime) {
         updateSun(deltaTime, simulationTime);
     }
 
+    // Update shooting stars (spawn and animate meteors)
+    updateShootingStars(deltaTime);
+
     // Update planets animation
     if (solarSystemState.planets) {
         updatePlanets(deltaTime, simulationTime);
@@ -164,6 +172,9 @@ export function disposeSolarSystem() {
         disposeStarfield();
         solarSystemState.starfield = null;
     }
+
+    // Dispose shooting stars
+    disposeShootingStars();
 
     if (solarSystemState.iss) {
         disposeISS();

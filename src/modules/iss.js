@@ -18,6 +18,7 @@ let trailPositions = []; // Store last 50 positions for trail
 const MAX_TRAIL_POINTS = 50;
 let currentPosition = null;
 let earthPosition = { x: 0, y: 0, z: 0 }; // Track Earth's position for relative positioning
+let uiUpdateCallback = null; // Callback to update UI with ISS data
 
 /**
  * Initialize ISS visualization
@@ -123,7 +124,7 @@ function startISSTracking() {
     // Register callback for position updates
     issAPI.onUpdate((position) => {
         currentPosition = position;
-        updateISSVisualization();
+        updateISSVisualization(true); // Pass true - this is new API data
     });
 
     console.log('✅ ISS tracking started (updates every 5 seconds)');
@@ -147,7 +148,7 @@ async function updateISSPosition() {
     try {
         const position = await issAPI.fetchISSPosition();
         currentPosition = position;
-        updateISSVisualization();
+        updateISSVisualization(true); // Pass true - this is new API data
 
         // Log position for debugging
         if (position.isMock) {
@@ -162,8 +163,9 @@ async function updateISSPosition() {
 
 /**
  * Update ISS mesh position and trail based on current position
+ * @param {boolean} isNewData - Whether this is new API data (not just a visual update)
  */
-function updateISSVisualization() {
+function updateISSVisualization(isNewData = false) {
     if (!currentPosition || !issMesh) return;
 
     // Convert geographic coordinates to 3D scene position
@@ -185,6 +187,18 @@ function updateISSVisualization() {
 
     // Update trail
     updateTrail(worldPos);
+
+    // Notify UI of ISS data update ONLY when we get new API data
+    if (isNewData && uiUpdateCallback && currentPosition) {
+        uiUpdateCallback({
+            position: {
+                lat: currentPosition.latitude,
+                lon: currentPosition.longitude
+            },
+            altitude: ISS_ORBIT_ALTITUDE,
+            timestamp: currentPosition.timestamp || Math.floor(Date.now() / 1000)
+        });
+    }
 }
 
 /**
@@ -290,6 +304,15 @@ export function setISSTrailVisible(visible) {
 }
 
 /**
+ * Register a callback for UI updates when ISS data changes
+ * @param {Function} callback - Function to call with ISS data
+ */
+export function registerUICallback(callback) {
+    uiUpdateCallback = callback;
+    console.log('✅ ISS UI callback registered');
+}
+
+/**
  * Update ISS visual style
  * @param {Object} styleConfig - New style configuration
  */
@@ -350,5 +373,6 @@ export default {
     clearISSTrail,
     setISSTrailVisible,
     updateISSStyle,
-    stopISSTracking
+    stopISSTracking,
+    registerUICallback
 };

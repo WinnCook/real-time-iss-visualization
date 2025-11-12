@@ -6,19 +6,20 @@
 import { initScene, addToScene } from './core/scene.js';
 import { initCamera, onWindowResize as cameraResize } from './core/camera.js';
 import { initRenderer, onWindowResize as rendererResize } from './core/renderer.js';
-import { initAnimation, startAnimation, addUpdateCallback } from './core/animation.js';
+import { initAnimation, startAnimation, addUpdateCallback, getFPS } from './core/animation.js';
 import { timeManager } from './utils/time.js';
 import { initSun, updateSun, disposeSun, getSun } from './modules/sun.js';
 import { initPlanets, updatePlanets, getPlanetPosition, disposePlanets, getPlanet } from './modules/planets.js';
 import { initMoon, updateMoon, disposeMoon, getMoon } from './modules/moon.js';
-import { initISS, updateISS, disposeISS, setISSTrailVisible, getISSMesh } from './modules/iss.js';
+import { initISS, updateISS, disposeISS, setISSTrailVisible, getISSMesh, registerUICallback } from './modules/iss.js';
 import { initOrbits, updateOrbits, disposeOrbits, setOrbitsVisible } from './modules/orbits.js';
 import { initStarfield, updateStarfield, disposeStarfield, setStarfieldVisible } from './modules/starfield.js';
 import { initLabels, registerObject, updateLabels, setLabelsVisible, disposeLabels } from './modules/labels.js';
 import { clearGeometryCache } from './utils/geometryCache.js';
 import { initPerformanceSlider, setPerformanceLevel, getPerformanceSettings } from './modules/performanceSlider.js';
 import { STYLES } from './utils/constants.js';
-import { initStyles, getCurrentStyle, setupStyleButtonListeners } from './modules/styles.js';
+import { initStyles, getCurrentStyle } from './modules/styles.js';
+import { initUI, registerClickableObject, updateFPS, updateISSInfo, updateCameraFollow } from './modules/ui.js';
 
 /**
  * Application state
@@ -104,6 +105,28 @@ async function init() {
         registerObject('moon', getMoon());
         registerObject('iss', getISSMesh());
 
+        // Initialize UI system (after all objects created)
+        initUI({
+            renderer: app.renderer,
+            camera: app.camera,
+            scene: app.scene,
+            recreateObjects: () => recreateCelestialObjects()
+        });
+
+        // Register clickable objects for click-to-focus
+        registerClickableObject('sun', getSun(), { type: 'star', name: 'Sun' });
+        registerClickableObject('mercury', getPlanet('mercury'), { type: 'planet', name: 'Mercury' });
+        registerClickableObject('venus', getPlanet('venus'), { type: 'planet', name: 'Venus' });
+        registerClickableObject('earth', getPlanet('earth'), { type: 'planet', name: 'Earth' });
+        registerClickableObject('mars', getPlanet('mars'), { type: 'planet', name: 'Mars' });
+        registerClickableObject('moon', getMoon(), { type: 'moon', name: 'Moon' });
+        registerClickableObject('iss', getISSMesh(), { type: 'spacecraft', name: 'ISS' });
+
+        // Register ISS data callback for UI updates
+        registerUICallback((issData) => {
+            updateISSInfo(issData);
+        });
+
         // Set up window resize handler
         window.addEventListener('resize', onWindowResize);
 
@@ -150,6 +173,15 @@ async function init() {
             if (app.labels) {
                 updateLabels();
             }
+
+            // Update camera following for locked objects and selected object info
+            const earthObject = getPlanet('earth');
+            if (earthObject) {
+                updateCameraFollow(earthObject);
+            }
+
+            // Update FPS counter in UI
+            updateFPS(getFPS());
         });
 
         // Hide loading screen
@@ -219,6 +251,15 @@ function recreateCelestialObjects(styleConfig = null) {
     registerObject('moon', getMoon());
     registerObject('iss', getISSMesh());
 
+    // Re-register clickable objects for click-to-focus
+    registerClickableObject('sun', getSun(), { type: 'star', name: 'Sun' });
+    registerClickableObject('mercury', getPlanet('mercury'), { type: 'planet', name: 'Mercury' });
+    registerClickableObject('venus', getPlanet('venus'), { type: 'planet', name: 'Venus' });
+    registerClickableObject('earth', getPlanet('earth'), { type: 'planet', name: 'Earth' });
+    registerClickableObject('mars', getPlanet('mars'), { type: 'planet', name: 'Mars' });
+    registerClickableObject('moon', getMoon(), { type: 'moon', name: 'Moon' });
+    registerClickableObject('iss', getISSMesh(), { type: 'spacecraft', name: 'ISS' });
+
     console.log('✅ Celestial objects recreated');
 }
 
@@ -256,160 +297,6 @@ function showError(message) {
 }
 
 /**
- * Set up UI event handlers (placeholder - will be moved to ui.js later)
- */
-function setupUIHandlers() {
-    // Setup style button listeners
-    setupStyleButtonListeners();
-
-    // Play/Pause button
-    const playPauseBtn = document.getElementById('play-pause');
-    if (playPauseBtn) {
-        playPauseBtn.addEventListener('click', () => {
-            if (timeManager.isPausedState()) {
-                timeManager.play();
-                playPauseBtn.textContent = '⏸ Pause';
-            } else {
-                timeManager.pause();
-                playPauseBtn.textContent = '▶️ Play';
-            }
-        });
-    }
-
-    // Time speed slider
-    const timeSpeedSlider = document.getElementById('time-speed');
-    const speedValue = document.getElementById('speed-value');
-    if (timeSpeedSlider && speedValue) {
-        // Set initial values
-        timeSpeedSlider.value = 100000;
-        speedValue.textContent = '100000x';
-
-        timeSpeedSlider.addEventListener('input', (e) => {
-            const speed = parseFloat(e.target.value);
-            timeManager.setTimeSpeed(speed);
-            speedValue.textContent = `${speed}x`;
-        });
-    }
-
-    // Preset speed buttons
-    const presetButtons = document.querySelectorAll('.preset-speeds button');
-    presetButtons.forEach(button => {
-        button.addEventListener('click', () => {
-            const speed = parseInt(button.dataset.speed);
-            timeManager.setTimeSpeed(speed);
-            if (timeSpeedSlider) timeSpeedSlider.value = speed;
-            if (speedValue) speedValue.textContent = `${speed}x`;
-        });
-    });
-
-    // Reset camera button
-    const resetCameraBtn = document.getElementById('reset-camera');
-    if (resetCameraBtn) {
-        resetCameraBtn.addEventListener('click', () => {
-            // Import and use resetCamera from camera.js
-            import('./core/camera.js').then(({ resetCamera }) => {
-                resetCamera();
-            });
-        });
-    }
-
-    // Help modal
-    const helpButton = document.getElementById('help-button');
-    const helpModal = document.getElementById('help-modal');
-    const closeModal = document.querySelector('.close-modal');
-
-    if (helpButton && helpModal) {
-        helpButton.addEventListener('click', () => {
-            helpModal.classList.remove('hidden');
-        });
-    }
-
-    if (closeModal && helpModal) {
-        closeModal.addEventListener('click', () => {
-            helpModal.classList.add('hidden');
-        });
-    }
-
-    // Close modal when clicking outside
-    if (helpModal) {
-        window.addEventListener('click', (e) => {
-            if (e.target === helpModal) {
-                helpModal.classList.add('hidden');
-            }
-        });
-    }
-
-    // Performance Slider with debouncing for object recreation
-    const performanceSlider = document.getElementById('performance-slider');
-    const performanceValue = document.getElementById('performance-value');
-    const presetDescription = document.getElementById('preset-description');
-    let sliderDebounceTimer = null;
-
-    if (performanceSlider && performanceValue) {
-        performanceSlider.addEventListener('input', (e) => {
-            const level = parseInt(e.target.value);
-
-            // Update performance level immediately (renderer settings only)
-            if (app.renderer) {
-                const settings = setPerformanceLevel(level, app.renderer);
-
-                // Update display
-                performanceValue.textContent = `${settings.description}`;
-            }
-
-            // Debounce object recreation (wait 500ms after user stops moving slider)
-            clearTimeout(sliderDebounceTimer);
-            sliderDebounceTimer = setTimeout(() => {
-                console.log(`🎨 Recreating objects for performance level: ${level}%`);
-                recreateCelestialObjects();
-            }, 500);
-        });
-
-        // Set initial value
-        const initialSettings = getPerformanceSettings(50);
-        performanceValue.textContent = `${initialSettings.description}`;
-    }
-
-    // Display Toggle Checkboxes
-
-    // Orbits toggle
-    const toggleOrbits = document.getElementById('toggle-orbits');
-    if (toggleOrbits) {
-        toggleOrbits.addEventListener('change', (e) => {
-            setOrbitsVisible(e.target.checked);
-            console.log(`🌐 Orbits ${e.target.checked ? 'shown' : 'hidden'}`);
-        });
-    }
-
-    // Trails toggle (ISS trail)
-    const toggleTrails = document.getElementById('toggle-trails');
-    if (toggleTrails) {
-        toggleTrails.addEventListener('change', (e) => {
-            setISSTrailVisible(e.target.checked);
-            console.log(`✨ Trails ${e.target.checked ? 'shown' : 'hidden'}`);
-        });
-    }
-
-    // Labels toggle
-    const toggleLabels = document.getElementById('toggle-labels');
-    if (toggleLabels) {
-        toggleLabels.addEventListener('change', (e) => {
-            setLabelsVisible(e.target.checked);
-            console.log(`🏷️ Labels ${e.target.checked ? 'shown' : 'hidden'}`);
-        });
-    }
-
-    // Stars toggle
-    const toggleStars = document.getElementById('toggle-stars');
-    if (toggleStars) {
-        toggleStars.addEventListener('change', (e) => {
-            setStarfieldVisible(e.target.checked);
-            console.log(`⭐ Stars ${e.target.checked ? 'shown' : 'hidden'}`);
-        });
-    }
-}
-
-/**
  * Wait for Three.js to load before initializing
  */
 function waitForThree() {
@@ -437,10 +324,7 @@ window.addEventListener('DOMContentLoaded', async () => {
     await waitForThree();
     console.log('✅ Three.js loaded');
 
-    // Set up UI handlers
-    setupUIHandlers();
-
-    // Initialize the application
+    // Initialize the application (includes UI initialization)
     init();
 });
 

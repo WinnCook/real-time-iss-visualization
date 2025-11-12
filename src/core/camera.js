@@ -72,9 +72,8 @@ export function initControls(domElement) {
     controls.screenSpacePanning = false;
     controls.minDistance = 10; // Minimum zoom (close to sun)
     controls.maxDistance = 50000; // Maximum zoom (see entire solar system including Neptune at 30 AU)
-    // Remove polar angle constraints for free rotation
-    controls.minPolarAngle = 0; // Allow rotation to top
-    controls.maxPolarAngle = Math.PI; // Allow rotation to bottom
+    // Remove polar angle constraints entirely for completely free rotation
+    // Don't set minPolarAngle or maxPolarAngle - allows full 360° vertical rotation
     controls.enableZoom = true; // Enable mouse wheel zoom
     controls.zoomSpeed = 1.0; // Zoom sensitivity
 

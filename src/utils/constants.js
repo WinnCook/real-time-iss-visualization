@@ -397,9 +397,9 @@ export function scaleRadius(radiusKm, type = 'planet', planetKey = null) {
             // Real ISS: ~109m wide, Earth diameter: ~12,742km
             // Real ratio: 109m / 12,742,000m = 0.0000085 (truly microscopic!)
             // Earth diameter in real mode: ~4.26 scene units
-            // Target ISS as tiny marker: ~0.02 scene units wide (0.5% of Earth)
-            // Scale factor needed: 0.02 / 20 = 0.001
-            return 0.001; // ISS model scaled to 0.02 scene units wide
+            // Make ISS VERY tiny: 0.003 scene units wide (0.07% of Earth)
+            // Scale factor needed: 0.003 / 20 = 0.00015
+            return 0.00015; // ISS model scaled to 0.003 scene units wide (super tiny marker)
         }
     } else {
         // Enlarged mode - use exaggerated scaling for visibility

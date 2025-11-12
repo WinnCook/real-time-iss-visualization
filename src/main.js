@@ -18,6 +18,7 @@ import { initLabels, registerObject, updateLabels, setLabelsVisible, disposeLabe
 import { clearGeometryCache } from './utils/geometryCache.js';
 import { initPerformanceSlider, setPerformanceLevel, getPerformanceSettings } from './modules/performanceSlider.js';
 import { STYLES } from './utils/constants.js';
+import { initStyles, getCurrentStyle, setupStyleButtonListeners } from './modules/styles.js';
 
 /**
  * Application state
@@ -65,23 +66,31 @@ async function init() {
             controls: app.controls
         });
 
+        // Initialize styles system (before creating any visual objects)
+        initStyles('realistic', (newStyleConfig) => {
+            recreateCelestialObjects(newStyleConfig);
+        });
+
+        // Get initial style config
+        const initialStyle = getCurrentStyle();
+
         // Initialize starfield background (first, as it's the backdrop)
-        app.starfield = initStarfield(STYLES.realistic);
+        app.starfield = initStarfield(initialStyle);
 
-        // Initialize the sun with realistic style
-        app.sun = initSun(STYLES.realistic);
+        // Initialize the sun with current style
+        app.sun = initSun(initialStyle);
 
-        // Initialize planets with realistic style
-        app.planets = initPlanets(STYLES.realistic);
+        // Initialize planets with current style
+        app.planets = initPlanets(initialStyle);
 
         // Initialize orbital paths
-        app.orbits = initOrbits(STYLES.realistic);
+        app.orbits = initOrbits(initialStyle);
 
-        // Initialize the moon with realistic style
-        app.moon = initMoon(STYLES.realistic);
+        // Initialize the moon with current style
+        app.moon = initMoon(initialStyle);
 
-        // Initialize the ISS with realistic style
-        app.iss = initISS(STYLES.realistic);
+        // Initialize the ISS with current style
+        app.iss = initISS(initialStyle);
 
         // Initialize labels system (after all objects are created)
         app.labels = initLabels(app.camera, app.renderer);
@@ -171,9 +180,10 @@ function onWindowResize() {
 }
 
 /**
- * Recreate all celestial objects with new performance settings
+ * Recreate all celestial objects with new performance settings or style
+ * @param {Object} styleConfig - Optional style configuration (uses current style if not provided)
  */
-function recreateCelestialObjects() {
+function recreateCelestialObjects(styleConfig = null) {
     console.log('🔄 Recreating celestial objects with new settings...');
 
     // Dispose existing objects
@@ -188,13 +198,16 @@ function recreateCelestialObjects() {
     // Clear geometry cache to force recreation
     clearGeometryCache();
 
+    // Get current style if not provided
+    const currentStyle = styleConfig || getCurrentStyle();
+
     // Recreate with current style
-    app.starfield = initStarfield(STYLES.realistic);
-    app.sun = initSun(STYLES.realistic);
-    app.planets = initPlanets(STYLES.realistic);
-    app.orbits = initOrbits(STYLES.realistic);
-    app.moon = initMoon(STYLES.realistic);
-    app.iss = initISS(STYLES.realistic);
+    app.starfield = initStarfield(currentStyle);
+    app.sun = initSun(currentStyle);
+    app.planets = initPlanets(currentStyle);
+    app.orbits = initOrbits(currentStyle);
+    app.moon = initMoon(currentStyle);
+    app.iss = initISS(currentStyle);
 
     // Recreate labels and re-register objects
     app.labels = initLabels(app.camera, app.renderer);
@@ -246,6 +259,9 @@ function showError(message) {
  * Set up UI event handlers (placeholder - will be moved to ui.js later)
  */
 function setupUIHandlers() {
+    // Setup style button listeners
+    setupStyleButtonListeners();
+
     // Play/Pause button
     const playPauseBtn = document.getElementById('play-pause');
     if (playPauseBtn) {

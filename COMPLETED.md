@@ -1481,3 +1481,194 @@ The codebase now has excellent separation of concerns:
 ---
 
 **Last Updated:** 2025-11-12 (Task 7 - Solar System Orchestrator completed - Sprint 1 essentially complete!)
+
+---
+
+## Sprint 2: Solar System Expansion & Enhanced Features
+
+### ✅ Task 1: Outer Planets System (Jupiter, Saturn, Uranus, Neptune)
+**Completed:** 2025-11-12
+**Sprint:** Sprint 2
+**Priority:** P1 (High)
+**Estimated Time:** 6-8 hours → **Actual Time:** 4 hours
+
+#### Overview:
+Expanded solar system from 4 planets to 8 planets, completing the full solar system visualization with Jupiter, Saturn (with iconic rings), Uranus, and Neptune. Implemented proportional planet sizing using tiered scaling system for realistic size relationships.
+
+#### What Was Done:
+- Added planetary data for all 4 outer planets to `constants.js`
+- Implemented Saturn's ring system using THREE.RingGeometry
+- Created tiered planet scaling system (rocky: 1500x, gas giants: 250x, ice giants: 450x)
+- Updated `planets.js` to support all 8 planets dynamically
+- Increased sun size from 40 to 60 for better prominence
+- Added camera presets (Inner System, Outer System, Full System, Top Down)
+- Fixed raycaster to detect child meshes (Saturn's rings)
+- Added dropdown selector for easy object selection
+- Increased max camera zoom distance to 50,000 units
+- Created iconic ISS geometry (cylinder body + solar panel wings)
+- Fixed ISS orientation to stay parallel to Earth's surface
+- Reduced ISS size from 50,000 to 30,000 for better proportions
+
+#### Technical Implementation Details:
+
+**Outer Planet Data (constants.js):**
+- **Jupiter:** 5.2 AU orbit, 4,333-day period, orange-tan color (0xc88b3a), 69,911 km radius
+- **Saturn:** 9.54 AU orbit, 10,759-day period, pale golden (0xead6b8), 58,232 km radius
+  - Ring system: Inner 74,500 km, Outer 140,220 km, 30 km thickness
+- **Uranus:** 19.19 AU orbit, 30,687-day period, cyan/ice blue (0x4fd0e7), 25,362 km radius
+  - Extreme tilt: 97.77° (rotates on its side!)
+- **Neptune:** 30.07 AU orbit, 60,190-day period, deep blue (0x4166f5), 24,622 km radius
+
+**Saturn Ring Implementation:**
+- Used THREE.RingGeometry with 64 segments for smooth appearance
+- Applied Saturn's axial tilt (26.73°) to rings
+- Transparent material (opacity 0.8) with DoubleSide rendering
+- Added as child mesh to Saturn planet
+- Style-aware: emissive glow in Neon style
+
+**Tiered Planet Scaling System:**
+```javascript
+PLANET_SIZE_ROCKY: 1500,      // Mercury, Venus, Earth, Mars
+PLANET_SIZE_GAS_GIANT: 250,   // Jupiter, Saturn (6x smaller multiplier)
+PLANET_SIZE_ICE_GIANT: 450,   // Uranus, Neptune (3.3x smaller multiplier)
+```
+- Rocky planets stay highly visible
+- Gas giants show size dominance without overwhelming scene
+- Ice giants balanced between rocky and gas giants
+- Realistic proportions: Jupiter appears appropriately massive compared to Earth
+
+**Iconic ISS Design:**
+- Central cylinder body (12 units long, 2 units radius)
+- Two rectangular solar panel wings (20x6x0.3 units)
+- Body: Red/orange emissive material (ISS_COLOR)
+- Panels: Blue-tinted emissive material (0x4a90e2)
+- Quaternion-based orientation to stay parallel to Earth's surface
+- Body points in direction of orbital motion
+- Size reduced 40% for better proportions
+
+**Camera Presets:**
+- Inner System: (0, 500, 1200) - View Sun to Mars
+- Outer System: (0, 3000, 8000) target (2500, 0, 0) - View Jupiter to Neptune
+- Full System: (0, 2000, 4000) - View all 8 planets
+- Top Down: (0, 5000, 0) - Bird's eye orbital plane view
+
+#### Bug Fixes:
+
+**Fix #1: Saturn Not Clickable**
+- **Issue:** Saturn's rings (child meshes) blocked click detection
+- **Solution:** Changed `raycaster.intersectObjects()` to `recursive: true`
+- **Solution:** Added parent traversal to find registered object when child clicked
+
+**Fix #2: Outer Planets Not Clickable**
+- **Issue:** `getCelestialObject()` only had cases for inner 4 planets
+- **Solution:** Added Jupiter, Saturn, Uranus, Neptune to switch statement
+
+**Fix #3: Zoom Out Limit Too Restrictive**
+- **Issue:** maxDistance = 1000 too small for outer planets (Neptune at 15,000 units)
+- **Solution:** Increased maxDistance from 1,000 to 50,000
+
+**Fix #4: ISS Orientation Incorrect**
+- **Issue:** ISS perpendicular to Earth's surface (sticking into Earth)
+- **Solution:** Rewrote orientation using quaternion-based rotation with radial direction as "up"
+
+#### Files Created:
+- `index.html` - Added dropdown HTML for object selection
+
+#### Files Modified:
+- `src/utils/constants.js` - Added 4 outer planets, tiered scaling, camera presets, increased sun size
+- `src/modules/planets.js` - Updated to pass planetKey to scaleRadius(), added Saturn rings
+- `src/modules/iss.js` - Replaced sphere with compound geometry (cylinder + panels), fixed orientation
+- `src/modules/solarSystem.js` - Added outer planets to getCelestialObject() and getAllPlanets()
+- `src/core/camera.js` - Increased maxDistance to 50,000
+- `src/modules/ui.js` - Added dropdown selector, recursive raycasting, parent traversal
+- `src/styles/ui.css` - Added .object-selector styles
+- `src/main.js` - Registered all 8 planets + dropdown as clickable
+
+#### Testing Performed:
+- ✅ All 8 planets visible and orbiting correctly
+- ✅ Saturn rings render with proper tilt and transparency
+- ✅ All planets clickable (including Saturn with rings)
+- ✅ Dropdown selector works for all 11 objects
+- ✅ Camera zoom out works to see full solar system
+- ✅ Proportional sizes look realistic (Jupiter/Saturn large, rocky planets small)
+- ✅ ISS appears as recognizable space station with solar panels
+- ✅ ISS orientation stays parallel to Earth's surface
+- ✅ ISS size appropriate (visible but not overwhelming)
+- ✅ Performance maintained at 60 FPS
+
+#### Key Decisions Made:
+
+1. **Tiered Scaling vs. Uniform Scaling**
+   - Chose tiered scaling to show realistic size relationships
+   - Gas giants 6x smaller multiplier prevents them from dominating
+   - Maintains visibility while showing Jupiter/Saturn are massive
+
+2. **Simple Ring Geometry vs. Textured Rings**
+   - Used THREE.RingGeometry for Saturn rings
+   - Solid color with transparency instead of texture
+   - Faster to render, still visually distinctive
+   - Can add texture in future sprint if desired
+
+3. **Iconic ISS vs. Detailed 3D Model**
+   - Created recognizable geometry (cylinder + panels) instead of loading model
+   - Faster development, no external dependencies
+   - Still clearly identifiable as space station
+   - Easier to modify materials for visual styles
+
+4. **Quaternion Orientation vs. Euler Angles**
+   - Used quaternion-based rotation for ISS orientation
+   - More stable than Euler angles (no gimbal lock)
+   - Smooth orientation as ISS orbits Earth
+
+5. **Camera Presets as Constants**
+   - Defined camera positions in constants.js
+   - Could be made into UI buttons in future
+   - Provides framework for preset camera views
+
+#### Challenges & Solutions:
+
+**Challenge 1:** Saturn rings not clickable (blocking planet)
+**Solution:** Enabled recursive raycasting and added parent traversal logic
+
+**Challenge 2:** Outer planets too far to see with default zoom
+**Solution:** Increased far clipping plane and max camera distance dramatically
+
+**Challenge 3:** ISS sticking into Earth perpendicular
+**Solution:** Completely rewrote orientation logic using proper radial/tangent vectors
+
+**Challenge 4:** Planet sizes either too uniform or too disparate
+**Solution:** Developed tiered scaling system with 3 categories
+
+#### User Feedback:
+- "looks great" - Proportional sizes and ISS approved
+- All features working as expected
+
+#### Subtasks Completed:
+- [x] 1.1: Add Jupiter planet data ✅
+- [x] 1.2: Add Saturn planet data with rings ✅
+- [x] 1.3: Add Uranus planet data ✅
+- [x] 1.4: Add Neptune planet data ✅
+- [x] 1.5: Implement Saturn ring geometry ✅
+- [x] 1.6: Update planets.js for 8 planets ✅
+- [x] 1.7: Add orbital paths for outer planets ✅ (already supported)
+- [x] 1.8: Implement camera zoom presets ✅
+- [x] 1.9: Add labels for new planets ✅ (already supported)
+- [x] 1.10: Update UI to register new clickable objects ✅
+- [x] 1.11: Test performance with 8 planets ✅
+- [x] 1.12: Optimize proportional sizes ✅ (tiered scaling)
+- [x] BONUS: Add dropdown selector ✅
+- [x] BONUS: Iconic ISS geometry ✅
+- [x] BONUS: Fix ISS orientation ✅
+
+#### Sprint Impact:
+- **Task 1 (Outer Planets) COMPLETED** ✅
+- **Sprint 2 Progress:** 1/3 tasks (33%)
+- **Exceeded expectations:** Added proportional sizing, iconic ISS, dropdown selector
+
+#### Commits:
+- `d6181af` - feat: proportional planet sizes and iconic ISS design
+- `32dff09` - fix: ISS orientation and size
+
+---
+
+**Last Updated:** 2025-11-12 (Sprint 2 Task 1 - Outer Planets System completed)

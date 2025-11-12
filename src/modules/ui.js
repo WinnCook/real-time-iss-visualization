@@ -105,6 +105,9 @@ function setupAllEventListeners() {
     // Object dropdown selector
     setupObjectDropdown();
 
+    // Keyboard shortcuts
+    setupKeyboardShortcuts();
+
     console.log('✅ All UI event listeners attached');
 }
 
@@ -375,6 +378,212 @@ function setupObjectDropdown() {
     });
 
     console.log('✅ Object dropdown selector enabled');
+}
+
+/**
+ * Setup keyboard shortcuts
+ */
+function setupKeyboardShortcuts() {
+    window.addEventListener('keydown', (event) => {
+        // Don't trigger if user is typing in an input field
+        if (event.target.tagName === 'INPUT' || event.target.tagName === 'TEXTAREA') {
+            return;
+        }
+
+        const key = event.key.toLowerCase();
+
+        switch (key) {
+            case ' ': // Space - Play/Pause
+                event.preventDefault();
+                const playPauseBtn = document.getElementById('play-pause');
+                if (playPauseBtn) playPauseBtn.click();
+                break;
+
+            case 'r': // R - Reset Camera
+                event.preventDefault();
+                unlockCamera();
+                resetCamera();
+                console.log('⌨️ Keyboard: Camera reset');
+                break;
+
+            case 'escape': // ESC - Unlock Camera (already handled but documented here)
+                unlockCamera();
+                break;
+
+            case 'h': // H - Show Help
+            case '?':
+                event.preventDefault();
+                const helpModal = document.getElementById('help-modal');
+                if (helpModal) {
+                    helpModal.classList.remove('hidden');
+                    console.log('⌨️ Keyboard: Help opened');
+                }
+                break;
+
+            case 'o': // O - Toggle Orbits
+                event.preventDefault();
+                const orbitsToggle = document.getElementById('toggle-orbits');
+                if (orbitsToggle) {
+                    orbitsToggle.checked = !orbitsToggle.checked;
+                    setOrbitsVisible(orbitsToggle.checked);
+                    console.log(`⌨️ Keyboard: Orbits ${orbitsToggle.checked ? 'ON' : 'OFF'}`);
+                }
+                break;
+
+            case 'l': // L - Toggle Labels
+                event.preventDefault();
+                const labelsToggle = document.getElementById('toggle-labels');
+                if (labelsToggle) {
+                    labelsToggle.checked = !labelsToggle.checked;
+                    setLabelsVisible(labelsToggle.checked);
+                    console.log(`⌨️ Keyboard: Labels ${labelsToggle.checked ? 'ON' : 'OFF'}`);
+                }
+                break;
+
+            case 't': // T - Toggle Trails
+                event.preventDefault();
+                const trailsToggle = document.getElementById('toggle-trails');
+                if (trailsToggle) {
+                    trailsToggle.checked = !trailsToggle.checked;
+                    setISSTrailVisible(trailsToggle.checked);
+                    console.log(`⌨️ Keyboard: Trails ${trailsToggle.checked ? 'ON' : 'OFF'}`);
+                }
+                break;
+
+            case 's': // S - Toggle Stars
+                event.preventDefault();
+                const starsToggle = document.getElementById('toggle-stars');
+                if (starsToggle) {
+                    starsToggle.checked = !starsToggle.checked;
+                    setStarfieldVisible(starsToggle.checked);
+                    console.log(`⌨️ Keyboard: Stars ${starsToggle.checked ? 'ON' : 'OFF'}`);
+                }
+                break;
+
+            case '1': // 1 - Realistic Style
+                event.preventDefault();
+                clickStyleButton('realistic');
+                break;
+
+            case '2': // 2 - Cartoon Style
+                event.preventDefault();
+                clickStyleButton('cartoon');
+                break;
+
+            case '3': // 3 - Neon Style
+                event.preventDefault();
+                clickStyleButton('neon');
+                break;
+
+            case '4': // 4 - Minimalist Style
+                event.preventDefault();
+                clickStyleButton('minimalist');
+                break;
+
+            case 'arrowup': // Arrow Up - Increase Time Speed
+                event.preventDefault();
+                adjustTimeSpeed(1.5);
+                break;
+
+            case 'arrowdown': // Arrow Down - Decrease Time Speed
+                event.preventDefault();
+                adjustTimeSpeed(0.66);
+                break;
+
+            case 'arrowleft': // Arrow Left - Slower preset
+                event.preventDefault();
+                setTimeSpeedPreset('slower');
+                break;
+
+            case 'arrowright': // Arrow Right - Faster preset
+                event.preventDefault();
+                setTimeSpeedPreset('faster');
+                break;
+
+            case 'f': // F - Focus on Earth
+                event.preventDefault();
+                focusOnObject('earth');
+                break;
+
+            case 'i': // I - Focus on ISS
+                event.preventDefault();
+                focusOnObject('iss');
+                break;
+        }
+    });
+
+    console.log('✅ Keyboard shortcuts enabled');
+}
+
+/**
+ * Click a style button by key
+ * @param {string} styleKey - Style identifier
+ */
+function clickStyleButton(styleKey) {
+    const button = document.querySelector(`[data-style="${styleKey}"]`);
+    if (button) {
+        button.click();
+        console.log(`⌨️ Keyboard: Switched to ${styleKey} style`);
+    }
+}
+
+/**
+ * Adjust time speed by multiplier
+ * @param {number} multiplier - Speed multiplier
+ */
+function adjustTimeSpeed(multiplier) {
+    const currentSpeed = timeManager.getTimeSpeed();
+    const newSpeed = Math.max(1, Math.min(500000, currentSpeed * multiplier));
+    timeManager.setTimeSpeed(newSpeed);
+
+    // Update UI
+    const slider = document.getElementById('time-speed');
+    const speedValue = document.getElementById('speed-value');
+    if (slider) slider.value = newSpeed;
+    if (speedValue) speedValue.textContent = `${Math.round(newSpeed)}x`;
+
+    console.log(`⌨️ Keyboard: Time speed ${newSpeed}x`);
+}
+
+/**
+ * Set time speed to preset
+ * @param {string} direction - 'slower' or 'faster'
+ */
+function setTimeSpeedPreset(direction) {
+    const presets = [1000, 10000, 50000, 100000, 500000];
+    const currentSpeed = timeManager.getTimeSpeed();
+
+    let newSpeed;
+    if (direction === 'faster') {
+        // Find next higher preset
+        newSpeed = presets.find(p => p > currentSpeed) || presets[presets.length - 1];
+    } else {
+        // Find next lower preset
+        newSpeed = [...presets].reverse().find(p => p < currentSpeed) || presets[0];
+    }
+
+    timeManager.setTimeSpeed(newSpeed);
+
+    // Update UI
+    const slider = document.getElementById('time-speed');
+    const speedValue = document.getElementById('speed-value');
+    if (slider) slider.value = newSpeed;
+    if (speedValue) speedValue.textContent = `${newSpeed}x`;
+
+    console.log(`⌨️ Keyboard: Time speed ${newSpeed}x`);
+}
+
+/**
+ * Focus on a specific object by key
+ * @param {string} objectKey - Object identifier
+ */
+function focusOnObject(objectKey) {
+    const object = clickableObjects.get(objectKey);
+    if (object) {
+        handleObjectClick(object);
+    } else {
+        console.warn(`⚠️ Object not found: ${objectKey}`);
+    }
 }
 
 /**

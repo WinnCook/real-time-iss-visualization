@@ -1090,3 +1090,60 @@ input[type="range"]::-moz-range-thumb:hover {
         right: 15px;
     }
 }
+
+/* ===================================
+   Real-Time View Notification
+   =================================== */
+
+/* Real-time notification (educational popup) */
+.realtime-notification {
+    position: fixed;
+    top: 80px;
+    left: 50%;
+    transform: translateX(-50%) translateY(-20px);
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.95), rgba(5, 150, 105, 0.95));
+    color: #fff;
+    padding: 1.5rem 2rem;
+    border-radius: 12px;
+    box-shadow: 0 6px 30px rgba(0, 0, 0, 0.5);
+    max-width: 450px;
+    opacity: 0;
+    pointer-events: none;
+    z-index: 10001;
+    transition: all 0.3s ease;
+}
+
+.realtime-notification.visible {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+}
+
+.realtime-notification strong {
+    display: block;
+    font-size: 1.2rem;
+    margin-bottom: 0.5rem;
+    font-weight: 700;
+}
+
+.realtime-notification p {
+    margin: 0;
+    font-size: 0.95rem;
+    line-height: 1.5;
+    color: rgba(255, 255, 255, 0.95);
+}
+
+/* Mobile responsive real-time notification */
+@media (max-width: 768px) {
+    .realtime-notification {
+        max-width: 90%;
+        padding: 1.25rem 1.5rem;
+    }
+
+    .realtime-notification strong {
+        font-size: 1.1rem;
+    }
+
+    .realtime-notification p {
+        font-size: 0.9rem;
+    }
+}

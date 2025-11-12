@@ -171,6 +171,21 @@ class TimeManager {
     }
 
     /**
+     * Reset simulation time to current real-world time
+     * This is used for "Real-Time View" to show actual planet positions right now
+     */
+    resetToCurrentTime() {
+        // J2000 epoch: January 1, 2000, 12:00 UTC
+        const J2000_EPOCH = new Date('2000-01-01T12:00:00Z');
+
+        // Set simulation time to milliseconds since J2000 epoch
+        this.simulationTime = Date.now() - J2000_EPOCH.getTime();
+
+        console.log('⏰ Simulation time reset to current real-world time');
+        console.log(`   Simulation time: ${this.formatSimulationTime()} since J2000 epoch`);
+    }
+
+    /**
      * Format current simulation time as human-readable string
      * @returns {string} Formatted time string (e.g., "123.4 days")
      */

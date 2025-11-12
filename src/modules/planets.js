@@ -3,8 +3,8 @@
  * Creates and manages Mercury, Venus, Earth, and Mars
  */
 
-import { PLANETS, RENDER, scaleRadius, auToScene, DEG_TO_RAD, TWO_PI, daysToMs } from '../utils/constants.js';
-import { calculatePlanetPosition } from '../utils/orbital.js';
+import { PLANETS, RENDER, scaleRadius, auToScene, DEG_TO_RAD, TWO_PI, daysToMs, ASTRONOMICAL_UNIT } from '../utils/constants.js';
+import { calculatePlanetPosition } from '../utils/orbitalElements.js';
 import { addToScene, removeFromScene } from '../core/scene.js';
 import { getCachedSphereGeometry } from '../utils/geometryCache.js';
 import { isRotationEnabled } from './performanceSlider.js';
@@ -35,6 +35,18 @@ const startAngles = {
  * @type {Object}
  */
 let currentStyle = null;
+
+/**
+ * Orbital mechanics mode (simplified circular or accurate Keplerian)
+ * @type {boolean}
+ */
+let useAccurateOrbits = false;
+
+/**
+ * Epoch date for J2000 calculations (January 1, 2000, 12:00 TT)
+ * @type {Date}
+ */
+const J2000_EPOCH = new Date('2000-01-01T12:00:00Z');
 
 /**
  * Cached orbital data for performance optimization
@@ -277,7 +289,8 @@ function createSaturnRings(planetKey, planetData, styleConfig) {
 }
 
 /**
- * Update all planet positions and rotations (OPTIMIZED)
+ * Update all planet positions and rotations
+ * Supports both simplified circular orbits and accurate Keplerian mechanics
  * @param {number} deltaTime - Time since last frame in milliseconds
  * @param {number} simulationTime - Current simulation time in milliseconds
  */
@@ -289,20 +302,39 @@ export function updatePlanets(deltaTime, simulationTime) {
         const planetMesh = planetMeshes[planetKey];
         if (!planetMesh) return;
 
-        // Use cached orbital data (OPTIMIZED - avoids recalculating constants)
-        const cached = cachedOrbitalData[planetKey];
-        const angle = startAngles[planetKey] + (simulationTime / cached.periodMs) * TWO_PI;
+        if (useAccurateOrbits) {
+            // ACCURATE KEPLERIAN ORBITAL MECHANICS
+            // Calculate current date from simulation time
+            const currentDate = new Date(J2000_EPOCH.getTime() + simulationTime);
 
-        // Calculate position on circular orbit (XZ plane)
-        const x = Math.cos(angle) * cached.orbitRadiusScene;
-        const z = Math.sin(angle) * cached.orbitRadiusScene;
+            // Get real 3D position using Keplerian elements
+            const pos = calculatePlanetPosition(planetKey, currentDate);
 
-        // Update mesh position
-        planetMesh.position.set(x, 0, z);
+            // Convert from AU to scene units
+            const x = pos.x * auToScene(1);
+            const y = pos.y * auToScene(1);
+            const z = pos.z * auToScene(1);
+
+            // Update mesh position (with Y as vertical axis in 3D space)
+            planetMesh.position.set(x, y, z);
+        } else {
+            // SIMPLIFIED CIRCULAR ORBITS (original fast implementation)
+            // Use cached orbital data (OPTIMIZED - avoids recalculating constants)
+            const cached = cachedOrbitalData[planetKey];
+            const angle = startAngles[planetKey] + (simulationTime / cached.periodMs) * TWO_PI;
+
+            // Calculate position on circular orbit (XZ plane)
+            const x = Math.cos(angle) * cached.orbitRadiusScene;
+            const z = Math.sin(angle) * cached.orbitRadiusScene;
+
+            // Update mesh position
+            planetMesh.position.set(x, 0, z);
+        }
 
         // Update planet rotation on its axis (using cached rotation speed)
         // Skip rotation if performance level is ultra-low (optimization)
         if (isRotationEnabled()) {
+            const cached = cachedOrbitalData[planetKey];
             planetMesh.rotation.y += cached.rotationSpeedPerSec * deltaTimeSeconds;
         }
     });
@@ -454,6 +486,33 @@ export function getPlanetCount() {
     return Object.keys(planetMeshes).length;
 }
 
+/**
+ * Set orbital mechanics mode
+ * @param {boolean} accurate - True for accurate Keplerian orbits, false for simplified circular
+ */
+export function setAccurateOrbits(accurate) {
+    useAccurateOrbits = accurate;
+    console.log(`🌍 Orbital mechanics: ${accurate ? 'ACCURATE (Keplerian)' : 'SIMPLIFIED (Circular)'}`);
+}
+
+/**
+ * Get current orbital mechanics mode
+ * @returns {boolean} True if using accurate orbits
+ */
+export function isUsingAccurateOrbits() {
+    return useAccurateOrbits;
+}
+
+/**
+ * Toggle between accurate and simplified orbital mechanics
+ * @returns {boolean} New state
+ */
+export function toggleOrbitalMode() {
+    useAccurateOrbits = !useAccurateOrbits;
+    console.log(`🌍 Orbital mechanics: ${useAccurateOrbits ? 'ACCURATE (Keplerian)' : 'SIMPLIFIED (Circular)'}`);
+    return useAccurateOrbits;
+}
+
 // Export default object
 export default {
     initPlanets,
@@ -469,5 +528,8 @@ export default {
     removePlanets,
     removePlanet,
     hasPlanet,
-    getPlanetCount
+    getPlanetCount,
+    setAccurateOrbits,
+    isUsingAccurateOrbits,
+    toggleOrbitalMode
 };

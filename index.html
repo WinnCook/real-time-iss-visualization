@@ -46,11 +46,11 @@
             <!-- Time Speed Slider -->
             <div class="control-group">
                 <label for="time-speed">Time Speed: <span id="speed-value">100000x</span></label>
-                <input type="range" id="time-speed" min="1" max="500000" value="100000" step="1000">
+                <input type="range" id="time-speed" min="1" max="500000" value="100000" step="1">
                 <div class="preset-speeds">
+                    <button data-speed="1">1x Real-Time</button>
                     <button data-speed="1000">1kx</button>
                     <button data-speed="10000">10kx</button>
-                    <button data-speed="50000">50kx</button>
                     <button data-speed="100000">100kx</button>
                     <button data-speed="500000">500kx</button>
                 </div>
@@ -60,6 +60,16 @@
             <div class="control-group">
                 <button id="play-pause" class="btn-primary">⏸ Pause</button>
                 <button id="reset-camera" class="btn-secondary">🎥 Reset Camera</button>
+            </div>
+
+            <!-- Real-Time View Button -->
+            <div class="control-group">
+                <button id="realtime-view-btn" class="btn-primary" style="width: 100%;">
+                    🌎 Real-Time View (Current Positions)
+                </button>
+                <p style="font-size: 0.85rem; color: rgba(255,255,255,0.7); margin-top: 0.5rem;">
+                    Shows actual planet positions right now
+                </p>
             </div>
 
             <!-- Visual Style Switcher -->
@@ -111,7 +121,14 @@
                         <input type="checkbox" id="toggle-sounds">
                         <span>🔊 Sounds</span>
                     </label>
+                    <label class="toggle">
+                        <input type="checkbox" id="toggle-accurate-orbits">
+                        <span>🎯 Accurate Orbits</span>
+                    </label>
                 </div>
+                <p style="font-size: 0.8rem; color: rgba(255,255,255,0.6); margin-top: 0.5rem;">
+                    Accurate Orbits uses real NASA data with elliptical paths and orbital inclinations
+                </p>
             </div>
         </div>
 

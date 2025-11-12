@@ -15,6 +15,7 @@ import { showTutorial } from './tutorial.js';
 import { captureScreenshot } from '../utils/screenshot.js';
 import { copyShareableURL } from '../utils/urlState.js';
 import { initSounds, setSoundsEnabled, isSoundsEnabled, playClickSound, playFocusSound, playToggleSound, playScreenshotSound, playStyleChangeSound } from '../utils/sounds.js';
+import { setAccurateOrbits, isUsingAccurateOrbits } from './planets.js';
 
 /**
  * References to app state (set during initialization)
@@ -126,6 +127,9 @@ function setupAllEventListeners() {
 
     // Share button
     setupShareButton();
+
+    // Real-Time View button
+    setupRealTimeViewButton();
 
     console.log('✅ All UI event listeners attached');
 }
@@ -304,6 +308,16 @@ function setupDisplayToggles() {
             console.log(`🔊 Sounds ${e.target.checked ? 'enabled' : 'muted'}`);
         });
     }
+
+    // Accurate Orbits toggle
+    const toggleAccurateOrbits = document.getElementById('toggle-accurate-orbits');
+    if (toggleAccurateOrbits) {
+        toggleAccurateOrbits.addEventListener('change', (e) => {
+            setAccurateOrbits(e.target.checked);
+            playToggleSound();
+            console.log(`🎯 Orbital mechanics: ${e.target.checked ? 'ACCURATE' : 'SIMPLIFIED'}`);
+        });
+    }
 }
 
 /**
@@ -373,6 +387,72 @@ function setupShareButton() {
             }
         });
     }
+}
+
+/**
+ * Setup Real-Time View button
+ */
+function setupRealTimeViewButton() {
+    const realtimeBtn = document.getElementById('realtime-view-btn');
+    if (realtimeBtn) {
+        realtimeBtn.addEventListener('click', () => {
+            playClickSound();
+
+            // Enable accurate orbits
+            setAccurateOrbits(true);
+            const toggleAccurateOrbits = document.getElementById('toggle-accurate-orbits');
+            if (toggleAccurateOrbits) {
+                toggleAccurateOrbits.checked = true;
+            }
+
+            // Set time speed to 1x (real-time)
+            timeManager.setTimeSpeed(1);
+            const slider = document.getElementById('time-speed');
+            const speedValue = document.getElementById('speed-value');
+            if (slider) slider.value = 1;
+            if (speedValue) speedValue.textContent = '1x';
+
+            // Reset simulation time to current real time
+            // This makes planets jump to their actual current positions
+            timeManager.resetToCurrentTime();
+
+            console.log('🌎 Real-Time View activated: Accurate orbits + 1x speed + current positions');
+
+            // Show notification
+            showNotification('🌎 Real-Time View Activated',
+                'Showing actual planet positions right now at 1x speed. Planets will appear stationary.');
+        });
+    }
+}
+
+/**
+ * Show a notification to the user
+ * @param {string} title - Notification title
+ * @param {string} message - Notification message
+ */
+function showNotification(title, message) {
+    const notification = document.createElement('div');
+    notification.className = 'realtime-notification';
+    notification.innerHTML = `
+        <strong>${title}</strong>
+        <p>${message}</p>
+    `;
+    document.body.appendChild(notification);
+
+    // Show notification
+    setTimeout(() => {
+        notification.classList.add('visible');
+    }, 10);
+
+    // Hide and remove after 5 seconds
+    setTimeout(() => {
+        notification.classList.remove('visible');
+        setTimeout(() => {
+            if (notification.parentNode) {
+                notification.parentNode.removeChild(notification);
+            }
+        }, 300);
+    }, 5000);
 }
 
 /**

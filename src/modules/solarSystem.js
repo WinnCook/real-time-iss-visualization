@@ -8,12 +8,14 @@ import { initSun, updateSun, disposeSun, getSun } from './sun.js';
 import { initPlanets, updatePlanets, getPlanetPosition, disposePlanets, getPlanet } from './planets.js';
 import { initMoon, updateMoon, disposeMoon, getMoon } from './moon.js';
 import { initISS, updateISS, disposeISS, getISSMesh, registerUICallback } from './iss.js';
-import { initOrbits, updateOrbits, disposeOrbits } from './orbits.js';
+import { initOrbits, updateOrbits, disposeOrbits, initMoonOrbit, updateMoonOrbit } from './orbits.js';
 import { initStarfield, updateStarfield, disposeStarfield } from './starfield.js';
-import { initLabels, registerObject, updateLabels, disposeLabels } from './labels.js';
+import { initLabels, registerObject, registerObjectGetter, updateLabels, disposeLabels } from './labels.js';
 import { initShootingStars, updateShootingStars, disposeShootingStars } from './shootingStars.js';
 import { clearGeometryCache } from '../utils/geometryCache.js';
 import { getCurrentStyle } from './styles.js';
+import { timeManager } from '../utils/time.js';
+import { getPlanetSizeMode } from '../utils/constants.js';
 
 /**
  * Solar system state
@@ -28,7 +30,8 @@ const solarSystemState = {
     labels: null,
     camera: null,
     renderer: null,
-    isInitialized: false
+    isInitialized: false,
+    moonOrbitInitialized: false
 };
 
 /**
@@ -83,8 +86,10 @@ export function initSolarSystem(config) {
     solarSystemState.labels = initLabels(camera, renderer);
     console.log('  ✓ Labels initialized');
 
-    // Register all objects with labels system
-    registerAllObjects();
+    // Register object getter with labels system (ROBUST: labels will never break!)
+    // Labels will dynamically fetch objects each frame, so they work even if objects are recreated
+    registerObjectGetter(getCelestialObject);
+    console.log('  ✓ Labels configured with dynamic object fetching');
 
     solarSystemState.isInitialized = true;
     console.log('✅ Solar System fully initialized');
@@ -93,20 +98,11 @@ export function initSolarSystem(config) {
 }
 
 /**
- * Register all celestial objects with the labels system
+ * DEPRECATED: No longer needed with new robust label system
+ * Kept for backwards compatibility
  */
 function registerAllObjects() {
-    registerObject('sun', getSun());
-    registerObject('mercury', getPlanet('mercury'));
-    registerObject('venus', getPlanet('venus'));
-    registerObject('earth', getPlanet('earth'));
-    registerObject('mars', getPlanet('mars'));
-    registerObject('jupiter', getPlanet('jupiter'));
-    registerObject('saturn', getPlanet('saturn'));
-    registerObject('uranus', getPlanet('uranus'));
-    registerObject('neptune', getPlanet('neptune'));
-    registerObject('moon', getMoon());
-    registerObject('iss', getISSMesh());
+    // No longer needed - labels now use getCelestialObject dynamically
 }
 
 /**
@@ -117,13 +113,21 @@ function registerAllObjects() {
 export function updateSolarSystem(deltaTime, simulationTime) {
     if (!solarSystemState.isInitialized) return;
 
+    // Get current time speed for scaling animations
+    const timeSpeed = timeManager.getTimeSpeed();
+
+    // Update starfield to follow camera (skybox effect)
+    if (solarSystemState.starfield && solarSystemState.camera) {
+        updateStarfield(deltaTime, simulationTime, solarSystemState.camera);
+    }
+
     // Update sun animation
     if (solarSystemState.sun) {
         updateSun(deltaTime, simulationTime);
     }
 
-    // Update shooting stars (spawn and animate meteors)
-    updateShootingStars(deltaTime);
+    // Update shooting stars (spawn and animate meteors, scaled with time speed)
+    updateShootingStars(deltaTime, timeSpeed);
 
     // Update planets animation
     if (solarSystemState.planets) {
@@ -139,7 +143,18 @@ export function updateSolarSystem(deltaTime, simulationTime) {
     if (solarSystemState.moon) {
         const earthPosition = getPlanetPosition('earth');
         if (earthPosition) {
+            // Initialize Moon orbit on first frame if not done yet (ensures Earth is positioned correctly)
+            if (!solarSystemState.moonOrbitInitialized) {
+                const planetSizeMode = getPlanetSizeMode();
+                const styleConfig = getCurrentStyle();
+                initMoonOrbit(styleConfig, earthPosition, planetSizeMode);
+                solarSystemState.moonOrbitInitialized = true;
+                console.log('  ✓ Moon orbit initialized on first frame at Earth position');
+            }
+
             updateMoon(deltaTime, simulationTime, earthPosition);
+            // Also update Moon's orbit position to follow Earth
+            updateMoonOrbit(earthPosition);
         }
     }
 
@@ -202,6 +217,7 @@ export function disposeSolarSystem() {
     }
 
     solarSystemState.isInitialized = false;
+    solarSystemState.moonOrbitInitialized = false;
     console.log('✅ Solar System disposed');
 }
 
@@ -227,6 +243,12 @@ export function recreateSolarSystem(styleConfig = null) {
             camera: solarSystemState.camera,
             renderer: solarSystemState.renderer,
             styleConfig: currentStyle
+        });
+
+        // Re-register all objects as clickable (needed after recreation)
+        // Use dynamic import to avoid circular dependency
+        import('./ui.js').then(({ reregisterAllClickableObjects }) => {
+            reregisterAllClickableObjects();
         });
     } else {
         console.error('❌ Cannot recreate solar system: camera or renderer not set');
@@ -313,6 +335,16 @@ export function getSolarSystemState() {
     };
 }
 
+/**
+ * Reset Moon orbit initialization (used when planet size mode changes)
+ * This will cause the Moon orbit to be recreated on the next update frame
+ */
+export function resetMoonOrbitInitialization() {
+    solarSystemState.moonOrbitInitialized = false;
+    disposeMoonOrbit();
+    console.log('🔄 Moon orbit will be recreated with new size mode');
+}
+
 // Export default object with all functions
 export default {
     initSolarSystem,
@@ -324,5 +356,6 @@ export default {
     getEarthPosition,
     registerISSCallback,
     registerAllObjects,
-    getSolarSystemState
+    getSolarSystemState,
+    resetMoonOrbitInitialization
 };

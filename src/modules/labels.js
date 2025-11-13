@@ -1,6 +1,10 @@
 /**
  * Labels Module - 2D labels for 3D celestial objects
  * Creates HTML labels that follow objects in 3D space
+ *
+ * ROBUST DESIGN: Labels dynamically fetch object references each frame
+ * instead of caching them. This prevents labels from breaking when objects
+ * are recreated (style changes, size mode changes, etc.)
  */
 
 import { PLANETS } from '../utils/constants.js';
@@ -36,10 +40,10 @@ let camera = null;
 let renderer = null;
 
 /**
- * References to 3D objects to label
- * @type {Object}
+ * Function to get celestial objects dynamically
+ * @type {Function|null}
  */
-const objectReferences = {};
+let getObjectFunc = null;
 
 /**
  * Initialize labels system
@@ -110,20 +114,32 @@ function createLabel(key, text, color) {
 }
 
 /**
- * Register a 3D object to be labeled
- * @param {string} key - Object identifier (e.g., 'earth', 'sun')
- * @param {THREE.Object3D} object - Three.js object to label
+ * Register a function to get celestial objects dynamically
+ * This function will be called every frame to get fresh object references
+ * @param {Function} getFunc - Function that takes a key and returns the object
+ */
+export function registerObjectGetter(getFunc) {
+    getObjectFunc = getFunc;
+    console.log('✅ Object getter function registered for labels');
+}
+
+/**
+ * DEPRECATED: Use registerObjectGetter instead
+ * Kept for backwards compatibility but does nothing
  */
 export function registerObject(key, object) {
-    objectReferences[key] = object;
+    // No-op: registerObjectGetter is the new robust approach
 }
 
 /**
  * Update all label positions (call every frame)
  * Projects 3D positions to 2D screen coordinates
+ *
+ * ROBUST: Dynamically fetches objects each frame using getter function
+ * This ensures labels always work, even when objects are recreated
  */
 export function updateLabels() {
-    if (!labelsContainer || !camera || !renderer || !isVisible) return;
+    if (!labelsContainer || !camera || !renderer || !isVisible || !getObjectFunc) return;
 
     const canvas = renderer.domElement;
     const canvasWidth = canvas.clientWidth;
@@ -135,7 +151,9 @@ export function updateLabels() {
     // Update each label
     Object.keys(labelElements).forEach(key => {
         const label = labelElements[key];
-        const object = objectReferences[key];
+
+        // Dynamically fetch object reference (ROBUST: always gets current object)
+        const object = getObjectFunc(key);
 
         if (!object) {
             label.style.display = 'none';
@@ -242,13 +260,10 @@ export function disposeLabels() {
         delete labelElements[key];
     });
 
-    Object.keys(objectReferences).forEach(key => {
-        delete objectReferences[key];
-    });
-
     labelsContainer = null;
     camera = null;
     renderer = null;
+    getObjectFunc = null;
 
     console.log('✅ Labels system disposed');
 }
@@ -257,6 +272,7 @@ export function disposeLabels() {
 export default {
     initLabels,
     registerObject,
+    registerObjectGetter,
     updateLabels,
     setLabelsVisible,
     areLabelsVisible,

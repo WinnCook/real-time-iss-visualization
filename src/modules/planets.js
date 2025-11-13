@@ -37,16 +37,22 @@ const startAngles = {
 let currentStyle = null;
 
 /**
- * Orbital mechanics mode (simplified circular or accurate Keplerian)
+ * Orbital mechanics mode (always use accurate Keplerian orbits from NASA JPL data)
  * @type {boolean}
  */
-let useAccurateOrbits = false;
+let useAccurateOrbits = true; // Always use accurate orbits for realistic simulation
 
 /**
  * Epoch date for J2000 calculations (January 1, 2000, 12:00 TT)
  * @type {Date}
  */
 const J2000_EPOCH = new Date('2000-01-01T12:00:00Z');
+
+/**
+ * Debug logging for planet positions (logs every 5 seconds)
+ * @type {number}
+ */
+let lastDebugLog = 0;
 
 /**
  * Cached orbital data for performance optimization
@@ -298,6 +304,13 @@ export function updatePlanets(deltaTime, simulationTime) {
     // Convert deltaTime from milliseconds to seconds for rotation calculations
     const deltaTimeSeconds = deltaTime / 1000;
 
+    // Debug logging every 5 seconds (only when accurate orbits enabled)
+    const currentTime = Date.now();
+    if (useAccurateOrbits && currentTime - lastDebugLog > 5000) {
+        lastDebugLog = currentTime;
+        logPlanetDistances();
+    }
+
     Object.keys(PLANETS).forEach(planetKey => {
         const planetMesh = planetMeshes[planetKey];
         if (!planetMesh) return;
@@ -337,6 +350,9 @@ export function updatePlanets(deltaTime, simulationTime) {
             const cached = cachedOrbitalData[planetKey];
             planetMesh.rotation.y += cached.rotationSpeedPerSec * deltaTimeSeconds;
         }
+
+        // Update world matrix so labels can get correct positions
+        planetMesh.updateMatrixWorld(true);
     });
 }
 
@@ -493,6 +509,17 @@ export function getPlanetCount() {
 export function setAccurateOrbits(accurate) {
     useAccurateOrbits = accurate;
     console.log(`🌍 Orbital mechanics: ${accurate ? 'ACCURATE (Keplerian)' : 'SIMPLIFIED (Circular)'}`);
+
+    // Recreate orbit visualization to match new orbital mode
+    import('./orbits.js').then(({ initOrbits }) => {
+        import('./styles.js').then(({ getCurrentStyle }) => {
+            const currentStyle = getCurrentStyle();
+            if (currentStyle) {
+                initOrbits(currentStyle);
+                console.log('✅ Orbit paths updated to match orbital mechanics mode');
+            }
+        });
+    });
 }
 
 /**
@@ -528,9 +555,89 @@ export function updatePlanetSizeMode(mode) {
         import('./sun.js').then(({ initSun }) => initSun(currentStyle));
         import('./moon.js').then(({ initMoon }) => initMoon(currentStyle));
         import('./iss.js').then(({ initISS }) => initISS(currentStyle));
+
+        // Reset Moon orbit so it gets recreated with correct size mode
+        import('./solarSystem.js').then(({ resetMoonOrbitInitialization }) => {
+            resetMoonOrbitInitialization();
+        });
     }
 
     console.log(`🔄 Celestial objects rebuilt with ${mode.toUpperCase()} sizes`);
+
+    // Re-register all objects as clickable (needed after size mode change)
+    import('./ui.js').then(({ reregisterAllClickableObjects }) => {
+        reregisterAllClickableObjects();
+    });
+
+    // Reset camera to default view position so user can see everything
+    import('../core/camera.js').then(({ resetCamera }) => {
+        resetCamera();
+        console.log('📷 Camera reset to default position after size mode change');
+    });
+}
+
+/**
+ * Debug function: Log planet distances from Sun and between each other
+ * Used to verify orbital positions are accurate
+ */
+function logPlanetDistances() {
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    console.log('📊 PLANET ORBITAL POSITIONS (Accurate Kepler Mode)');
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+
+    const innerPlanets = ['mercury', 'venus', 'earth', 'mars'];
+    const positions = {};
+
+    // Collect positions
+    innerPlanets.forEach(planetKey => {
+        const mesh = planetMeshes[planetKey];
+        if (mesh) {
+            positions[planetKey] = mesh.position.clone();
+        }
+    });
+
+    // Log distances from Sun (origin)
+    console.log('\n🌞 Distance from Sun:');
+    innerPlanets.forEach(planetKey => {
+        if (positions[planetKey]) {
+            const pos = positions[planetKey];
+            const distanceScene = Math.sqrt(pos.x * pos.x + pos.y * pos.y + pos.z * pos.z);
+            const distanceAU = distanceScene / auToScene(1);
+            const expectedAU = PLANETS[planetKey].orbitRadius;
+            const error = Math.abs(distanceAU - expectedAU);
+            const status = error < 0.1 ? '✓' : '⚠️';
+
+            console.log(`  ${status} ${planetKey.padEnd(10)}: ${distanceAU.toFixed(3)} AU (expected: ${expectedAU.toFixed(3)} AU)`);
+        }
+    });
+
+    // Log inter-planet distances (especially Venus-Earth)
+    if (positions['venus'] && positions['earth']) {
+        console.log('\n🪐 Inter-Planet Distances:');
+        const venusPos = positions['venus'];
+        const earthPos = positions['earth'];
+
+        const dx = earthPos.x - venusPos.x;
+        const dy = earthPos.y - venusPos.y;
+        const dz = earthPos.z - venusPos.z;
+        const distanceScene = Math.sqrt(dx * dx + dy * dy + dz * dz);
+        const distanceAU = distanceScene / auToScene(1);
+
+        // Calculate expected range
+        const minDist = 1.0 - 0.723; // Conjunction (same side)
+        const maxDist = 1.0 + 0.723; // Opposition (opposite sides)
+
+        console.log(`  Venus ↔ Earth: ${distanceAU.toFixed(3)} AU (${distanceScene.toFixed(1)} scene units)`);
+        console.log(`  Expected range: ${minDist.toFixed(3)} AU (conjunction) to ${maxDist.toFixed(3)} AU (opposition)`);
+
+        if (distanceAU < 0.4) {
+            console.log('  ⚠️  VERY CLOSE - Near conjunction!');
+        } else if (distanceAU > 1.5) {
+            console.log('  ℹ️  FAR APART - Near opposition');
+        }
+    }
+
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
 }
 
 // Export default object

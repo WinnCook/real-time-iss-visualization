@@ -1,16 +1,24 @@
 /**
  * Orbits Module - Orbital path visualization
- * Creates and manages orbital path lines for all planets
+ * Creates and manages orbital path lines for all planets and the Moon
  */
 
-import { PLANETS, SCALE, auToScene } from '../utils/constants.js';
+import { PLANETS, SCALE, auToScene, MOON, kmToScene } from '../utils/constants.js';
 import { addToScene, removeFromScene } from '../core/scene.js';
+import { isUsingAccurateOrbits } from './planets.js';
+import { calculatePlanetPosition } from '../utils/orbitalElements.js';
 
 /**
  * Orbit line objects keyed by planet name
  * @type {Object<string, THREE.LineLoop>}
  */
 const orbitLines = {};
+
+/**
+ * Moon orbit line (Earth-relative)
+ * @type {THREE.LineLoop|null}
+ */
+let moonOrbitLine = null;
 
 /**
  * Current visual style configuration
@@ -60,16 +68,43 @@ export function initOrbits(styleConfig = {}) {
  * @param {Object} styleConfig - Visual style configuration
  */
 function createOrbit(planetKey, planetData, styleConfig) {
-    // Calculate orbit radius in scene units
-    const orbitRadius = auToScene(planetData.orbitRadius);
-
-    // Create circular path geometry
     const points = [];
-    for (let i = 0; i <= ORBIT_SEGMENTS; i++) {
-        const angle = (i / ORBIT_SEGMENTS) * Math.PI * 2;
-        const x = Math.cos(angle) * orbitRadius;
-        const z = Math.sin(angle) * orbitRadius;
-        points.push(new THREE.Vector3(x, 0, z));
+
+    // Check if using accurate Keplerian orbits
+    if (isUsingAccurateOrbits()) {
+        // ACCURATE ELLIPTICAL ORBIT - sample actual planet positions over one orbit period
+        const orbitPeriodDays = planetData.orbitPeriod; // days
+        const epochDate = new Date('2000-01-01T12:00:00Z'); // J2000 epoch
+
+        // Sample 256 points along the orbit for smooth ellipse
+        const numSamples = 256;
+        for (let i = 0; i <= numSamples; i++) {
+            // Time fraction through orbit (0 to 1)
+            const fraction = i / numSamples;
+            // Calculate date at this fraction of orbit
+            const daysOffset = fraction * orbitPeriodDays;
+            const sampleDate = new Date(epochDate.getTime() + daysOffset * 24 * 60 * 60 * 1000);
+
+            // Get accurate position using Keplerian elements
+            const pos = calculatePlanetPosition(planetKey, sampleDate);
+
+            // Convert from AU to scene units
+            const x = pos.x * auToScene(1);
+            const y = pos.y * auToScene(1);
+            const z = pos.z * auToScene(1);
+
+            points.push(new THREE.Vector3(x, y, z));
+        }
+    } else {
+        // SIMPLIFIED CIRCULAR ORBIT in XZ plane
+        const orbitRadius = auToScene(planetData.orbitRadius);
+
+        for (let i = 0; i <= ORBIT_SEGMENTS; i++) {
+            const angle = (i / ORBIT_SEGMENTS) * Math.PI * 2;
+            const x = Math.cos(angle) * orbitRadius;
+            const z = Math.sin(angle) * orbitRadius;
+            points.push(new THREE.Vector3(x, 0, z));
+        }
     }
 
     // Create buffer geometry from points
@@ -85,6 +120,14 @@ function createOrbit(planetKey, planetData, styleConfig) {
         type: 'orbit',
         planetKey: planetKey
     };
+
+    // Disable frustum culling to prevent disappearing at certain camera angles
+    orbitLine.frustumCulled = false;
+
+    // Set render order to ensure orbits render properly
+    // Lower values render first, higher values render later
+    // Render orbits before transparent objects but after opaque ones
+    orbitLine.renderOrder = 1;
 
     // Add to scene
     addToScene(orbitLine);
@@ -104,31 +147,33 @@ function createOrbitMaterial(planetData, styleConfig) {
     const color = planetData.color;
 
     // Adjust opacity and appearance based on style
-    let opacity = 0.3; // Default opacity
-    let linewidth = SCALE.ORBIT_LINE_WIDTH;
+    // INCREASED all opacities for better visibility
+    let opacity = 0.6; // Default opacity (increased from 0.3)
+    let linewidth = 3; // Thicker lines (note: linewidth > 1 may not work on all platforms)
 
     if (styleConfig.name === 'Neon/Cyberpunk') {
-        opacity = 0.6; // More visible in neon style
-        linewidth = 2;
+        opacity = 0.8; // More visible in neon style
+        linewidth = 4;
     } else if (styleConfig.name === 'Minimalist/Abstract') {
-        opacity = 0.5; // Clean, visible lines
-        linewidth = 1;
+        opacity = 0.7; // Clean, visible lines
+        linewidth = 3;
     } else if (styleConfig.name === 'Cartoon/Stylized') {
-        opacity = 0.4;
-        linewidth = 2;
+        opacity = 0.7;
+        linewidth = 4;
     } else {
-        // Realistic style - subtle orbit lines
-        opacity = 0.2;
-        linewidth = 1;
+        // Realistic style - more visible orbit lines
+        opacity = 0.5; // Increased from 0.2
+        linewidth = 3;
     }
 
-    // Create line material
+    // Create line material with better rendering settings
     const material = new THREE.LineBasicMaterial({
         color: color,
         opacity: opacity,
         transparent: true,
         linewidth: linewidth,
-        depthWrite: false // Prevent z-fighting with other transparent objects
+        depthWrite: false, // Prevent z-fighting with other transparent objects
+        depthTest: true    // Ensure proper depth testing so orbits render in correct order
     });
 
     return material;
@@ -169,7 +214,7 @@ export function updateOrbitsStyle(styleConfig) {
 }
 
 /**
- * Toggle visibility of all orbital paths
+ * Toggle visibility of all orbital paths (including Moon orbit)
  * @param {boolean} visible - Whether orbits should be visible
  */
 export function setOrbitsVisible(visible) {
@@ -178,6 +223,11 @@ export function setOrbitsVisible(visible) {
     Object.values(orbitLines).forEach(orbitLine => {
         orbitLine.visible = visible;
     });
+
+    // Also toggle Moon orbit visibility
+    if (moonOrbitLine) {
+        moonOrbitLine.visible = visible;
+    }
 
     console.log(`🌐 Orbital paths ${visible ? 'shown' : 'hidden'}`);
 }
@@ -241,12 +291,13 @@ function disposeOrbit(planetKey) {
 }
 
 /**
- * Dispose of all orbital path resources
+ * Dispose of all orbital path resources (including Moon orbit)
  */
 export function disposeOrbits() {
     Object.keys(orbitLines).forEach(planetKey => {
         disposeOrbit(planetKey);
     });
+    disposeMoonOrbit();
     console.log('✅ All orbital paths disposed');
 }
 
@@ -273,6 +324,105 @@ export function getOrbitCount() {
     return Object.keys(orbitLines).length;
 }
 
+/**
+ * Initialize Moon orbit visualization
+ * @param {Object} styleConfig - Visual style configuration
+ * @param {THREE.Vector3} earthPosition - Current Earth position
+ * @param {string} planetSizeMode - Planet size mode ('real' or 'enlarged')
+ */
+export function initMoonOrbit(styleConfig, earthPosition = null, planetSizeMode = 'enlarged') {
+    // Clean up existing Moon orbit
+    disposeMoonOrbit();
+
+    if (!earthPosition) {
+        earthPosition = new THREE.Vector3(0, 0, 0); // Default to origin if Earth not available
+    }
+
+    // Calculate Moon orbit radius based on planet size mode
+    let orbitRadiusScene;
+
+    if (planetSizeMode === 'real') {
+        orbitRadiusScene = kmToScene(MOON.orbitRadius) * 100;
+    } else {
+        orbitRadiusScene = kmToScene(MOON.orbitRadius) * SCALE.MOON_ORBIT_SCALE;
+    }
+
+    // Create circle geometry for Moon's orbit around Earth
+    const points = [];
+    for (let i = 0; i <= ORBIT_SEGMENTS; i++) {
+        const angle = (i / ORBIT_SEGMENTS) * Math.PI * 2;
+        const x = Math.cos(angle) * orbitRadiusScene;
+        const z = Math.sin(angle) * orbitRadiusScene;
+        // Moon orbits in XZ plane relative to Earth
+        points.push(new THREE.Vector3(x, 0, z));
+    }
+
+    const geometry = new THREE.BufferGeometry().setFromPoints(points);
+
+    // Create material (similar style to planet orbits but dimmer)
+    const material = new THREE.LineBasicMaterial({
+        color: MOON.color,
+        opacity: 0.4, // Slightly dimmer than planet orbits
+        transparent: true,
+        linewidth: 2,
+        depthWrite: false,
+        depthTest: true
+    });
+
+    moonOrbitLine = new THREE.LineLoop(geometry, material);
+    moonOrbitLine.name = 'Moon-Orbit';
+    moonOrbitLine.userData = {
+        type: 'orbit',
+        objectKey: 'moon'
+    };
+
+    // Position at Earth's location
+    moonOrbitLine.position.copy(earthPosition);
+
+    // Disable frustum culling
+    moonOrbitLine.frustumCulled = false;
+    moonOrbitLine.renderOrder = 1;
+
+    // Set visibility based on current orbits visibility state
+    moonOrbitLine.visible = orbitsVisible;
+
+    addToScene(moonOrbitLine);
+
+    console.log(`✅ Moon orbit initialized at Earth position (${earthPosition.x.toFixed(0)}, ${earthPosition.y.toFixed(0)}, ${earthPosition.z.toFixed(0)})`);
+}
+
+/**
+ * Update Moon orbit position to follow Earth
+ * @param {THREE.Vector3} earthPosition - Current Earth position
+ */
+export function updateMoonOrbit(earthPosition) {
+    if (!moonOrbitLine || !earthPosition) return;
+
+    // Update Moon orbit position to match Earth's position
+    moonOrbitLine.position.copy(earthPosition);
+}
+
+/**
+ * Dispose Moon orbit
+ */
+export function disposeMoonOrbit() {
+    if (moonOrbitLine) {
+        removeFromScene(moonOrbitLine);
+        moonOrbitLine.geometry.dispose();
+        moonOrbitLine.material.dispose();
+        moonOrbitLine = null;
+        console.log('✅ Moon orbit disposed');
+    }
+}
+
+/**
+ * Get Moon orbit line
+ * @returns {THREE.LineLoop|null}
+ */
+export function getMoonOrbit() {
+    return moonOrbitLine;
+}
+
 // Export default object
 export default {
     initOrbits,
@@ -287,5 +437,9 @@ export default {
     disposeOrbits,
     removeOrbits,
     hasOrbits,
-    getOrbitCount
+    getOrbitCount,
+    initMoonOrbit,
+    updateMoonOrbit,
+    disposeMoonOrbit,
+    getMoonOrbit
 };

@@ -28,6 +28,9 @@ let uiUpdateCallback = null; // Callback to update UI with ISS data
 export function initISS(styleConfig) {
     console.log('🛰️ Initializing ISS module...');
 
+    // Clean up existing ISS if any
+    disposeISS();
+
     // Create ISS mesh
     issMesh = createISSMesh(styleConfig);
     addToScene(issMesh);

@@ -7,7 +7,7 @@
 import { initSun, updateSun, disposeSun, getSun } from './sun.js';
 import { initPlanets, updatePlanets, getPlanetPosition, disposePlanets, getPlanet } from './planets.js';
 import { initMoon, updateMoon, disposeMoon, getMoon } from './moon.js';
-import { initISS, updateISS, disposeISS, getISSMesh, registerUICallback } from './iss.js';
+import { initISS, updateISS, disposeISS, getISSMesh, registerUICallback, updateModuleLabels, setModuleLabelsEnabled } from './iss.js';
 import { initOrbits, updateOrbits, disposeOrbits, initMoonOrbit, updateMoonOrbit } from './orbits.js';
 import { initStarfield, updateStarfield, disposeStarfield } from './starfield.js';
 import { initLabels, registerObject, registerObjectGetter, updateLabels, disposeLabels } from './labels.js';
@@ -170,6 +170,11 @@ export function updateSolarSystem(deltaTime, simulationTime) {
     if (solarSystemState.labels) {
         updateLabels();
     }
+
+    // Update ISS module labels positions
+    if (solarSystemState.iss && solarSystemState.camera) {
+        updateModuleLabels(solarSystemState.camera);
+    }
 }
 
 /**
@@ -317,6 +322,14 @@ export function getEarthPosition() {
  */
 export function registerISSCallback(callback) {
     registerUICallback(callback);
+}
+
+/**
+ * Toggle ISS module labels visibility
+ * @param {boolean} enabled - Whether module labels should be visible
+ */
+export function toggleISSModuleLabels(enabled) {
+    setModuleLabelsEnabled(enabled);
 }
 
 /**

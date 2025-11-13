@@ -16,7 +16,9 @@ import { scaleRadius } from '../utils/constants.js';
 import { getCachedSphereGeometry } from '../utils/geometryCache.js';
 
 // Module state
-let issMesh = null;
+let issMesh = null; // Will be THREE.LOD object
+let issDetailedModel = null; // Store detailed model reference
+let issSimpleModel = null; // Store simple model reference
 let issTrail = null;
 let issUpdateInterval = null;
 let trailPositions = []; // Store last 50 positions for trail
@@ -24,8 +26,28 @@ const MAX_TRAIL_POINTS = 50;
 let currentPosition = null;
 let earthPosition = { x: 0, y: 0, z: 0 }; // Track Earth's position for relative positioning
 let uiUpdateCallback = null; // Callback to update UI with ISS data
-let solarPanels = []; // Store references to solar panels for rotation
+let solarPanelsDetailed = []; // Solar panels from detailed 3D model
+let solarPanelsSimple = []; // Solar panels from simple fallback model
 let issModelLoaded = false; // Track if 3D model loaded successfully
+let moduleLabels = []; // HTML label elements for ISS modules
+let moduleLabelsEnabled = false; // Toggle for module labels
+
+// LOD distance thresholds (in scene units)
+const LOD_DISTANCES = {
+    DETAILED: 0,      // 0-500 units: Show detailed model
+    SIMPLE: 500       // 500+ units: Show simple fallback
+};
+
+// ISS Module positions (approximate, relative to center)
+// These are rough estimates based on typical ISS layout
+const ISS_MODULES = [
+    { name: 'Zvezda (Service)', position: { x: 15, y: 0, z: 0 }, color: '#ff6b6b' },
+    { name: 'Zarya (FGB)', position: { x: 10, y: 0, z: 0 }, color: '#4ecdc4' },
+    { name: 'Destiny (US Lab)', position: { x: 0, y: 0, z: 0 }, color: '#45b7d1' },
+    { name: 'Harmony (Node 2)', position: { x: -5, y: 0, z: 0 }, color: '#96ceb4' },
+    { name: 'Columbus (EU Lab)', position: { x: -10, y: 0, z: 2 }, color: '#ffeaa7' },
+    { name: 'Kibo (Japan)', position: { x: -10, y: 0, z: -2 }, color: '#dfe6e9' }
+];
 
 /**
  * Initialize ISS visualization (async to load 3D model)
@@ -33,13 +55,31 @@ let issModelLoaded = false; // Track if 3D model loaded successfully
  * @returns {Promise<Object>} ISS mesh and trail objects
  */
 export async function initISS(styleConfig) {
-    console.log('🛰️ Initializing ISS module...');
+    console.log('🛰️ Initializing ISS module with LOD system...');
 
     // Clean up existing ISS if any
     disposeISS();
 
-    // Create ISS mesh (load 3D model)
-    issMesh = await loadISSModel(styleConfig);
+    // Create LOD object
+    const issLOD = new THREE.LOD();
+    issLOD.name = 'ISS-LOD';
+    issLOD.userData = {
+        type: 'iss',
+        isTrackable: true
+    };
+
+    // Load detailed 3D model (Level 0 - close range)
+    issDetailedModel = await loadISSModel(styleConfig);
+    issLOD.addLevel(issDetailedModel, LOD_DISTANCES.DETAILED);
+    console.log(`  LOD Level 0 (detailed): 0-${LOD_DISTANCES.SIMPLE} units`);
+
+    // Create simple fallback model (Level 1 - far range)
+    issSimpleModel = createFallbackISS(styleConfig);
+    issLOD.addLevel(issSimpleModel, LOD_DISTANCES.SIMPLE);
+    console.log(`  LOD Level 1 (simple): ${LOD_DISTANCES.SIMPLE}+ units`);
+
+    // Set the LOD object as the main ISS mesh
+    issMesh = issLOD;
     addToScene(issMesh);
 
     // Create trail line
@@ -49,7 +89,10 @@ export async function initISS(styleConfig) {
     // Start fetching ISS position from API
     startISSTracking();
 
-    console.log('✅ ISS module initialized');
+    // Create module labels (hidden by default)
+    createModuleLabels();
+
+    console.log('✅ ISS module initialized with 2-level LOD system');
 
     return { mesh: issMesh, trail: issTrail };
 }
@@ -95,8 +138,8 @@ async function loadISSModel(styleConfig) {
                 const model = gltf.scene;
                 issGroup.add(model);
 
-                // Find solar panels in the model for animation
-                solarPanels = [];
+                // Find solar panels in the model for animation (detailed model)
+                solarPanelsDetailed = [];
                 model.traverse((child) => {
                     // Look for meshes that might be solar panels
                     // (Naming depends on the model structure - we'll find them by position/size)
@@ -111,7 +154,7 @@ async function loadISSModel(styleConfig) {
                             if (child.name.toLowerCase().includes('panel') ||
                                 child.name.toLowerCase().includes('solar') ||
                                 child.name.toLowerCase().includes('array')) {
-                                solarPanels.push(child);
+                                solarPanelsDetailed.push(child);
                                 console.log(`  Found solar panel: ${child.name}`);
                             }
                         }
@@ -124,15 +167,11 @@ async function loadISSModel(styleConfig) {
                 const issScale = scaleRadius(3, 'iss'); // Reasonable size in both modes
                 issGroup.scale.set(issScale, issScale, issScale);
 
-                // Set group properties
-                issGroup.name = 'ISS';
-                issGroup.userData = {
-                    type: 'iss',
-                    isTrackable: true
-                };
+                // Set group properties (LOD parent will handle userData)
+                issGroup.name = 'ISS-Detailed';
 
                 console.log(`  Scaled ISS model by ${issScale}x`);
-                console.log(`  Found ${solarPanels.length} solar panel meshes`);
+                console.log(`  Found ${solarPanelsDetailed.length} solar panel meshes`);
 
                 resolve(issGroup);
             },
@@ -195,9 +234,11 @@ function createFallbackISS(styleConfig) {
     rightPanel.name = 'ISS-Panel-Right';
     group.add(rightPanel);
 
-    solarPanels = [leftPanel, rightPanel];
-    console.log('✅ Fallback ISS: BRIGHT YELLOW body + CYAN panels (solar panels stored)');
+    // Store simple model panels
+    solarPanelsSimple = [leftPanel, rightPanel];
+    console.log('✅ Fallback ISS: BRIGHT YELLOW body + CYAN panels (simple solar panels stored)');
 
+    group.name = 'ISS-Simple';
     return group;
 }
 
@@ -361,29 +402,143 @@ function updateTrail(position) {
  * Rotate solar panels to face the sun for maximum power generation
  * @param {THREE.Group} issGroup - The ISS group mesh
  */
-function rotateSolarPanelsToSun(issGroup) {
-    if (!solarPanels || solarPanels.length === 0) {
-        console.log('⚠️ No solar panels found to rotate');
-        return;
-    }
+function rotateSolarPanelsToSun(issLOD) {
+    // Check which LOD level is currently active
+    const currentLevel = issLOD.getCurrentLevel();
 
-    console.log(`🔄 Rotating ${solarPanels.length} solar panels toward sun`);
+    // Select appropriate panel array based on LOD level
+    const panels = (currentLevel === 0) ? solarPanelsDetailed : solarPanelsSimple;
+
+    if (!panels || panels.length === 0) {
+        return; // No panels found yet (model still loading)
+    }
 
     // Sun is at origin (0, 0, 0)
     const sunPosition = new THREE.Vector3(0, 0, 0);
 
     // Rotate each solar panel to face the sun
-    solarPanels.forEach((panel, index) => {
-        if (!panel || !panel.isObject3D) {
-            console.log(`  Panel ${index}: invalid`);
+    panels.forEach((panel) => {
+        if (!panel || !panel.isObject3D) return;
+
+        // Make the panel look at the sun
+        // The panel's -Z axis will point toward the sun
+        panel.lookAt(sunPosition);
+    });
+}
+
+/**
+ * Create ISS module labels (HTML elements positioned in 3D space)
+ */
+function createModuleLabels() {
+    console.log('🏷️ Creating ISS module labels...');
+
+    // Remove existing labels if any
+    disposeModuleLabels();
+
+    // Create HTML labels for each module
+    ISS_MODULES.forEach((module, index) => {
+        const label = document.createElement('div');
+        label.className = 'iss-module-label';
+        label.id = `iss-module-${index}`;
+        label.innerHTML = `<span style="border-left: 3px solid ${module.color}; padding-left: 0.5rem;">${module.name}</span>`;
+        label.style.position = 'absolute';
+        label.style.color = 'rgba(255, 255, 255, 0.9)';
+        label.style.fontSize = '0.75rem';
+        label.style.fontWeight = '500';
+        label.style.backgroundColor = 'rgba(0, 0, 0, 0.7)';
+        label.style.padding = '0.25rem 0.5rem';
+        label.style.borderRadius = '4px';
+        label.style.pointerEvents = 'none';
+        label.style.whiteSpace = 'nowrap';
+        label.style.display = 'none'; // Hidden by default
+        label.style.zIndex = '1000';
+
+        document.body.appendChild(label);
+        moduleLabels.push({
+            element: label,
+            module: module
+        });
+    });
+
+    console.log(`✅ Created ${moduleLabels.length} ISS module labels`);
+}
+
+/**
+ * Update ISS module label positions (called every frame)
+ * @param {THREE.Camera} camera - The camera object
+ */
+export function updateModuleLabels(camera) {
+    if (!moduleLabelsEnabled || !issMesh || moduleLabels.length === 0) {
+        // Hide all labels if disabled
+        moduleLabels.forEach(({ element }) => {
+            element.style.display = 'none';
+        });
+        return;
+    }
+
+    // Only show labels when ISS is close (detailed model visible)
+    const currentLevel = issMesh.getCurrentLevel();
+    if (currentLevel !== 0) {
+        // Far away, hide labels
+        moduleLabels.forEach(({ element }) => {
+            element.style.display = 'none';
+        });
+        return;
+    }
+
+    // Update each label position
+    moduleLabels.forEach(({ element, module }) => {
+        // Calculate world position of module (relative to ISS position)
+        const moduleWorldPos = new THREE.Vector3(
+            issMesh.position.x + module.position.x,
+            issMesh.position.y + module.position.y,
+            issMesh.position.z + module.position.z
+        );
+
+        // Project to screen coordinates
+        const screenPos = moduleWorldPos.clone().project(camera);
+
+        // Check if behind camera
+        if (screenPos.z > 1) {
+            element.style.display = 'none';
             return;
         }
 
-        // Simple approach: just make the panel look at the sun
-        // The panel's -Z axis will point toward the sun
-        panel.lookAt(sunPosition);
-        console.log(`  Panel ${index}: rotated`);
+        // Convert to pixel coordinates
+        const x = (screenPos.x * 0.5 + 0.5) * window.innerWidth;
+        const y = (-(screenPos.y * 0.5) + 0.5) * window.innerHeight;
+
+        // Position label
+        element.style.left = `${x}px`;
+        element.style.top = `${y}px`;
+        element.style.display = 'block';
+
+        // Fade based on distance from camera
+        const distance = camera.position.distanceTo(moduleWorldPos);
+        const opacity = Math.max(0, Math.min(1, 1 - (distance - 100) / 400));
+        element.style.opacity = opacity;
     });
+}
+
+/**
+ * Toggle ISS module labels on/off
+ * @param {boolean} enabled - Whether labels should be visible
+ */
+export function setModuleLabelsEnabled(enabled) {
+    moduleLabelsEnabled = enabled;
+    console.log(`🏷️ ISS module labels ${enabled ? 'enabled' : 'disabled'}`);
+}
+
+/**
+ * Dispose module labels (cleanup)
+ */
+function disposeModuleLabels() {
+    moduleLabels.forEach(({ element }) => {
+        if (element && element.parentNode) {
+            element.parentNode.removeChild(element);
+        }
+    });
+    moduleLabels = [];
 }
 
 /**
@@ -550,6 +705,17 @@ export function disposeISS() {
     trailPositions = [];
     currentPosition = null;
 
+    // Clear solar panel references
+    solarPanelsDetailed = [];
+    solarPanelsSimple = [];
+
+    // Clear model references
+    issDetailedModel = null;
+    issSimpleModel = null;
+
+    // Dispose module labels
+    disposeModuleLabels();
+
     console.log('✅ ISS module disposed');
 }
 
@@ -565,5 +731,7 @@ export default {
     setISSTrailVisible,
     updateISSStyle,
     stopISSTracking,
-    registerUICallback
+    registerUICallback,
+    updateModuleLabels,
+    setModuleLabelsEnabled
 };

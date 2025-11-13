@@ -125,7 +125,7 @@ export const SCALE = {
     PLANET_SIZE: 1500,             // Legacy - still used by scaleRadius for backward compatibility
     MOON_SIZE: 1000,
     SUN_SIZE: 60, // Increased from 40 for better prominence
-    ISS_SIZE: 30000, // Reduced from 50000 - large enough to be visible but not overwhelming
+    ISS_SIZE: 10000, // Much smaller - visible but not overwhelming
 
     // Moon orbit scaling (needed because planets are scaled up 1500x but Moon orbit uses real km distance)
     // This ensures Moon is visible outside Earth's scaled-up surface
@@ -153,7 +153,7 @@ export const RENDER = {
     // Camera
     FOV: 45, // Field of view in degrees
     NEAR: 0.1, // Near clipping plane
-    FAR: 20000, // Far clipping plane (increased for outer planets)
+    FAR: 100000, // Far clipping plane (increased for realistic star distances)
     DEFAULT_CAMERA_POSITION: { x: 0, y: 2000, z: 4000 }, // Camera position for full solar system view
 
     // Performance (default to BALANCED preset)
@@ -394,12 +394,15 @@ export function scaleRadius(radiusKm, type = 'planet', planetKey = null) {
             scale = 100;
         } else if (type === 'iss') {
             // ISS model is built 20 units wide - we need to return a SCALE FACTOR
-            // Real ISS: ~109m wide, Earth diameter: ~12,742km
-            // Real ratio: 109m / 12,742,000m = 0.0000085 (truly microscopic!)
-            // Earth diameter in real mode: ~4.26 scene units
-            // Make ISS VERY tiny: 0.003 scene units wide (0.07% of Earth)
-            // Scale factor needed: 0.003 / 20 = 0.00015
-            return 0.00015; // ISS model scaled to 0.003 scene units wide (super tiny marker)
+            // Real ISS: 109m = 0.109 km, Earth radius: 6,371 km
+            // In real mode, Earth radius = 2.13 scene units
+            //
+            // COMPROMISE: Make ISS 0.2% of Earth's radius for visibility
+            // 0.2% of 2.13 = 0.00426 scene units
+            // Scale factor = 0.00426 / 20 = 0.000213
+            //
+            // This is still 100x bigger than reality but at least visible
+            return 0.0003; // Tiny but visible marker
         }
     } else {
         // Enlarged mode - use exaggerated scaling for visibility

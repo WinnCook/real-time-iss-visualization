@@ -25,13 +25,16 @@ let currentStyle = null;
 
 /**
  * Number of stars to generate
+ * Reduced for more realistic sparse distribution
  */
-const STAR_COUNT = 15000;
+const STAR_COUNT = 5000; // Reduced from 15,000 to prevent "swarm" effect
 
 /**
  * Star field radius (how far away stars are)
+ * Real stars are essentially at infinity compared to our solar system
+ * Using very large radius to emulate realistic distance
  */
-const STAR_FIELD_RADIUS = 8000;
+const STAR_FIELD_RADIUS = 60000; // Even farther for true background effect
 
 /**
  * Initialize the starfield
@@ -74,8 +77,9 @@ function createStarfield(styleConfig) {
         const theta = Math.random() * Math.PI * 2; // Azimuth angle
         const phi = Math.acos((Math.random() * 2) - 1); // Polar angle (uniform distribution)
 
-        // Distance variation (stars at different depths)
-        const distance = STAR_FIELD_RADIUS * (0.8 + Math.random() * 0.2);
+        // Distance variation (stars at nearly uniform infinite distance)
+        // Very small variation to keep them far away, emulating real stellar distances
+        const distance = STAR_FIELD_RADIUS * (0.98 + Math.random() * 0.02);
 
         // Convert spherical to Cartesian coordinates
         const x = distance * Math.sin(phi) * Math.cos(theta);
@@ -107,8 +111,8 @@ function createStarfield(styleConfig) {
 
         // Star size variation (magnitude/brightness)
         // Realistic distribution: most stars small, few bright ones
-        const brightness = Math.pow(Math.random(), 3); // Cubic distribution favors smaller stars
-        const size = 1.0 + brightness * 3.0; // Size range 1-4
+        const brightness = Math.pow(Math.random(), 4); // Quartic distribution - even more small stars
+        const size = 0.5 + brightness * 2.0; // Size range 0.5-2.5 (smaller than before)
         sizes.push(size);
     }
 
@@ -137,23 +141,23 @@ function createStarfield(styleConfig) {
  */
 function createStarfieldMaterial(styleConfig) {
     // Adjust appearance based on style
-    let size = 2.0;
-    let opacity = 0.8;
+    let size = 1.5; // Reduced base size for more realistic appearance
+    let opacity = 0.6; // Reduced opacity for subtler stars
     let sizeAttenuation = true; // Stars get smaller with distance
 
     if (styleConfig.name === 'Neon/Cyberpunk') {
-        size = 3.0; // Bigger, glowier stars
-        opacity = 0.9;
-    } else if (styleConfig.name === 'Minimalist/Abstract') {
-        size = 1.5; // Smaller, subtle stars
-        opacity = 0.6;
-    } else if (styleConfig.name === 'Cartoon/Stylized') {
-        size = 2.5;
-        opacity = 0.7;
-    } else {
-        // Realistic
-        size = 2.0;
+        size = 2.5; // Bigger, glowier stars
         opacity = 0.8;
+    } else if (styleConfig.name === 'Minimalist/Abstract') {
+        size = 1.0; // Smaller, subtle stars
+        opacity = 0.4;
+    } else if (styleConfig.name === 'Cartoon/Stylized') {
+        size = 2.0;
+        opacity = 0.6;
+    } else {
+        // Realistic - subtle, distant stars
+        size = 1.5;
+        opacity = 0.6;
     }
 
     const material = new THREE.PointsMaterial({
@@ -170,13 +174,21 @@ function createStarfieldMaterial(styleConfig) {
 }
 
 /**
- * Update starfield (currently static, no animation)
+ * Update starfield to follow camera (skybox effect)
+ * Stars should always appear as distant backdrop regardless of camera position
  * @param {number} deltaTime - Time since last frame in milliseconds
  * @param {number} simulationTime - Current simulation time in milliseconds
+ * @param {THREE.Camera} camera - Camera to follow
  */
-export function updateStarfield(deltaTime, simulationTime) {
-    // Starfield is static, no updates needed
-    // Could add slow rotation or twinkling effect here in the future
+export function updateStarfield(deltaTime, simulationTime, camera = null) {
+    if (!starfield) return;
+
+    // Make starfield follow camera position (skybox effect)
+    // Stars are at infinity, so they should move with the camera
+    // This prevents stars from appearing "pooled" near the sun
+    if (camera) {
+        starfield.position.copy(camera.position);
+    }
 }
 
 /**

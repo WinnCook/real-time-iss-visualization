@@ -4,6 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="Real-time ISS tracking with beautiful 3D solar system visualization">
+
+    <!-- FORCE NO CACHE - NUCLEAR OPTION -->
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+
     <title>Real-Time ISS & Solar System Visualization</title>
 
     <!-- Styles -->
@@ -115,6 +121,20 @@
                 </p>
             </div>
 
+            <!-- Shooting Star Frequency -->
+            <div class="control-group">
+                <label for="meteor-frequency">Meteor Frequency: <span id="meteor-frequency-value">Low</span></label>
+                <input type="range" id="meteor-frequency" min="0" max="100" value="20" step="1">
+                <div class="performance-markers">
+                    <span>Off</span>
+                    <span>Moderate</span>
+                    <span>🌠 Frequent</span>
+                </div>
+                <p style="font-size: 0.8rem; color: rgba(255,255,255,0.6); margin-top: 0.5rem;">
+                    Control how often shooting stars appear (scales with time speed)
+                </p>
+            </div>
+
             <!-- Feature Toggles -->
             <div class="control-group">
                 <label>Display:</label>
@@ -139,13 +159,9 @@
                         <input type="checkbox" id="toggle-sounds">
                         <span>🔊 Sounds</span>
                     </label>
-                    <label class="toggle">
-                        <input type="checkbox" id="toggle-accurate-orbits">
-                        <span>🎯 Accurate Orbits</span>
-                    </label>
                 </div>
                 <p style="font-size: 0.8rem; color: rgba(255,255,255,0.6); margin-top: 0.5rem;">
-                    Accurate Orbits uses real NASA data with elliptical paths and orbital inclinations
+                    Visualization uses real NASA orbital data with elliptical paths and orbital inclinations
                 </p>
             </div>
         </div>
@@ -262,23 +278,37 @@
         </div>
     </div>
 
+    <!-- VERSION 20250113002 - FIXED CONTROLS -->
+
     <!-- Load Three.js from CDN (using known working version) -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 
-    <!-- Load OrbitControls from CDN -->
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <!-- ONLY LOAD TRACKBALLCONTROLS - NO ORBITCONTROLS (conflict removed) -->
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/TrackballControls.js"></script>
+
+    <!-- Load GLTFLoader for 3D models -->
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
 
     <!-- Verify Three.js loaded and make it globally available -->
     <script>
+        console.log('🚨🚨🚨 VERIFICATION SCRIPT RUNNING - VERSION 20250113002 🚨🚨🚨');
+
         if (typeof THREE !== 'undefined') {
             window.THREE = THREE;
             console.log('✅ Three.js library loaded (version:', THREE.REVISION, ')');
 
-            // Verify OrbitControls loaded
-            if (THREE.OrbitControls) {
-                console.log('✅ OrbitControls loaded');
+            // Verify TrackballControls loaded
+            if (THREE.TrackballControls) {
+                console.log('✅✅✅ TrackballControls loaded - UNLIMITED ROTATION ENABLED!');
             } else {
-                console.error('❌ OrbitControls failed to load');
+                console.error('❌❌❌ TrackballControls FAILED TO LOAD - rotation will be broken!');
+            }
+
+            // Verify GLTFLoader loaded
+            if (THREE.GLTFLoader) {
+                console.log('✅ GLTFLoader loaded - 3D models ready!');
+            } else {
+                console.error('❌ GLTFLoader failed to load');
             }
         } else {
             console.error('❌ Failed to load Three.js from CDN');
@@ -287,6 +317,54 @@
     </script>
 
     <!-- Main Application Entry Point (will load other modules as needed) -->
-    <script type="module" src="src/main.js"></script>
+    <script type="module" src="src/main.js?v=20250113002"></script>
+
+    <!-- EMERGENCY INLINE ISS CHASE CAMERA - BYPASS MODULE CACHE -->
+    <script>
+        console.log('🚨🚨🚨 INLINE EMERGENCY ISS CHASE SETUP LOADED 🚨🚨🚨');
+
+        // Wait for page to fully load
+        window.addEventListener('load', () => {
+            console.log('🚨 PAGE LOADED - SETTING UP ISS CHASE BUTTON');
+
+            setTimeout(() => {
+                const issChaseBtn = document.getElementById('iss-chase-camera');
+                console.log('🔍 ISS Chase Button found?', issChaseBtn);
+
+                if (issChaseBtn) {
+                    console.log('✅✅✅ ISS CHASE BUTTON FOUND IN INLINE SCRIPT!');
+
+                    issChaseBtn.addEventListener('click', function(e) {
+                        console.log('🚨🚨🚨 ISS CHASE BUTTON CLICKED (INLINE)!!!');
+                        e.preventDefault();
+                        e.stopPropagation();
+
+                        // Debug what's available
+                        console.log('  typeof window.activateISSChaseCamera:', typeof window.activateISSChaseCamera);
+                        console.log('  window.activateISSChaseCamera:', window.activateISSChaseCamera);
+
+                        // Try to call the globally exposed function
+                        if (typeof window.activateISSChaseCamera === 'function') {
+                            console.log('✅ Calling window.activateISSChaseCamera NOW!');
+                            try {
+                                window.activateISSChaseCamera();
+                            } catch (err) {
+                                console.error('❌ Error calling activateISSChaseCamera:', err);
+                                alert('Error: ' + err.message);
+                            }
+                        } else {
+                            console.error('❌ window.activateISSChaseCamera is NOT a function!');
+                            console.error('   Type:', typeof window.activateISSChaseCamera);
+                            alert('ISS Chase Camera function not loaded yet. Wait a moment and try again.');
+                        }
+                    });
+
+                    console.log('✅ ISS Chase button event listener attached (INLINE)');
+                } else {
+                    console.error('❌ ISS Chase button not found in DOM');
+                }
+            }, 2000); // Wait 2 seconds to ensure DOM is ready
+        });
+    </script>
 </body>
 </html>

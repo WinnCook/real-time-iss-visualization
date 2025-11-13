@@ -28,20 +28,21 @@ All future features, enhancements, and ideas that haven't been scheduled yet.
 
 ---
 
-### Epic: Outer Planets System 🪐 (USER REQUESTED)
+### Epic: Outer Planets System 🪐 ✅ COMPLETED
 **Priority:** P1 | **Effort:** Medium
 **Requested:** 2025-11-11 by User
+**Completed:** 2025-11-13
 
 #### Tasks:
-- [ ] Add Jupiter (largest planet, orbital mechanics, moons optional)
-- [ ] Add Saturn with ring system (rings are critical visual feature)
-- [ ] Add Uranus (tilted rotation axis)
-- [ ] Add Neptune (farthest planet, deep blue color)
-- [ ] Implement proper AU scaling for outer solar system
-- [ ] Add orbital period calculations (Jupiter: 11.86 years, Saturn: 29.46 years)
-- [ ] Optimize camera view to show full solar system
-- [ ] Add zoom levels (inner planets vs outer planets view)
-- [ ] Consider adding major moons (Titan, Europa, Ganymede, Io)
+- [x] Add Jupiter (largest planet, orbital mechanics, moons optional) ✅
+- [x] Add Saturn with ring system (rings are critical visual feature) ✅
+- [x] Add Uranus (tilted rotation axis) ✅
+- [x] Add Neptune (farthest planet, deep blue color) ✅
+- [x] Implement proper AU scaling for outer solar system ✅
+- [x] Add orbital period calculations (Jupiter: 11.86 years, Saturn: 29.46 years) ✅
+- [x] Optimize camera view to show full solar system ✅
+- [x] Add zoom levels (inner planets vs outer planets view) ✅
+- [ ] Consider adding major moons (Titan, Europa, Ganymede, Io) - DEFERRED
 
 **Technical Considerations:**
 - Outer planets are MUCH farther (Jupiter at 5.2 AU, Neptune at 30 AU)
@@ -51,19 +52,21 @@ All future features, enhancements, and ideas that haven't been scheduled yet.
 
 ---
 
-### Epic: Enhanced ISS Visualization 🛰️ (USER REQUESTED)
+### Epic: Enhanced ISS Visualization 🛰️ ✅ MOSTLY COMPLETED
 **Priority:** P1 | **Effort:** Medium
 **Requested:** 2025-11-11 by User
+**Status:** Core features complete, enhancements pending
 
 #### Tasks:
-- [x] Make ISS bigger for visibility (COMPLETED - 3x radius increase)
-- [ ] Replace sphere with detailed 3D ISS model (.glb or .obj format)
-- [ ] Add ISS solar panel animations (rotate to face sun)
-- [ ] Show ISS orientation (pitch, roll, yaw based on real data)
-- [ ] Add ISS module labels (Zvezda, Harmony, Columbus, etc.)
-- [ ] Implement ISS "chase camera" mode (follow ISS closely)
-- [ ] Add ISS pass prediction (when will ISS be over user location?)
-- [ ] Show ISS altitude changes (perigee/apogee visualization)
+- [x] Make ISS size appropriate for visibility (COMPLETED - 2025-11-13) ✅
+- [x] Replace sphere with detailed 3D ISS model (.glb format) (COMPLETED - ISS_stationary.glb) ✅
+- [x] Add ISS solar panel animations (rotate to face sun) (COMPLETED - 2025-11-13) ✅
+- [x] Show ISS real-time position from API (COMPLETED) ✅
+- [x] Add ISS orbital trail visualization (COMPLETED) ✅
+- [ ] Show ISS orientation (pitch, roll, yaw based on real data) - FUTURE
+- [ ] Add ISS module labels (Zvezda, Harmony, Columbus, etc.) - FUTURE
+- [ ] Add ISS pass prediction (when will ISS be over user location?) - FUTURE
+- [ ] Show ISS altitude changes (perigee/apogee visualization) - FUTURE
 
 **3D Model Resources:**
 - NASA provides official ISS 3D models (public domain)

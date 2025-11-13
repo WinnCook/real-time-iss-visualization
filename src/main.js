@@ -68,25 +68,26 @@ async function init() {
         });
 
         // Initialize styles system (before creating any visual objects)
-        initStyles('realistic', (newStyleConfig) => {
-            recreateSolarSystem(newStyleConfig);
+        initStyles('realistic', async (newStyleConfig) => {
+            await recreateSolarSystem(newStyleConfig);
         });
 
         // Get initial style config
         const initialStyle = getCurrentStyle();
 
-        // Initialize solar system with all celestial objects
+        // Initialize solar system with all celestial objects (ASYNC - waits for ISS 3D model)
         completeTask('Loading starfield');
         completeTask('Creating sun');
         completeTask('Creating planets');
         completeTask('Creating orbits');
         completeTask('Creating moon');
         completeTask('Initializing ISS');
-        app.solarSystem = initSolarSystem({
+        app.solarSystem = await initSolarSystem({
             camera: app.camera,
             renderer: app.renderer,
             styleConfig: initialStyle
         });
+        console.log('✅ Solar system fully initialized with 3D ISS model');
 
         // Initialize UI system (after all objects created)
         completeTask('Setting up labels');
@@ -94,7 +95,7 @@ async function init() {
             renderer: app.renderer,
             camera: app.camera,
             scene: app.scene,
-            recreateObjects: () => recreateSolarSystem()
+            recreateObjects: async () => await recreateSolarSystem()
         });
 
         // Register clickable objects for click-to-focus

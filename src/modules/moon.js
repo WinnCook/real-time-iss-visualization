@@ -129,6 +129,9 @@ export function updateMoon(deltaTime, simulationTime, earthPosition) {
     // The Moon's rotation should match its orbital angle to maintain tidal locking
     // We rotate around Y-axis to keep the same face toward Earth
     moonMesh.rotation.y = orbitalAngle;
+
+    // Update world matrix so labels can get correct positions
+    moonMesh.updateMatrixWorld(true);
 }
 
 /**

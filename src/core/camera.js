@@ -12,13 +12,13 @@ import { RENDER } from '../utils/constants.js';
 export let camera;
 
 /**
- * OrbitControls for camera manipulation
- * @type {THREE.OrbitControls}
+ * TrackballControls for camera manipulation (unlimited rotation)
+ * @type {THREE.TrackballControls}
  */
 export let controls;
 
 /**
- * Initialize the camera and orbit controls
+ * Initialize the camera and trackball controls
  * @param {HTMLElement} domElement - The canvas element for controls
  * @returns {Object} Object containing camera and controls
  */
@@ -44,8 +44,8 @@ export function initCamera(domElement) {
 
     console.log('✅ Camera initialized at position:', camera.position);
 
-    // Initialize orbit controls if domElement is provided
-    if (domElement && typeof THREE.OrbitControls !== 'undefined') {
+    // Initialize trackball controls if domElement is provided
+    if (domElement && typeof THREE.TrackballControls !== 'undefined') {
         initControls(domElement);
     }
 
@@ -53,9 +53,9 @@ export function initCamera(domElement) {
 }
 
 /**
- * Initialize OrbitControls for camera manipulation
+ * Initialize TrackballControls for camera manipulation (TRULY UNLIMITED ROTATION)
  * @param {HTMLElement} domElement - The canvas element
- * @returns {THREE.OrbitControls}
+ * @returns {THREE.TrackballControls}
  */
 export function initControls(domElement) {
     if (!camera) {
@@ -63,35 +63,30 @@ export function initControls(domElement) {
         return null;
     }
 
-    // Create OrbitControls
-    controls = new THREE.OrbitControls(camera, domElement);
+    // Create TrackballControls - NO ROTATION LIMITS BY DESIGN
+    controls = new THREE.TrackballControls(camera, domElement);
 
-    // Configure controls
-    controls.enableDamping = true; // Smooth camera movements
-    controls.dampingFactor = 0.05;
-    controls.screenSpacePanning = false;
-    controls.minDistance = 10; // Minimum zoom (close to sun)
-    controls.maxDistance = 50000; // Maximum zoom (see entire solar system including Neptune at 30 AU)
-    // Allow completely free rotation by setting polar angle to full range
-    controls.minPolarAngle = -Infinity; // No lower limit
-    controls.maxPolarAngle = Infinity;  // No upper limit
-    controls.enableZoom = true; // Enable mouse wheel zoom
-    controls.zoomSpeed = 1.0; // Zoom sensitivity
+    // Configure controls for smooth, unlimited rotation
+    controls.rotateSpeed = 1.5;          // Rotation sensitivity
+    controls.zoomSpeed = 1.2;            // Zoom sensitivity
+    controls.panSpeed = 0.8;             // Pan sensitivity
 
-    // Enhanced touch controls for mobile
-    controls.touches = {
-        ONE: THREE.TOUCH.ROTATE,        // One finger: rotate
-        TWO: THREE.TOUCH.DOLLY_PAN      // Two fingers: pinch zoom + pan
-    };
-    controls.enablePan = true;           // Enable panning with two fingers
-    controls.panSpeed = 1.0;             // Pan sensitivity
-    controls.rotateSpeed = 0.8;          // Rotation sensitivity (slightly slower for better control)
+    controls.noZoom = false;             // Enable zoom
+    controls.noPan = false;              // Enable pan
+    controls.noRotate = false;           // Enable rotation
 
-    // Set initial target (look at origin)
-    controls.target.set(0, 0, 0);
-    controls.update();
+    controls.staticMoving = false;       // Enable momentum/inertia
+    controls.dynamicDampingFactor = 0.15; // Smooth damping with momentum
 
-    console.log('✅ OrbitControls initialized');
+    controls.minDistance = 0.1;          // Minimum zoom distance (very close - can see ISS details!)
+    controls.maxDistance = 50000;        // Maximum zoom distance (see full solar system)
+
+    // TrackballControls has NO angle limits - you can spin infinitely in ANY direction!
+    console.log('🎮 TrackballControls initialized - TRULY UNLIMITED ROTATION');
+    console.log('   ✅ No polar angle limits (can rotate past poles)');
+    console.log('   ✅ No azimuth limits (infinite horizontal rotation)');
+    console.log('   ✅ Can spin continuously in any direction');
+
     return controls;
 }
 
@@ -106,7 +101,7 @@ export function onWindowResize() {
 }
 
 /**
- * Reset camera to default position and target
+ * Reset camera to default position
  */
 export function resetCamera() {
     if (camera && controls) {
@@ -115,8 +110,9 @@ export function resetCamera() {
             RENDER.DEFAULT_CAMERA_POSITION.y,
             RENDER.DEFAULT_CAMERA_POSITION.z
         );
+        camera.lookAt(0, 0, 0);
         controls.target.set(0, 0, 0);
-        controls.update();
+        controls.reset();
         console.log('🎥 Camera reset to default position');
     }
 }
@@ -133,7 +129,7 @@ export function focusOnObject(object, distance = 20) {
     const objectPosition = new THREE.Vector3();
     object.getWorldPosition(objectPosition);
 
-    // Set controls target to object position
+    // Set controls target to object position (TrackballControls DOES have target)
     controls.target.copy(objectPosition);
 
     // Calculate camera position (offset from object)
@@ -143,7 +139,6 @@ export function focusOnObject(object, distance = 20) {
 
     camera.position.copy(objectPosition).add(direction.multiplyScalar(distance));
 
-    controls.update();
     console.log(`🎯 Camera focused on: ${object.name || 'object'}`);
 }
 
@@ -186,10 +181,10 @@ export function animateCameraTo(targetPosition, lookAtPosition, duration = 1000)
 }
 
 /**
- * Update controls (call this every frame if damping is enabled)
+ * Update controls (call this every frame - TrackballControls ALWAYS needs update)
  */
 export function updateControls() {
-    if (controls && controls.enableDamping) {
+    if (controls) {
         controls.update();
     }
 }

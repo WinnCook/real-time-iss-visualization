@@ -59,7 +59,8 @@ export function geographicToScenePosition(latitude, longitude, altitude) {
         // Real mode: Use actual ISS orbital altitude with same scaling as Earth
         // ISS altitude: 408 km, Earth radius: 6,371 km
         // Real ratio: 408 / 6,371 = 0.064 (6.4% above surface)
-        altitudeScene = scaleRadius(altitude, 'planet');
+        // Apply 100x scale to altitude BEFORE converting to scene units (same as planet scaling)
+        altitudeScene = kmToScene(altitude * 100);
     } else {
         // Enlarged mode: Use exaggerated altitude for visibility
         // Scale altitude proportionally to Earth's scaled radius

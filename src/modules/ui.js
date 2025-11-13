@@ -1,7 +1,12 @@
 /**
  * UI Module - User Interface Controls and Event Handlers
  * Manages all UI interactions, info panels, and user input
+ * VERSION: CACHE_BUSTER_20250113002
+ * GLOBAL WINDOW EXPORT ENABLED
  */
+
+console.log('🚨🚨🚨 UI.JS LOADED - VERSION CACHE_BUSTER_20250113002 🚨🚨🚨');
+console.log('🚨🚨🚨 GLOBAL WINDOW EXPORT ENABLED 🚨🚨🚨');
 
 import { timeManager } from '../utils/time.js';
 import { resetCamera, controls as cameraControls } from '../core/camera.js';
@@ -15,7 +20,8 @@ import { showTutorial } from './tutorial.js';
 import { captureScreenshot } from '../utils/screenshot.js';
 import { copyShareableURL } from '../utils/urlState.js';
 import { initSounds, setSoundsEnabled, isSoundsEnabled, playClickSound, playFocusSound, playToggleSound, playScreenshotSound, playStyleChangeSound } from '../utils/sounds.js';
-import { setAccurateOrbits, isUsingAccurateOrbits, updatePlanetSizeMode } from './planets.js';
+import { isUsingAccurateOrbits, updatePlanetSizeMode } from './planets.js';
+import { setMeteorFrequency, getMeteorFrequencyLabel } from './shootingStars.js';
 
 /**
  * References to app state (set during initialization)
@@ -107,6 +113,9 @@ function setupAllEventListeners() {
     // Performance controls
     setupPerformanceControls();
 
+    // Meteor frequency control
+    setupMeteorFrequencyControl();
+
     // Display toggles
     setupDisplayToggles();
 
@@ -167,6 +176,9 @@ function setupTimeControls() {
             const speed = parseFloat(e.target.value);
             timeManager.setTimeSpeed(speed);
             speedValue.textContent = `${speed}x`;
+
+            // Update Real-Time View button state
+            updateRealTimeViewButtonState();
         });
     }
 
@@ -178,6 +190,9 @@ function setupTimeControls() {
             timeManager.setTimeSpeed(speed);
             if (timeSpeedSlider) timeSpeedSlider.value = speed;
             if (speedValue) speedValue.textContent = `${speed}x`;
+
+            // Update Real-Time View button state
+            updateRealTimeViewButtonState();
         });
     });
 }
@@ -186,15 +201,16 @@ function setupTimeControls() {
  * Setup camera controls
  */
 function setupCameraControls() {
+    console.log('🚨🚨🚨 SETUP CAMERA CONTROLS CALLED 🚨🚨🚨');
+
     // Reset camera button
     const resetCameraBtn = document.getElementById('reset-camera');
+    console.log('  Reset button:', resetCameraBtn);
     if (resetCameraBtn) {
         resetCameraBtn.addEventListener('click', () => {
-            // Unlock from any followed object first
             unlockCamera();
-            // Then reset to default position
             resetCamera();
-            console.log('🎥 Camera reset to default position');
+            console.log('🎥 Camera reset');
         });
     }
 
@@ -256,6 +272,28 @@ function setupPerformanceControls() {
 }
 
 /**
+ * Setup meteor frequency slider
+ */
+function setupMeteorFrequencyControl() {
+    const slider = document.getElementById('meteor-frequency');
+    const valueDisplay = document.getElementById('meteor-frequency-value');
+
+    if (slider && valueDisplay) {
+        // Set initial display
+        valueDisplay.textContent = getMeteorFrequencyLabel();
+
+        // Add event listener
+        slider.addEventListener('input', (e) => {
+            const frequency = parseInt(e.target.value);
+            setMeteorFrequency(frequency);
+            valueDisplay.textContent = getMeteorFrequencyLabel();
+            playToggleSound();
+            console.log(`🌠 Meteor frequency: ${frequency}% (${getMeteorFrequencyLabel()})`);
+        });
+    }
+}
+
+/**
  * Setup display toggle checkboxes
  */
 function setupDisplayToggles() {
@@ -309,16 +347,6 @@ function setupDisplayToggles() {
                 playClickSound();
             }
             console.log(`🔊 Sounds ${e.target.checked ? 'enabled' : 'muted'}`);
-        });
-    }
-
-    // Accurate Orbits toggle
-    const toggleAccurateOrbits = document.getElementById('toggle-accurate-orbits');
-    if (toggleAccurateOrbits) {
-        toggleAccurateOrbits.addEventListener('change', (e) => {
-            setAccurateOrbits(e.target.checked);
-            playToggleSound();
-            console.log(`🎯 Orbital mechanics: ${e.target.checked ? 'ACCURATE' : 'SIMPLIFIED'}`);
         });
     }
 }
@@ -395,18 +423,46 @@ function setupShareButton() {
 /**
  * Setup Real-Time View button
  */
+/**
+ * Update Real-Time View button state based on current time speed
+ * Button is highlighted and non-clickable when at 1x speed
+ */
+function updateRealTimeViewButtonState() {
+    const realtimeBtn = document.getElementById('realtime-view-btn');
+    if (!realtimeBtn) {
+        console.warn('Real-Time View button not found');
+        return;
+    }
+
+    const currentSpeed = timeManager.getTimeSpeed();
+    const isRealTime = currentSpeed === 1;
+
+    console.log(`🔄 Updating Real-Time View button state: speed=${currentSpeed}, isRealTime=${isRealTime}`);
+
+    if (isRealTime) {
+        // At 1x speed - highlight button and make it non-clickable
+        realtimeBtn.classList.add('active');
+        realtimeBtn.style.pointerEvents = 'none'; // Disable clicking
+        realtimeBtn.style.opacity = '1'; // Full opacity when active
+        realtimeBtn.style.background = '#4a90e2'; // Blue highlight
+        realtimeBtn.style.color = '#ffffff'; // White text
+        realtimeBtn.style.border = '2px solid #4a90e2'; // Blue border
+    } else {
+        // Not at 1x speed - make button black and clickable (like other inactive buttons)
+        realtimeBtn.classList.remove('active');
+        realtimeBtn.style.pointerEvents = 'auto'; // Enable clicking
+        realtimeBtn.style.opacity = '1'; // Full opacity
+        realtimeBtn.style.background = '#1a1a1a'; // Dark gray/black background
+        realtimeBtn.style.color = '#ffffff'; // White text
+        realtimeBtn.style.border = '2px solid #333'; // Darker border
+    }
+}
+
 function setupRealTimeViewButton() {
     const realtimeBtn = document.getElementById('realtime-view-btn');
     if (realtimeBtn) {
         realtimeBtn.addEventListener('click', () => {
             playClickSound();
-
-            // Enable accurate orbits
-            setAccurateOrbits(true);
-            const toggleAccurateOrbits = document.getElementById('toggle-accurate-orbits');
-            if (toggleAccurateOrbits) {
-                toggleAccurateOrbits.checked = true;
-            }
 
             // Set time speed to 1x (real-time)
             timeManager.setTimeSpeed(1);
@@ -421,10 +477,16 @@ function setupRealTimeViewButton() {
 
             console.log('🌎 Real-Time View activated: Accurate orbits + 1x speed + current positions');
 
+            // Update button state
+            updateRealTimeViewButtonState();
+
             // Show notification
             showNotification('🌎 Real-Time View Activated',
                 'Showing actual planet positions right now at 1x speed. Planets will appear stationary.');
         });
+
+        // Set initial button state
+        updateRealTimeViewButtonState();
     }
 }
 
@@ -447,8 +509,33 @@ function setupSizeModeButtons() {
                 sizeModeBtns.forEach(btn => btn.classList.remove('active'));
                 e.target.closest('.size-mode-btn').classList.add('active');
 
+                // Save camera lock state before size change
+                const wasLocked = lockedObject !== null;
+                const lockedKey = lockedObjectKey;
+                const savedCameraOffset = cameraOffset ? cameraOffset.clone() : null;
+
                 // Update planet sizes
                 updatePlanetSizeMode(mode);
+
+                // Restore camera lock after size change
+                if (wasLocked && lockedKey) {
+                    setTimeout(() => {
+                        // Re-lock to the same object
+                        const objData = clickableObjects.get(lockedKey);
+                        if (objData && objData.object) {
+                            lockedObject = objData.object;
+                            lockedObjectKey = lockedKey;
+                            if (savedCameraOffset) {
+                                cameraOffset = savedCameraOffset;
+                            }
+                            // Update camera to follow the object immediately
+                            const objPos = new THREE.Vector3();
+                            lockedObject.getWorldPosition(objPos);
+                            previousObjectPosition = objPos.clone();
+                            console.log(`🔒 Camera re-locked to ${lockedKey} after size change`);
+                        }
+                    }, 100); // Small delay to ensure objects are recreated
+                }
 
                 console.log(`📏 Planet size mode: ${mode.toUpperCase()}`);
 
@@ -514,8 +601,31 @@ function setupClickToFocus() {
         return;
     }
 
-    canvas.addEventListener('click', (event) => {
-        // Calculate mouse position in normalized device coordinates (-1 to +1)
+    // Track mouse position to distinguish click from drag
+    let mouseDownPos = null;
+    const DRAG_THRESHOLD = 5; // pixels - if mouse moves more than this, it's a drag not a click
+
+    canvas.addEventListener('mousedown', (event) => {
+        mouseDownPos = { x: event.clientX, y: event.clientY };
+    });
+
+    canvas.addEventListener('mouseup', (event) => {
+        if (!mouseDownPos) return;
+
+        // Calculate how far mouse moved since mousedown
+        const dx = event.clientX - mouseDownPos.x;
+        const dy = event.clientY - mouseDownPos.y;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+
+        // Reset mouseDownPos
+        mouseDownPos = null;
+
+        // If mouse moved significantly, user was dragging (rotating camera), not clicking
+        if (distance > DRAG_THRESHOLD) {
+            return; // Don't trigger focus on drag
+        }
+
+        // This was a genuine click (not a drag) - perform raycasting
         const rect = canvas.getBoundingClientRect();
         mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
         mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
@@ -544,7 +654,7 @@ function setupClickToFocus() {
         }
     });
 
-    console.log('✅ Click-to-focus raycasting enabled');
+    console.log('✅ Click-to-focus raycasting enabled (drag-aware)');
 }
 
 /**
@@ -815,6 +925,30 @@ export function registerClickableObject(key, object, metadata = {}) {
     };
 
     clickableObjects.set(key, object);
+}
+
+/**
+ * Re-register all clickable objects (call after objects are recreated)
+ * This is needed when style changes or size mode changes
+ */
+export function reregisterAllClickableObjects() {
+    // Import getCelestialObject dynamically to avoid circular dependencies
+    import('./solarSystem.js').then(({ getCelestialObject }) => {
+        // Re-register all celestial objects
+        registerClickableObject('sun', getCelestialObject('sun'), { type: 'star', name: 'Sun' });
+        registerClickableObject('mercury', getCelestialObject('mercury'), { type: 'planet', name: 'Mercury' });
+        registerClickableObject('venus', getCelestialObject('venus'), { type: 'planet', name: 'Venus' });
+        registerClickableObject('earth', getCelestialObject('earth'), { type: 'planet', name: 'Earth' });
+        registerClickableObject('mars', getCelestialObject('mars'), { type: 'planet', name: 'Mars' });
+        registerClickableObject('jupiter', getCelestialObject('jupiter'), { type: 'planet', name: 'Jupiter' });
+        registerClickableObject('saturn', getCelestialObject('saturn'), { type: 'planet', name: 'Saturn' });
+        registerClickableObject('uranus', getCelestialObject('uranus'), { type: 'planet', name: 'Uranus' });
+        registerClickableObject('neptune', getCelestialObject('neptune'), { type: 'planet', name: 'Neptune' });
+        registerClickableObject('moon', getCelestialObject('moon'), { type: 'moon', name: 'Moon' });
+        registerClickableObject('iss', getCelestialObject('iss'), { type: 'spacecraft', name: 'ISS' });
+
+        console.log('✅ All clickable objects re-registered');
+    });
 }
 
 /**

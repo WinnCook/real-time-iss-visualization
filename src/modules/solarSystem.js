@@ -35,14 +35,14 @@ const solarSystemState = {
 };
 
 /**
- * Initialize the entire solar system with all celestial objects
+ * Initialize the entire solar system with all celestial objects (ASYNC for 3D models)
  * @param {Object} config - Configuration object
  * @param {THREE.Camera} config.camera - Camera reference for labels
  * @param {THREE.WebGLRenderer} config.renderer - Renderer reference for labels
  * @param {Object} config.styleConfig - Visual style configuration (optional, uses current style if not provided)
- * @returns {Object} Solar system state
+ * @returns {Promise<Object>} Solar system state
  */
-export function initSolarSystem(config) {
+export async function initSolarSystem(config) {
     console.log('🌌 Initializing Solar System...');
 
     const { camera, renderer, styleConfig = null } = config;
@@ -78,9 +78,9 @@ export function initSolarSystem(config) {
     solarSystemState.moon = initMoon(currentStyle);
     console.log('  ✓ Moon initialized');
 
-    // Initialize the ISS
-    solarSystemState.iss = initISS(currentStyle);
-    console.log('  ✓ ISS initialized');
+    // Initialize the ISS (ASYNC - loads 3D model)
+    solarSystemState.iss = await initISS(currentStyle);
+    console.log('  ✓ ISS initialized (3D model loaded)');
 
     // Initialize labels system (after all objects are created)
     solarSystemState.labels = initLabels(camera, renderer);
@@ -222,10 +222,11 @@ export function disposeSolarSystem() {
 }
 
 /**
- * Recreate all celestial objects with new settings (style or performance)
+ * Recreate all celestial objects with new settings (style or performance) - ASYNC
  * @param {Object} styleConfig - Optional style configuration (uses current style if not provided)
+ * @returns {Promise<void>}
  */
-export function recreateSolarSystem(styleConfig = null) {
+export async function recreateSolarSystem(styleConfig = null) {
     console.log('🔄 Recreating Solar System with new settings...');
 
     // Dispose existing objects
@@ -237,9 +238,9 @@ export function recreateSolarSystem(styleConfig = null) {
     // Get current style if not provided
     const currentStyle = styleConfig || getCurrentStyle();
 
-    // Recreate with current style
+    // Recreate with current style (ASYNC - waits for ISS model)
     if (solarSystemState.camera && solarSystemState.renderer) {
-        initSolarSystem({
+        await initSolarSystem({
             camera: solarSystemState.camera,
             renderer: solarSystemState.renderer,
             styleConfig: currentStyle
@@ -341,7 +342,7 @@ export function getSolarSystemState() {
  */
 export function resetMoonOrbitInitialization() {
     solarSystemState.moonOrbitInitialized = false;
-    disposeMoonOrbit();
+    // Don't call dispose - just reset flag
     console.log('🔄 Moon orbit will be recreated with new size mode');
 }
 

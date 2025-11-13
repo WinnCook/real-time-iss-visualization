@@ -1,7 +1,12 @@
 /**
  * ISS (International Space Station) Module
  * Real-time ISS tracking with API integration, position updates, and orbital trail
+ * VERSION: CACHE_BUSTER_20250113001
+ * BRIGHT FALLBACK ENABLED FOR VISIBILITY
  */
+
+console.log('🚨🚨🚨 ISS.JS LOADED - VERSION CACHE_BUSTER_20250113001 🚨🚨🚨');
+console.log('🚨🚨🚨 BRIGHT FALLBACK ENABLED 🚨🚨🚨');
 
 import { addToScene, removeFromScene } from '../core/scene.js';
 import { issAPI } from '../utils/api.js';
@@ -19,20 +24,22 @@ const MAX_TRAIL_POINTS = 50;
 let currentPosition = null;
 let earthPosition = { x: 0, y: 0, z: 0 }; // Track Earth's position for relative positioning
 let uiUpdateCallback = null; // Callback to update UI with ISS data
+let solarPanels = []; // Store references to solar panels for rotation
+let issModelLoaded = false; // Track if 3D model loaded successfully
 
 /**
- * Initialize ISS visualization
+ * Initialize ISS visualization (async to load 3D model)
  * @param {Object} styleConfig - Visual style configuration from STYLES
- * @returns {Object} ISS mesh and trail objects
+ * @returns {Promise<Object>} ISS mesh and trail objects
  */
-export function initISS(styleConfig) {
+export async function initISS(styleConfig) {
     console.log('🛰️ Initializing ISS module...');
 
     // Clean up existing ISS if any
     disposeISS();
 
-    // Create ISS mesh
-    issMesh = createISSMesh(styleConfig);
+    // Create ISS mesh (load 3D model)
+    issMesh = await loadISSModel(styleConfig);
     addToScene(issMesh);
 
     // Create trail line
@@ -48,75 +55,150 @@ export function initISS(styleConfig) {
 }
 
 /**
- * Create ISS mesh with iconic geometry (cylinder body + solar panels)
+ * Load ISS 3D model from GLB file
  * @param {Object} styleConfig - Visual style configuration
- * @returns {THREE.Group} ISS mesh group
+ * @returns {Promise<THREE.Group>} ISS mesh group
  */
-function createISSMesh(styleConfig) {
-    // Create a group to hold all ISS components
-    const issGroup = new THREE.Group();
+async function loadISSModel(styleConfig) {
+    return new Promise((resolve, reject) => {
+        // Create a group to hold the model
+        const issGroup = new THREE.Group();
 
-    // Create material based on visual style
+        // Create GLTF loader
+        console.log('🔍 Checking for GLTFLoader...');
+        console.log('  THREE.GLTFLoader exists?', typeof THREE.GLTFLoader);
+
+        if (typeof THREE.GLTFLoader === 'undefined') {
+            console.error('❌ GLTFLoader not available! Falling back to simple geometry.');
+            const fallbackISS = createFallbackISS(styleConfig);
+            issGroup.add(fallbackISS);
+            issGroup.name = 'ISS';
+            issGroup.userData = { type: 'iss', isTrackable: true };
+            resolve(issGroup);
+            return;
+        }
+
+        const loader = new THREE.GLTFLoader();
+        console.log('✅ GLTFLoader instantiated');
+
+        console.log('🛰️ Loading ISS 3D model from assets/models/ISS_stationary.glb...');
+
+        // Load the ISS model
+        loader.load(
+            'assets/models/ISS_stationary.glb',
+            // On load success
+            (gltf) => {
+                console.log('✅ ISS model loaded successfully');
+                issModelLoaded = true;
+
+                // Add the loaded model to the group
+                const model = gltf.scene;
+                issGroup.add(model);
+
+                // Find solar panels in the model for animation
+                solarPanels = [];
+                model.traverse((child) => {
+                    // Look for meshes that might be solar panels
+                    // (Naming depends on the model structure - we'll find them by position/size)
+                    if (child.isMesh) {
+                        // Apply material based on visual style
+                        if (child.material) {
+                            // Enhance materials for visual styles
+                            if (styleConfig.name === 'Neon/Cyberpunk') {
+                                child.material.emissiveIntensity = 1.5;
+                            }
+                            // Store panels for rotation (we'll identify them later)
+                            if (child.name.toLowerCase().includes('panel') ||
+                                child.name.toLowerCase().includes('solar') ||
+                                child.name.toLowerCase().includes('array')) {
+                                solarPanels.push(child);
+                                console.log(`  Found solar panel: ${child.name}`);
+                            }
+                        }
+                    }
+                });
+
+                // Scale the model appropriately
+                // Real ISS is ~109m × 73m = 0.109km × 0.073km
+                // Use appropriate radius for both enlarged and real modes
+                const issScale = scaleRadius(3, 'iss'); // Reasonable size in both modes
+                issGroup.scale.set(issScale, issScale, issScale);
+
+                // Set group properties
+                issGroup.name = 'ISS';
+                issGroup.userData = {
+                    type: 'iss',
+                    isTrackable: true
+                };
+
+                console.log(`  Scaled ISS model by ${issScale}x`);
+                console.log(`  Found ${solarPanels.length} solar panel meshes`);
+
+                resolve(issGroup);
+            },
+            // On progress
+            (xhr) => {
+                const percent = (xhr.loaded / xhr.total * 100).toFixed(0);
+                console.log(`  Loading ISS model: ${percent}%`);
+            },
+            // On error
+            (error) => {
+                console.error('❌ Error loading ISS model:', error);
+                console.log('  Falling back to simple geometry...');
+
+                // Fallback: Create simple iconic geometry if model fails to load
+                const fallbackISS = createFallbackISS(styleConfig);
+                issGroup.add(fallbackISS);
+
+                resolve(issGroup);
+            }
+        );
+    });
+}
+
+/**
+ * Create fallback ISS geometry (simple iconic design)
+ * Used if 3D model fails to load
+ * @param {Object} styleConfig - Visual style configuration
+ * @returns {THREE.Group} Simple ISS geometry
+ */
+function createFallbackISS(styleConfig) {
+    console.log('🔧 Creating FALLBACK ISS geometry (3D model failed to load)');
+    const group = new THREE.Group();
+
+    // MAKE IT SUPER OBVIOUS - BRIGHT YELLOW BODY
+    const bodyGeometry = new THREE.CylinderGeometry(3, 3, 18, 8);
     const bodyMaterial = new THREE.MeshStandardMaterial({
-        color: COLORS.ISS_COLOR,
-        emissive: COLORS.ISS_COLOR,
-        emissiveIntensity: styleConfig.name === 'Neon/Cyberpunk' ? 2.0 : 0.5,
-        metalness: 0.8,
-        roughness: 0.2
+        color: 0xFFFF00, // BRIGHT YELLOW
+        emissive: 0xFFFF00,
+        emissiveIntensity: 1.0
     });
+    const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
+    body.rotation.z = Math.PI / 2;
+    group.add(body);
 
-    // Solar panel material (slightly different - more golden/blue)
+    // BRIGHT CYAN SOLAR PANELS
+    const panelGeometry = new THREE.BoxGeometry(25, 8, 0.5);
     const panelMaterial = new THREE.MeshStandardMaterial({
-        color: 0x4a90e2, // Blue tint for solar panels
-        emissive: 0x4a90e2,
-        emissiveIntensity: styleConfig.name === 'Neon/Cyberpunk' ? 1.5 : 0.3,
-        metalness: 0.6,
-        roughness: 0.4
+        color: 0x00FFFF, // BRIGHT CYAN
+        emissive: 0x00FFFF,
+        emissiveIntensity: 0.8
     });
 
-    // CENTRAL CYLINDER BODY (ISS modules)
-    // Real ISS is ~73m long, we'll use proportional dimensions
-    const bodyLength = 12;
-    const bodyRadius = 2;
-    const bodyGeometry = new THREE.CylinderGeometry(bodyRadius, bodyRadius, bodyLength, 8);
-    const bodyMesh = new THREE.Mesh(bodyGeometry, bodyMaterial);
-
-    // Rotate cylinder to align along X axis (default is Y axis)
-    bodyMesh.rotation.z = Math.PI / 2;
-    bodyMesh.name = 'ISS-Body';
-    issGroup.add(bodyMesh);
-
-    // SOLAR PANELS (wings on both sides)
-    // Real ISS solar arrays are ~73m wide
-    const panelWidth = 20;  // Wide wingspan
-    const panelHeight = 6;  // Tall panels
-    const panelDepth = 0.3; // Very thin (solar panels are flat)
-    const panelGeometry = new THREE.BoxGeometry(panelWidth, panelHeight, panelDepth);
-
-    // Left solar panel wing
     const leftPanel = new THREE.Mesh(panelGeometry, panelMaterial);
-    leftPanel.position.set(-bodyLength * 0.4, 0, 0); // Position to left side of body
+    leftPanel.position.set(-8, 0, 0);
     leftPanel.name = 'ISS-Panel-Left';
-    issGroup.add(leftPanel);
+    group.add(leftPanel);
 
-    // Right solar panel wing
     const rightPanel = new THREE.Mesh(panelGeometry, panelMaterial);
-    rightPanel.position.set(bodyLength * 0.4, 0, 0); // Position to right side of body
+    rightPanel.position.set(8, 0, 0);
     rightPanel.name = 'ISS-Panel-Right';
-    issGroup.add(rightPanel);
+    group.add(rightPanel);
 
-    // Scale entire ISS for visibility (massively enlarged)
-    const issScale = scaleRadius(10, 'iss'); // Approximate ISS size ~10m → scaled up
-    issGroup.scale.set(issScale, issScale, issScale);
+    solarPanels = [leftPanel, rightPanel];
+    console.log('✅ Fallback ISS: BRIGHT YELLOW body + CYAN panels (solar panels stored)');
 
-    // Set group properties
-    issGroup.name = 'ISS';
-    issGroup.userData = {
-        type: 'iss',
-        isTrackable: true
-    };
-
-    return issGroup;
+    return group;
 }
 
 /**
@@ -276,6 +358,35 @@ function updateTrail(position) {
 }
 
 /**
+ * Rotate solar panels to face the sun for maximum power generation
+ * @param {THREE.Group} issGroup - The ISS group mesh
+ */
+function rotateSolarPanelsToSun(issGroup) {
+    if (!solarPanels || solarPanels.length === 0) {
+        console.log('⚠️ No solar panels found to rotate');
+        return;
+    }
+
+    console.log(`🔄 Rotating ${solarPanels.length} solar panels toward sun`);
+
+    // Sun is at origin (0, 0, 0)
+    const sunPosition = new THREE.Vector3(0, 0, 0);
+
+    // Rotate each solar panel to face the sun
+    solarPanels.forEach((panel, index) => {
+        if (!panel || !panel.isObject3D) {
+            console.log(`  Panel ${index}: invalid`);
+            return;
+        }
+
+        // Simple approach: just make the panel look at the sun
+        // The panel's -Z axis will point toward the sun
+        panel.lookAt(sunPosition);
+        console.log(`  Panel ${index}: rotated`);
+    });
+}
+
+/**
  * Update ISS animation (called every frame)
  * @param {number} deltaTime - Time since last frame in seconds
  * @param {number} simulationTime - Current simulation time in milliseconds
@@ -317,6 +428,12 @@ export function updateISS(deltaTime, simulationTime, earthPos) {
                      radial);
         quaternion.setFromRotationMatrix(matrix);
         issMesh.quaternion.copy(quaternion);
+
+        // SOLAR PANEL ROTATION: Rotate panels to face the sun
+        rotateSolarPanelsToSun(issMesh);
+
+        // Update world matrix so labels can get correct positions
+        issMesh.updateMatrixWorld(true);
     }
 }
 
@@ -333,6 +450,7 @@ export function getISSPosition() {
  * @returns {THREE.Mesh|null} ISS mesh
  */
 export function getISSMesh() {
+    console.log('🔍 getISSMesh() called, returning:', issMesh);
     return issMesh;
 }
 

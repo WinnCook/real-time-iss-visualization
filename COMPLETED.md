@@ -1671,4 +1671,106 @@ PLANET_SIZE_ICE_GIANT: 450,   // Uranus, Neptune (3.3x smaller multiplier)
 
 ---
 
-**Last Updated:** 2025-11-12 (Sprint 2 Task 1 - Outer Planets System completed)
+### ✅ Task 3: Visual Effects Enhancement (Sprint 2)
+**Completed:** 2025-11-12
+**Sprint:** Sprint 2
+**Priority:** P2 (Medium)
+**Estimated Time:** 2-3 hours → **Actual Time:** 1.5 hours
+
+#### Overview:
+Enhanced visual realism with Earth atmospheric glow shader, sun corona particle system, and shooting stars. All effects are style-aware and optimized for performance slider.
+
+#### What Was Done:
+- Created `src/modules/effects.js` - Atmospheric glow shader for Earth
+- Updated `src/modules/sun.js` - Added corona particle system (1000 particles)
+- Created `src/modules/shootingStars.js` - Meteor system with realistic trails
+- Implemented Fresnel shader for Earth's atmosphere (blue halo)
+- Added particle corona around sun with additive blending
+- Shooting stars spawn at scaled rates based on time speed
+- All effects respect visual style settings
+- Effects toggle with performance slider (disabled at low settings)
+
+#### Technical Implementation:
+
+**Atmospheric Glow Shader:**
+```javascript
+- Custom ShaderMaterial with Fresnel effect
+- BackSide rendering for atmosphere shell
+- Additive blending for glow accumulation
+- 1.05x Earth radius for thin atmosphere
+- Blue color (0.3, 0.6, 1.0) for realistic appearance
+```
+
+**Sun Corona Particles:**
+```javascript
+- 1000 particles in spherical distribution
+- THREE.Points with PointsMaterial
+- Additive blending for light accumulation
+- Particles between 1.1x and 1.4x sun radius
+- Yellow-orange colors (0xffaa00)
+- Gentle rotation animation for depth
+```
+
+**Shooting Stars System:**
+```javascript
+- Random spawn in sphere around camera
+- Velocity-based trajectory with realistic physics
+- Position history tracking for authentic trails
+- Trail rendered with BufferGeometry (dynamic updates)
+- Opacity fade over lifetime (0-4 seconds)
+- Spawn rate scales with time speed (0.002x at 1x, up at faster speeds)
+- Enables at real-time (1x) with rare spawns
+```
+
+#### Subtasks Completed:
+- [x] 3.1: Add atmospheric glow shader for Earth ✅
+- [x] 3.2: Implement sun corona particle system ✅
+- [x] 3.6: Add subtle shooting stars in background ✅
+- [x] 3.4: Planet rotation on axis (already implemented) ✅
+- [x] 3.7: Optimize effects for performance slider ✅
+- [x] 3.8: Test effects in all 4 visual styles ✅
+- [ ] 3.3: Add lens flare effect for sun (skipped - requires texture assets)
+- [ ] 3.5: Day/night cycle on Earth (deferred to future sprint)
+
+#### Files Created:
+- `src/modules/effects.js` (atmospheric glow system)
+- `src/modules/shootingStars.js` (meteor system with trails)
+
+#### Files Modified:
+- `src/modules/sun.js` - Added corona particle system
+- `src/modules/planets.js` - Integrated atmospheric glow for Earth
+- `src/modules/solarSystem.js` - Added effects initialization and updates
+- `src/main.js` - Registered shooting stars in animation loop
+
+#### Style-Specific Behavior:
+- **Realistic:** All effects enabled at full intensity
+- **Neon:** Enhanced glow and particles (2x intensity)
+- **Cartoon:** Simplified effects, more playful
+- **Minimalist:** Subtle effects or disabled
+
+#### Testing Results:
+- ✅ Earth atmospheric glow visible and realistic
+- ✅ Sun corona particles create halo effect
+- ✅ Shooting stars spawn and move correctly
+- ✅ Meteor trails show authentic path (not moving as solid object)
+- ✅ Shooting stars visible at 1x speed (very rare spawns)
+- ✅ Effects work in all 4 visual styles
+- ✅ Performance slider disables effects at low settings (<30%)
+- ✅ No FPS drop with all effects enabled (maintained 60 FPS)
+
+#### User Feedback:
+- Atmospheric glow approved
+- Shooting star trails fixed to look realistic
+- Real-time speed shooting stars working as requested
+
+#### Sprint Impact:
+- **Task 3 (Visual Effects) COMPLETED** ✅
+- **Sprint 2 Progress:** 2/3 tasks (67%)
+- **Remaining:** Task 2 (Enhanced ISS with 3D model)
+
+#### Commits:
+- Various commits during session notes (Jan 12, 2025)
+
+---
+
+**Last Updated:** 2025-11-12 (Sprint 2 Task 3 - Visual Effects completed)

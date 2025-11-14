@@ -58,10 +58,10 @@ export function calculateMoonPosition(simulationTime, earthPosition, moonData, s
     let orbitRadiusScene;
 
     if (planetSizeMode === 'real') {
-        // Real mode: Use actual distance without extra scaling
+        // Real mode: Use actual astronomical distance (no extra scaling)
         // Moon: 384,400 km from Earth, Earth radius: 6,371 km
         // Ratio: 60.3x Earth radius (accurate!)
-        orbitRadiusScene = kmToScene(moonData.orbitRadius) * 100; // Same 100x scale as planets
+        orbitRadiusScene = kmToScene(moonData.orbitRadius);
     } else {
         // Enlarged mode: Apply MOON_ORBIT_SCALE to make Moon visible outside Earth's scaled-up surface
         // Without this, Moon would be inside Earth since planets are scaled 1500x but orbit distance is real km

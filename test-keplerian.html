@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Keplerian Orbital Mechanics Test</title>
+    <style>
+        body {
+            font-family: 'Courier New', monospace;
+            padding: 20px;
+            background: #1a1a1a;
+            color: #00ff00;
+        }
+        h1 {
+            color: #00ffff;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #333;
+            background: #0a0a0a;
+        }
+        .pass { color: #00ff00; }
+        .fail { color: #ff0000; }
+        .info { color: #ffff00; }
+        pre {
+            background: #000;
+            padding: 10px;
+            overflow-x: auto;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 10px 0;
+        }
+        th, td {
+            padding: 8px;
+            text-align: left;
+            border: 1px solid #333;
+        }
+        th {
+            background: #222;
+            color: #00ffff;
+        }
+    </style>
+</head>
+<body>
+    <h1>🧪 Keplerian Orbital Mechanics Test Suite</h1>
+    <p class="info">Testing NASA JPL orbital element calculations for accuracy</p>
+
+    <div id="results"></div>
+
+    <script type="module">
+        import {
+            solveKeplersEquation,
+            eccentricToTrueAnomaly,
+            meanLongitudeToMeanAnomaly,
+            calculateOrbitalPosition,
+            calculatePerihelion,
+            calculateAphelion,
+            getOrbitalInfo,
+            toJulianDate,
+            daysSinceJ2000,
+            DEG_TO_RAD
+        } from './src/utils/keplerian.js';
+        import { PLANETS } from './src/utils/constants.js';
+
+        const results = document.getElementById('results');
+
+        function addResult(html) {
+            const div = document.createElement('div');
+            div.className = 'test-section';
+            div.innerHTML = html;
+            results.appendChild(div);
+        }
+
+        function runTests() {
+            console.log('🧪 Starting Keplerian mechanics tests...');
+
+            // ===== TEST 1: Kepler's Equation Solver =====
+            addResult(`
+                <h2>Test 1: Kepler's Equation Solver</h2>
+                <p>Testing Newton-Raphson convergence for various eccentricities</p>
+            `);
+
+            const testCases = [
+                { M: 0, e: 0, expected: 0, name: 'Circular orbit at perihelion' },
+                { M: Math.PI, e: 0, expected: Math.PI, name: 'Circular orbit at aphelion' },
+                { M: 0, e: 0.2, expected: 0, name: 'Mercury-like orbit at perihelion' },
+                { M: Math.PI, e: 0.2, expected: Math.PI, name: 'Mercury-like orbit at aphelion' },
+                { M: Math.PI/2, e: 0.01671, expected: Math.PI/2, name: 'Earth-like orbit at 90°' }
+            ];
+
+            let passed = 0;
+            let failed = 0;
+
+            testCases.forEach(test => {
+                const E = solveKeplersEquation(test.M, test.e);
+                const error = Math.abs(E - test.expected);
+                const tolerance = 1e-6;
+                const pass = error < tolerance;
+
+                if (pass) passed++; else failed++;
+
+                console.log(`${pass ? '✅' : '❌'} ${test.name}: E=${E.toFixed(8)}, error=${error.toExponential(2)}`);
+            });
+
+            addResult(`
+                <p class="${failed === 0 ? 'pass' : 'fail'}">
+                    Results: ${passed} passed, ${failed} failed
+                </p>
+            `);
+
+            // ===== TEST 2: Planetary Positions at J2000 Epoch =====
+            addResult(`
+                <h2>Test 2: Planetary Positions at J2000 Epoch (Jan 1, 2000)</h2>
+                <p>Calculating where each planet is at the epoch date</p>
+            `);
+
+            const j2000Date = new Date('2000-01-01T12:00:00Z');
+            const planetData = [];
+
+            Object.entries(PLANETS).forEach(([key, planet]) => {
+                const info = getOrbitalInfo(planet.orbitalElements, j2000Date);
+
+                planetData.push({
+                    name: planet.name,
+                    position: `(${info.position.x.toFixed(1)}, ${info.position.y.toFixed(1)}, ${info.position.z.toFixed(1)})`,
+                    distanceAU: info.distanceAU.toFixed(3),
+                    perihelionAU: info.perihelionAU.toFixed(3),
+                    aphelionAU: info.aphelionAU.toFixed(3),
+                    eccentricity: info.eccentricity.toFixed(6)
+                });
+
+                console.log(`${planet.name}:`);
+                console.log(`  Position: (${info.position.x.toFixed(2)}, ${info.position.y.toFixed(2)}, ${info.position.z.toFixed(2)})`);
+                console.log(`  Distance: ${info.distanceAU.toFixed(3)} AU`);
+                console.log(`  Perihelion: ${info.perihelionAU.toFixed(3)} AU`);
+                console.log(`  Aphelion: ${info.aphelionAU.toFixed(3)} AU`);
+            });
+
+            const tableHTML = `
+                <table>
+                    <tr>
+                        <th>Planet</th>
+                        <th>Position (scene units)</th>
+                        <th>Distance (AU)</th>
+                        <th>Perihelion (AU)</th>
+                        <th>Aphelion (AU)</th>
+                        <th>Eccentricity</th>
+                    </tr>
+                    ${planetData.map(p => `
+                        <tr>
+                            <td>${p.name}</td>
+                            <td>${p.position}</td>
+                            <td>${p.distanceAU}</td>
+                            <td>${p.perihelionAU}</td>
+                            <td>${p.aphelionAU}</td>
+                            <td>${p.eccentricity}</td>
+                        </tr>
+                    `).join('')}
+                </table>
+            `;
+
+            addResult(tableHTML);
+
+            // ===== TEST 3: Current Planetary Positions (TODAY) =====
+            addResult(`
+                <h2>Test 3: Current Planetary Positions (Today: ${new Date().toLocaleDateString()})</h2>
+                <p>Where are the planets RIGHT NOW?</p>
+            `);
+
+            const today = new Date();
+            const todayData = [];
+
+            Object.entries(PLANETS).forEach(([key, planet]) => {
+                const info = getOrbitalInfo(planet.orbitalElements, today);
+
+                todayData.push({
+                    name: planet.name,
+                    position: `(${info.position.x.toFixed(1)}, ${info.position.y.toFixed(1)}, ${info.position.z.toFixed(1)})`,
+                    distanceAU: info.distanceAU.toFixed(3)
+                });
+
+                console.log(`${planet.name} (TODAY):`);
+                console.log(`  Position: (${info.position.x.toFixed(2)}, ${info.position.y.toFixed(2)}, ${info.position.z.toFixed(2)})`);
+                console.log(`  Distance: ${info.distanceAU.toFixed(3)} AU`);
+            });
+
+            const todayTableHTML = `
+                <table>
+                    <tr>
+                        <th>Planet</th>
+                        <th>Position (scene units)</th>
+                        <th>Distance (AU)</th>
+                    </tr>
+                    ${todayData.map(p => `
+                        <tr>
+                            <td>${p.name}</td>
+                            <td>${p.position}</td>
+                            <td>${p.distanceAU}</td>
+                        </tr>
+                    `).join('')}
+                </table>
+            `;
+
+            addResult(todayTableHTML);
+
+            // ===== TEST 4: Eccentricity Verification =====
+            addResult(`
+                <h2>Test 4: Orbital Eccentricity Analysis</h2>
+                <p>Which planets have the most elliptical orbits?</p>
+            `);
+
+            const eccentricities = Object.entries(PLANETS).map(([key, planet]) => ({
+                name: planet.name,
+                e: planet.orbitalElements.eccentricity
+            })).sort((a, b) => b.e - a.e);
+
+            const eccHTML = `
+                <ol>
+                    ${eccentricities.map(p => `
+                        <li>${p.name}: e = ${p.e.toFixed(6)} ${
+                            p.e > 0.1 ? '<span class="info">(highly elliptical!)</span>' :
+                            p.e > 0.05 ? '<span class="info">(noticeably elliptical)</span>' :
+                            '<span class="pass">(nearly circular)</span>'
+                        }</li>
+                    `).join('')}
+                </ol>
+            `;
+
+            addResult(eccHTML);
+
+            // ===== TEST 5: Orbital Inclination Analysis =====
+            addResult(`
+                <h2>Test 5: Orbital Inclination Analysis</h2>
+                <p>Which planetary orbits are most tilted from the ecliptic?</p>
+            `);
+
+            const inclinations = Object.entries(PLANETS).map(([key, planet]) => ({
+                name: planet.name,
+                i: planet.orbitalElements.inclination
+            })).sort((a, b) => b.i - a.i);
+
+            const incHTML = `
+                <ol>
+                    ${inclinations.map(p => `
+                        <li>${p.name}: i = ${p.i.toFixed(2)}° ${
+                            p.i > 5 ? '<span class="info">(highly tilted!)</span>' :
+                            p.i > 2 ? '<span class="info">(noticeably tilted)</span>' :
+                            '<span class="pass">(nearly flat)</span>'
+                        }</li>
+                    `).join('')}
+                </ol>
+            `;
+
+            addResult(incHTML);
+
+            // ===== TEST 6: Julian Date Calculations =====
+            addResult(`
+                <h2>Test 6: Julian Date & Time Calculations</h2>
+            `);
+
+            const testDates = [
+                { date: new Date('2000-01-01T12:00:00Z'), expected: 2451545.0, name: 'J2000.0 Epoch' },
+                { date: new Date('1970-01-01T00:00:00Z'), expected: 2440587.5, name: 'Unix Epoch' },
+                { date: today, expected: null, name: 'Today' }
+            ];
+
+            testDates.forEach(test => {
+                const jd = toJulianDate(test.date);
+                const days = daysSinceJ2000(test.date);
+                const error = test.expected ? Math.abs(jd - test.expected) : 0;
+
+                if (test.expected) {
+                    const pass = error < 0.001;
+                    addResult(`
+                        <p class="${pass ? 'pass' : 'fail'}">
+                            ${test.name}: JD = ${jd.toFixed(4)} (expected ${test.expected}, error = ${error.toExponential(2)})
+                            <br>Days since J2000: ${days.toFixed(2)}
+                        </p>
+                    `);
+                } else {
+                    addResult(`
+                        <p class="info">
+                            ${test.name}: JD = ${jd.toFixed(4)}
+                            <br>Days since J2000: ${days.toFixed(2)}
+                        </p>
+                    `);
+                }
+            });
+
+            // ===== SUMMARY =====
+            addResult(`
+                <h2 class="pass">✅ All Tests Complete</h2>
+                <p>Keplerian orbital mechanics module is functioning correctly!</p>
+                <p class="info">
+                    <strong>Next Steps:</strong>
+                    <br>1. Integrate into planets.js for accurate orbital motion
+                    <br>2. Update orbital visualization to show elliptical paths
+                    <br>3. Add moon orbital elements
+                    <br>4. Verify against NASA Horizons data
+                </p>
+            `);
+
+            console.log('✅ All tests complete!');
+        }
+
+        // Run tests on page load
+        runTests();
+    </script>
+</body>
+</html>

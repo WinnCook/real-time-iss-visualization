@@ -2,11 +2,17 @@
  * Orbital Elements - Real Keplerian orbital elements from NASA JPL
  * Source: https://ssd.jpl.nasa.gov/planets/approx_pos.html
  * Epoch: J2000 (January 1, 2000, 12:00 TT)
+ *
+ * NOTE: This module now uses orbital elements from constants.js (PLANETS.orbitalElements)
+ * The data below is kept for backward compatibility but should be migrated.
+ *
+ * @deprecated Use PLANETS.orbitalElements from constants.js instead
  */
 
 /**
- * Keplerian orbital elements for planets
+ * Keplerian orbital elements for planets (DEPRECATED - use constants.js)
  * All angles in degrees, distances in AU
+ * @deprecated
  */
 export const ORBITAL_ELEMENTS = {
     mercury: {

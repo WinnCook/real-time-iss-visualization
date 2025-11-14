@@ -24,6 +24,7 @@ import { isUsingAccurateOrbits, updatePlanetSizeMode } from './planets.js';
 import { setMeteorFrequency, getMeteorFrequencyLabel } from './shootingStars.js';
 import { getPlanetSizeMode } from '../utils/constants.js';
 import { addEarthReferencePoints, removeEarthReferencePoints } from '../utils/earthDebug.js';
+import { escapeHTML } from '../utils/htmlSanitizer.js';
 
 /**
  * References to app state (set during initialization)
@@ -356,6 +357,18 @@ function setupDisplayToggles() {
         });
     }
 
+    // Orbital markers toggle (perihelion/aphelion)
+    const toggleOrbitalMarkersCheckbox = document.getElementById('toggle-orbital-markers');
+    if (toggleOrbitalMarkersCheckbox) {
+        toggleOrbitalMarkersCheckbox.addEventListener('change', (e) => {
+            import('./solarSystem.js').then(({ toggleOrbitalMarkers }) => {
+                toggleOrbitalMarkers(e.target.checked);
+                playToggleSound();
+                console.log(`🎯 Orbital Markers ${e.target.checked ? 'shown' : 'hidden'}`);
+            });
+        });
+    }
+
     // Sounds toggle
     const toggleSounds = document.getElementById('toggle-sounds');
     if (toggleSounds) {
@@ -588,9 +601,12 @@ function setupSizeModeButtons() {
 function showNotification(title, message) {
     const notification = document.createElement('div');
     notification.className = 'realtime-notification';
+    // SECURITY FIX: Escape HTML to prevent XSS attacks
+    const safeTitle = escapeHTML(title);
+    const safeMessage = escapeHTML(message);
     notification.innerHTML = `
-        <strong>${title}</strong>
-        <p>${message}</p>
+        <strong>${safeTitle}</strong>
+        <p>${safeMessage}</p>
     `;
     document.body.appendChild(notification);
 
@@ -1231,8 +1247,10 @@ function updateSelectedObjectInfo(key, object, earthObject = null) {
         `;
     }
 
+    // SECURITY FIX: Escape name to prevent XSS attacks
+    const safeName = escapeHTML(name);
     selectedInfo.innerHTML = `
-        <p><strong>${name}</strong> <span style="color: #4a90e2;">🔒 Locked</span></p>
+        <p><strong>${safeName}</strong> <span style="color: #4a90e2;">🔒 Locked</span></p>
         <div class="info-row">
             <span class="info-label">From Sun:</span>
             <span>${formatDistance(distances.fromSun)}</span>

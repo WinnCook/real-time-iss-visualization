@@ -23,52 +23,140 @@ export const PLANETS = {
         name: "Mercury",
         color: 0xaaaaaa, // Light gray (visible against dark space)
         radius: 2439.7, // km
-        orbitRadius: 0.387, // AU
+        orbitRadius: 0.387, // AU (simplified - use orbitalElements for accuracy)
         orbitPeriod: 87.97, // days
         rotationPeriod: 58.6, // days
-        tilt: 0.034 // degrees
+        tilt: 0.034, // degrees
+
+        // ACCURATE ORBITAL ELEMENTS (J2000.0 Epoch - January 1, 2000, 12:00 TT)
+        // Source: NASA JPL DE440/DE441 Ephemeris, "Explanatory Supplement to Astronomical Almanac"
+        // Reference: Mean ecliptic and equinox of J2000
+        orbitalElements: {
+            epoch: 2451545.0, // Julian Date for J2000.0 (2000-Jan-01.5 TT)
+
+            // Orbital elements at epoch
+            semiMajorAxis: 0.38709927, // AU - Average distance from Sun
+            eccentricity: 0.20563593, // 0-1 scale (0.206 = highly elliptical orbit!)
+            inclination: 7.00497902, // degrees - Tilt relative to ecliptic (highest of all planets!)
+            longitudeOfAscendingNode: 48.33076593, // degrees (Ω) - Where orbit crosses ecliptic upward
+            argumentOfPeriapsis: 29.12703035, // degrees (ω) - Orientation of ellipse in orbital plane
+            meanLongitude: 252.25032350, // degrees (L) - Position at epoch
+
+            // Rates of change (per Julian century from J2000.0)
+            // These account for gravitational perturbations over time
+            semiMajorAxisRate: 0.00000037, // AU/century
+            eccentricityRate: 0.00001906, // per century
+            inclinationRate: -0.00594749, // degrees/century
+            longitudeOfAscendingNodeRate: -0.12534081, // degrees/century
+            argumentOfPeriapsisRate: 0.16047689, // degrees/century
+            meanLongitudeRate: 149472.67411175 // degrees/century (derived from period)
+        }
     },
     venus: {
         name: "Venus",
         color: 0xffc649,
         radius: 6051.8, // km
-        orbitRadius: 0.723, // AU
+        orbitRadius: 0.723, // AU (simplified)
         orbitPeriod: 224.70, // days
         rotationPeriod: -243, // days (retrograde)
-        tilt: 177.4 // degrees
+        tilt: 177.4, // degrees
+
+        orbitalElements: {
+            epoch: 2451545.0,
+            semiMajorAxis: 0.72333566, // AU
+            eccentricity: 0.00677672, // Very circular orbit (0.007)
+            inclination: 3.39467605, // degrees
+            longitudeOfAscendingNode: 76.67984255, // degrees (Ω)
+            argumentOfPeriapsis: 54.89293244, // degrees (ω)
+            meanLongitude: 181.97909950, // degrees (L)
+            semiMajorAxisRate: 0.00000390,
+            eccentricityRate: -0.00004107,
+            inclinationRate: -0.00078890,
+            longitudeOfAscendingNodeRate: -0.27769418,
+            argumentOfPeriapsisRate: 0.05086002,
+            meanLongitudeRate: 58517.81538729
+        }
     },
     earth: {
         name: "Earth",
         color: 0x4a90e2,
         radius: 6371, // km
-        orbitRadius: 1.0, // AU (by definition)
+        orbitRadius: 1.0, // AU (by definition - simplified)
         orbitPeriod: 365.25, // days
         rotationPeriod: 1, // days
-        tilt: 23.44 // degrees
+        tilt: 23.44, // degrees
+
+        orbitalElements: {
+            epoch: 2451545.0,
+            semiMajorAxis: 1.00000261, // AU (Earth-Moon barycenter)
+            eccentricity: 0.01671123, // Nearly circular (0.017)
+            inclination: 0.00001531, // degrees - By definition, ecliptic is based on Earth
+            longitudeOfAscendingNode: -11.26064, // degrees (Ω) - Negative value
+            argumentOfPeriapsis: 114.20783, // degrees (ω) - Also called longitude of perihelion - Ω
+            meanLongitude: 100.46457166, // degrees (L)
+            semiMajorAxisRate: 0.00000562,
+            eccentricityRate: -0.00004392,
+            inclinationRate: -0.01294668,
+            longitudeOfAscendingNodeRate: 0.05739699,
+            argumentOfPeriapsisRate: 0.31831144,
+            meanLongitudeRate: 35999.37244981
+        }
     },
     mars: {
         name: "Mars",
         color: 0xdc4d3a,
         radius: 3389.5, // km
-        orbitRadius: 1.524, // AU
+        orbitRadius: 1.524, // AU (simplified)
         orbitPeriod: 686.98, // days
         rotationPeriod: 1.026, // days
-        tilt: 25.19 // degrees
+        tilt: 25.19, // degrees
+
+        orbitalElements: {
+            epoch: 2451545.0,
+            semiMajorAxis: 1.52371034, // AU
+            eccentricity: 0.09339410, // Noticeably elliptical (0.093)
+            inclination: 1.84969142, // degrees
+            longitudeOfAscendingNode: 49.55953891, // degrees (Ω)
+            argumentOfPeriapsis: 286.50210402, // degrees (ω)
+            meanLongitude: -4.55343205, // degrees (L) - Negative value
+            semiMajorAxisRate: 0.00001847,
+            eccentricityRate: 0.00007882,
+            inclinationRate: -0.00813131,
+            longitudeOfAscendingNodeRate: -0.29257343,
+            argumentOfPeriapsisRate: 0.29528966,
+            meanLongitudeRate: 19140.30268499
+        }
     },
     jupiter: {
         name: "Jupiter",
         color: 0xc88b3a, // Orange-tan with bands
         radius: 69911, // km (largest planet)
-        orbitRadius: 5.2, // AU
+        orbitRadius: 5.2, // AU (simplified)
         orbitPeriod: 4333, // days (11.86 years)
         rotationPeriod: 0.41, // days (fastest rotation - 9.9 hours)
-        tilt: 3.13 // degrees
+        tilt: 3.13, // degrees
+
+        orbitalElements: {
+            epoch: 2451545.0,
+            semiMajorAxis: 5.20288700, // AU
+            eccentricity: 0.04838624, // Slight ellipse (0.048)
+            inclination: 1.30439695, // degrees
+            longitudeOfAscendingNode: 100.47390909, // degrees (Ω)
+            argumentOfPeriapsis: 273.86716699, // degrees (ω)
+            meanLongitude: 34.39644051, // degrees (L)
+            semiMajorAxisRate: -0.00011607,
+            eccentricityRate: -0.00013253,
+            inclinationRate: -0.00183714,
+            longitudeOfAscendingNodeRate: 0.20469106,
+            argumentOfPeriapsisRate: 0.21252668,
+            meanLongitudeRate: 3034.74612775
+        }
     },
     saturn: {
         name: "Saturn",
         color: 0xead6b8, // Pale golden yellow
         radius: 58232, // km (second largest)
-        orbitRadius: 9.54, // AU
+        orbitRadius: 9.54, // AU (simplified)
         orbitPeriod: 10759, // days (29.46 years)
         rotationPeriod: 0.45, // days (10.7 hours)
         tilt: 26.73, // degrees
@@ -79,25 +167,73 @@ export const PLANETS = {
             thickness: 30, // km (very thin!)
             color: 0xc9b18f, // Dusty tan color
             opacity: 0.8
+        },
+
+        orbitalElements: {
+            epoch: 2451545.0,
+            semiMajorAxis: 9.53667594, // AU
+            eccentricity: 0.05386179, // Slight ellipse (0.054)
+            inclination: 2.48599187, // degrees
+            longitudeOfAscendingNode: 113.66242448, // degrees (Ω)
+            argumentOfPeriapsis: 339.39214853, // degrees (ω)
+            meanLongitude: 49.95424423, // degrees (L)
+            semiMajorAxisRate: -0.00125060,
+            eccentricityRate: -0.00050991,
+            inclinationRate: 0.00193609,
+            longitudeOfAscendingNodeRate: -0.28867794,
+            argumentOfPeriapsisRate: -0.41897216,
+            meanLongitudeRate: 1222.49362201
         }
     },
     uranus: {
         name: "Uranus",
         color: 0x4fd0e7, // Cyan/ice blue
         radius: 25362, // km
-        orbitRadius: 19.19, // AU
+        orbitRadius: 19.19, // AU (simplified)
         orbitPeriod: 30687, // days (84 years)
         rotationPeriod: -0.72, // days (17.2 hours, retrograde)
-        tilt: 97.77 // degrees (extreme tilt - rotates on its side!)
+        tilt: 97.77, // degrees (extreme tilt - rotates on its side!)
+
+        orbitalElements: {
+            epoch: 2451545.0,
+            semiMajorAxis: 19.18916464, // AU
+            eccentricity: 0.04725744, // Slight ellipse (0.047)
+            inclination: 0.77263783, // degrees
+            longitudeOfAscendingNode: 74.01692503, // degrees (Ω)
+            argumentOfPeriapsis: 96.99898605, // degrees (ω)
+            meanLongitude: 313.23810451, // degrees (L)
+            semiMajorAxisRate: -0.00196176,
+            eccentricityRate: -0.00004397,
+            inclinationRate: -0.00242939,
+            longitudeOfAscendingNodeRate: 0.04240589,
+            argumentOfPeriapsisRate: 0.40805281,
+            meanLongitudeRate: 428.48202785
+        }
     },
     neptune: {
         name: "Neptune",
         color: 0x4166f5, // Deep blue
         radius: 24622, // km
-        orbitRadius: 30.07, // AU (farthest planet)
+        orbitRadius: 30.07, // AU (farthest planet - simplified)
         orbitPeriod: 60190, // days (164.8 years)
         rotationPeriod: 0.67, // days (16.1 hours)
-        tilt: 28.32 // degrees
+        tilt: 28.32, // degrees
+
+        orbitalElements: {
+            epoch: 2451545.0,
+            semiMajorAxis: 30.06992276, // AU
+            eccentricity: 0.00859048, // Very circular (0.009)
+            inclination: 1.77004347, // degrees
+            longitudeOfAscendingNode: 131.78422574, // degrees (Ω)
+            argumentOfPeriapsis: 276.33550814, // degrees (ω)
+            meanLongitude: -55.12002969, // degrees (L) - Negative value
+            semiMajorAxisRate: 0.00026291,
+            eccentricityRate: 0.00005105,
+            inclinationRate: 0.00035372,
+            longitudeOfAscendingNodeRate: -0.00508664,
+            argumentOfPeriapsisRate: -0.32241464,
+            meanLongitudeRate: 218.45945325
+        }
     }
 };
 
@@ -380,7 +516,7 @@ export const SIMULATION = {
 // ========== API SETTINGS ==========
 
 export const API = {
-    ISS_URL: 'http://api.open-notify.org/iss-now.json',
+    ISS_URL: 'https://api.open-notify.org/iss-now.json', // SECURITY FIX: Changed to HTTPS
     UPDATE_INTERVAL: 5000, // milliseconds (5 seconds)
     TIMEOUT: 10000, // Request timeout
     RETRY_DELAY: 10000 // Delay before retry on error

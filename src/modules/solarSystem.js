@@ -14,6 +14,8 @@ import { initOrbits, updateOrbits, disposeOrbits, initMoonOrbit, updateMoonOrbit
 import { initStarfield, updateStarfield, disposeStarfield } from './starfield.js';
 import { initLabels, registerObject, registerObjectGetter, updateLabels, disposeLabels } from './labels.js';
 import { initShootingStars, updateShootingStars, disposeShootingStars } from './shootingStars.js';
+// TEMPORARY: Commented out to debug
+// import { initOrbitalMarkers, setOrbitalMarkersVisible, areOrbitalMarkersVisible, disposeOrbitalMarkers } from './orbitalMarkers.js';
 import { clearGeometryCache } from '../utils/geometryCache.js';
 import { getCurrentStyle } from './styles.js';
 import { timeManager } from '../utils/time.js';
@@ -30,6 +32,7 @@ const solarSystemState = {
     asteroidBelt: null,
     iss: null,
     orbits: null,
+    orbitalMarkers: null,
     starfield: null,
     labels: null,
     camera: null,
@@ -85,6 +88,11 @@ export async function initSolarSystem(config) {
     // Initialize orbital paths
     solarSystemState.orbits = initOrbits(currentStyle);
     console.log('  ✓ Orbits initialized');
+
+    // Initialize orbital markers (perihelion/aphelion)
+    // TEMPORARY: Commented out to debug
+    // solarSystemState.orbitalMarkers = initOrbitalMarkers(currentStyle);
+    // console.log('  ✓ Orbital markers initialized (perihelion/aphelion points)');
 
     // Initialize the moon
     solarSystemState.moon = initMoon(currentStyle);
@@ -253,6 +261,12 @@ export function disposeSolarSystem() {
         solarSystemState.orbits = null;
     }
 
+    // TEMPORARY: Commented out to debug
+    // if (solarSystemState.orbitalMarkers) {
+    //     disposeOrbitalMarkers();
+    //     solarSystemState.orbitalMarkers = null;
+    // }
+
     if (solarSystemState.planets) {
         disposePlanets();
         solarSystemState.planets = null;
@@ -407,6 +421,26 @@ export function getSolarSystemState() {
  */
 export function toggleAsteroidBelt(visible) {
     setAsteroidBeltVisible(visible);
+}
+
+/**
+ * Toggle orbital markers (perihelion/aphelion) visibility
+ * @param {boolean} visible - Whether markers should be visible
+ */
+export function toggleOrbitalMarkers(visible) {
+    // TEMPORARY: Commented out to debug
+    // setOrbitalMarkersVisible(visible);
+    console.log('Orbital markers temporarily disabled for debugging');
+}
+
+/**
+ * Get orbital markers visibility state
+ * @returns {boolean}
+ */
+export function getOrbitalMarkersVisible() {
+    // TEMPORARY: Commented out to debug
+    // return areOrbitalMarkersVisible();
+    return false;
 }
 
 /**

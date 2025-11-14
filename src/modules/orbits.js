@@ -469,6 +469,12 @@ export function initMajorMoonOrbits(styleConfig, planetMeshes) {
         // Calculate orbit radius
         const orbitRadiusScene = kmToScene(moonData.orbitRadius) * orbitScale;
 
+        // DEBUG: Log orbit creation
+        console.log(`\n🎯 Creating orbit line for ${moonData.name}:`);
+        console.log(`  Mode: ${sizeMode}, Scale: ${orbitScale}`);
+        console.log(`  Orbit radius (km): ${moonData.orbitRadius}`);
+        console.log(`  Orbit radius (scene): ${orbitRadiusScene.toFixed(4)}`);
+
         // Create circle geometry for orbit
         const points = [];
         for (let i = 0; i <= ORBIT_SEGMENTS; i++) {

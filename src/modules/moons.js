@@ -75,14 +75,22 @@ export async function initMajorMoons(styleConfig = {}, planetMeshes = {}) {
         const sizeMode = getPlanetSizeMode();
         const orbitScale = sizeMode === 'real' ? 100 : SCALE.MAJOR_MOON_ORBIT_SCALE;
 
+        const orbitRadiusScene = kmToScene(moonData.orbitRadius) * orbitScale;
+
+        // DEBUG: Log cached data creation
+        console.log(`\n🌙 Caching ${moonData.name} orbital data:`);
+        console.log(`  Mode: ${sizeMode}, Scale: ${orbitScale}`);
+        console.log(`  Orbit radius (km): ${moonData.orbitRadius}`);
+        console.log(`  Orbit radius (scene): ${orbitRadiusScene.toFixed(4)}`);
+
         cachedOrbitalData[moonKey] = {
-            orbitRadiusScene: kmToScene(moonData.orbitRadius) * orbitScale,
+            orbitRadiusScene: orbitRadiusScene,
             periodMs: daysToMs(moonData.orbitPeriod),
             rotationSpeedPerSec: (Math.PI * 2) / (moonData.rotationPeriod * 24 * 60 * 60)
         };
     }
 
-    console.log('✅ Major Moons initialized: Io, Europa, Ganymede, Callisto (Jupiter) + Titan, Rhea, Iapetus (Saturn)');
+    console.log('\n✅ Major Moons initialized: Io, Europa, Ganymede, Callisto (Jupiter) + Titan, Rhea, Iapetus (Saturn)');
     return moonMeshes;
 }
 
@@ -188,6 +196,15 @@ export function updateMajorMoons(deltaTime, simulationTime) {
             parentPosition.y, // Same Y as parent (moons orbit in equatorial plane)
             parentPosition.z + localZ
         );
+
+        // DEBUG: Log actual distance for first update of Callisto
+        if (moonKey === 'callisto' && simulationTime < 100) {
+            const actualDistance = Math.sqrt(localX * localX + localZ * localZ);
+            console.log(`\n🔍 Callisto actual position check:`);
+            console.log(`  Cached orbit radius: ${cached.orbitRadiusScene.toFixed(4)}`);
+            console.log(`  Actual distance from Jupiter: ${actualDistance.toFixed(4)}`);
+            console.log(`  Match: ${Math.abs(cached.orbitRadiusScene - actualDistance) < 0.01 ? '✅ YES' : '❌ NO'}`);
+        }
 
         // Update moon rotation on its axis (using cached rotation speed)
         // Skip rotation if performance level is ultra-low (optimization)

@@ -446,11 +446,15 @@ export function getMoonOrbit() {
  * @param {Object} planetMeshes - Planet mesh objects to get positions
  */
 export function initMajorMoonOrbits(styleConfig, planetMeshes) {
+    console.log('\n🎯🎯🎯 INITIALIZING MAJOR MOON ORBITS 🎯🎯🎯');
+
     // Clean up existing major moon orbits
     disposeMajorMoonOrbits();
 
     const sizeMode = getPlanetSizeMode();
     const orbitScale = sizeMode === 'real' ? 100 : SCALE.MAJOR_MOON_ORBIT_SCALE;
+
+    console.log(`📊 Orbit line settings: Mode=${sizeMode}, Scale=${orbitScale}`);
 
     // Get orbit line color from style
     const orbitColor = styleConfig.orbitColor || 0x555555;

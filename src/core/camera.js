@@ -78,8 +78,8 @@ export function initControls(domElement) {
     controls.staticMoving = false;       // Enable momentum/inertia
     controls.dynamicDampingFactor = 0.15; // Smooth damping with momentum
 
-    controls.minDistance = 0.1;          // Minimum zoom distance (very close - can see ISS details!)
-    controls.maxDistance = 50000;        // Maximum zoom distance (see full solar system)
+    controls.minDistance = 0;            // NO FUCKING LIMIT - ZOOM TO INFINITY!
+    controls.maxDistance = 999999;       // Maximum zoom distance (see full solar system)
 
     // TrackballControls has NO angle limits - you can spin infinitely in ANY direction!
     console.log('🎮 TrackballControls initialized - TRULY UNLIMITED ROTATION');

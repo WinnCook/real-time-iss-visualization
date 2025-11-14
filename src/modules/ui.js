@@ -22,6 +22,8 @@ import { copyShareableURL } from '../utils/urlState.js';
 import { initSounds, setSoundsEnabled, isSoundsEnabled, playClickSound, playFocusSound, playToggleSound, playScreenshotSound, playStyleChangeSound } from '../utils/sounds.js';
 import { isUsingAccurateOrbits, updatePlanetSizeMode } from './planets.js';
 import { setMeteorFrequency, getMeteorFrequencyLabel } from './shootingStars.js';
+import { getPlanetSizeMode } from '../utils/constants.js';
+import { addEarthReferencePoints, removeEarthReferencePoints } from '../utils/earthDebug.js';
 
 /**
  * References to app state (set during initialization)
@@ -49,6 +51,11 @@ let lockedObject = null;
 let lockedObjectKey = null;
 let cameraOffset = null;
 let previousObjectPosition = null;
+
+/**
+ * Earth debug markers state
+ */
+let earthDebugMarkersVisible = false;
 
 /**
  * Performance slider debounce timer
@@ -334,6 +341,18 @@ function setupDisplayToggles() {
             setStarfieldVisible(e.target.checked);
             playToggleSound();
             console.log(`⭐ Stars ${e.target.checked ? 'shown' : 'hidden'}`);
+        });
+    }
+
+    // Asteroid belt toggle
+    const toggleAsteroidBelt = document.getElementById('toggle-asteroid-belt');
+    if (toggleAsteroidBelt) {
+        toggleAsteroidBelt.addEventListener('change', (e) => {
+            import('./solarSystem.js').then(({ toggleAsteroidBelt }) => {
+                toggleAsteroidBelt(e.target.checked);
+                playToggleSound();
+                console.log(`☄️ Asteroid Belt ${e.target.checked ? 'shown' : 'hidden'}`);
+            });
         });
     }
 
@@ -774,6 +793,11 @@ function setupKeyboardShortcuts() {
                 }
                 break;
 
+            case 'd': // D - Toggle Earth Debug Markers (for texture verification)
+                event.preventDefault();
+                toggleEarthDebugMarkers();
+                break;
+
             case '1': // 1 - Realistic Style
                 event.preventDefault();
                 clickStyleButton('realistic');
@@ -945,9 +969,21 @@ export function reregisterAllClickableObjects() {
         registerClickableObject('uranus', getCelestialObject('uranus'), { type: 'planet', name: 'Uranus' });
         registerClickableObject('neptune', getCelestialObject('neptune'), { type: 'planet', name: 'Neptune' });
         registerClickableObject('moon', getCelestialObject('moon'), { type: 'moon', name: 'Moon' });
+
+        // Register Jupiter's Galilean moons
+        registerClickableObject('io', getCelestialObject('io'), { type: 'major_moon', name: 'Io', parent: 'Jupiter' });
+        registerClickableObject('europa', getCelestialObject('europa'), { type: 'major_moon', name: 'Europa', parent: 'Jupiter' });
+        registerClickableObject('ganymede', getCelestialObject('ganymede'), { type: 'major_moon', name: 'Ganymede', parent: 'Jupiter' });
+        registerClickableObject('callisto', getCelestialObject('callisto'), { type: 'major_moon', name: 'Callisto', parent: 'Jupiter' });
+
+        // Register Saturn's major moons
+        registerClickableObject('titan', getCelestialObject('titan'), { type: 'major_moon', name: 'Titan', parent: 'Saturn' });
+        registerClickableObject('rhea', getCelestialObject('rhea'), { type: 'major_moon', name: 'Rhea', parent: 'Saturn' });
+        registerClickableObject('iapetus', getCelestialObject('iapetus'), { type: 'major_moon', name: 'Iapetus', parent: 'Saturn' });
+
         registerClickableObject('iss', getCelestialObject('iss'), { type: 'spacecraft', name: 'ISS' });
 
-        console.log('✅ All clickable objects re-registered');
+        console.log('✅ All clickable objects re-registered (including 7 major moons)');
     });
 }
 
@@ -960,47 +996,164 @@ function handleObjectClick(object) {
     if (!key) return;
 
     console.log(`🎯 Clicked: ${key}`);
+    console.log(`   Object:`, object);
+    console.log(`   Object name: ${object.name}`);
+    console.log(`   Object type: ${object.type}`);
+    console.log(`   Is LOD: ${object.isLOD}`);
     playFocusSound();
 
     // Focus camera on object
-    if (appCamera && cameraControls && object.position) {
-        const targetPosition = object.position.clone();
+    if (appCamera && cameraControls) {
+        // Get WORLD position (not local position - ISS is a child of scene!)
+        const targetPosition = new THREE.Vector3();
+        object.getWorldPosition(targetPosition);
+        console.log(`   Target position (getWorldPosition): (${targetPosition.x.toFixed(2)}, ${targetPosition.y.toFixed(2)}, ${targetPosition.z.toFixed(2)})`);
+        console.log(`   Object.position: (${object.position.x.toFixed(2)}, ${object.position.y.toFixed(2)}, ${object.position.z.toFixed(2)})`);
+
+        // For LOD objects, also check children
+        if (object.isLOD && object.children && object.children.length > 0) {
+            console.log(`   LOD has ${object.children.length} children`);
+            object.children.forEach((child, i) => {
+                const childPos = new THREE.Vector3();
+                child.getWorldPosition(childPos);
+                console.log(`   Child ${i}: (${childPos.x.toFixed(2)}, ${childPos.y.toFixed(2)}, ${childPos.z.toFixed(2)})`);
+            });
+        }
 
         // Calculate optimal camera distance based on object size and type
         let baseRadius = 1;
 
+        // SPECIAL HANDLING FOR ISS (it's a LOD object, not a simple mesh)
+        if (key === 'iss') {
+            // Get current scale mode to determine appropriate camera distance
+            const sizeMode = getPlanetSizeMode();
+
+            // Check if ISS is actually at origin (sun position - indicates ISS not loaded)
+            const distanceFromOrigin = Math.sqrt(
+                targetPosition.x * targetPosition.x +
+                targetPosition.y * targetPosition.y +
+                targetPosition.z * targetPosition.z
+            );
+            if (distanceFromOrigin < 1) {
+                console.error(`❌ ISS TOO CLOSE TO ORIGIN (distance: ${distanceFromOrigin.toFixed(4)}) - ISS NOT LOADED YET!`);
+                console.error('   Wait a few seconds for ISS API to load position, then try again');
+                alert('ISS is still loading. Wait 2-3 seconds and try clicking again.');
+                return;
+            }
+
+            // SIMPLE APPROACH: Use fixed camera distances that WORK
+            // Fuck the bounding box - just use values we KNOW are good
+            console.log(`   🛰️ ISS scale mode: ${sizeMode}`);
+
+            if (sizeMode === 'real') {
+                // ISS is TINY in real mode - get SUPER CLOSE
+                // Real ISS is about 0.0075 units wide (25 units * 0.0003 scale)
+                // Set camera to 0.015 units away - that's 2x the width
+                baseRadius = 0.005; // VERY CLOSE - this is the "base" we'll multiply
+                console.log(`   🛰️ ISS REAL mode: Using fixed baseRadius = ${baseRadius}`);
+            } else {
+                // ISS is ENLARGED in enlarged mode - back away more
+                // Enlarged ISS is much bigger
+                baseRadius = 20; // Decent distance for enlarged ISS
+                console.log(`   🛰️ ISS ENLARGED mode: Using fixed baseRadius = ${baseRadius}`);
+            }
+        }
         // Try to get radius from geometry
-        if (object.geometry?.parameters?.radius) {
+        else if (object.geometry?.parameters?.radius) {
             baseRadius = object.geometry.parameters.radius;
-        } else if (object.scale) {
+        }
+        // Handle LOD objects (get radius from first child)
+        else if (object.isLOD && object.children && object.children[0]) {
+            const firstChild = object.children[0];
+            if (firstChild.geometry?.parameters?.radius) {
+                baseRadius = firstChild.geometry.parameters.radius;
+            } else if (firstChild.scale) {
+                baseRadius = firstChild.scale.x;
+            }
+            console.log(`   LOD object detected, baseRadius from child: ${baseRadius}`);
+        }
+        else if (object.scale) {
             // Use scale as fallback
             baseRadius = object.scale.x;
         }
 
-        // Different zoom distances for different object types
-        let zoomMultiplier = 5; // Default
-        if (key === 'sun') {
-            zoomMultiplier = 3; // Closer to sun (it's big)
-        } else if (key === 'iss') {
-            zoomMultiplier = 20; // Much closer to ISS (it's small)
-        } else if (key === 'moon') {
-            zoomMultiplier = 8; // Medium distance for moon
+        // Calculate final camera distance
+        let finalCameraDistance;
+
+        if (key === 'iss') {
+            // ISS gets DIRECT camera distance - no multipliers, no minimums
+            const sizeMode = getPlanetSizeMode();
+            if (sizeMode === 'real') {
+                // REAL MODE: Camera very close to tiny ISS
+                // We dynamically reduce near plane to 0.001, so we can get super close!
+                finalCameraDistance = 0.05;
+                console.log(`   🛰️ ISS REAL mode: Direct camera distance = ${finalCameraDistance} (near plane will be 0.001)`);
+            } else {
+                // ENLARGED MODE: Camera at 60 units (fills screen with big ISS)
+                finalCameraDistance = 60;
+                console.log(`   🛰️ ISS ENLARGED mode: Direct camera distance = ${finalCameraDistance}`);
+            }
         } else {
-            zoomMultiplier = 6; // Good distance for planets
+            // PLANETS get multiplier logic
+            let zoomMultiplier = 3; // Default - CLOSE UP
+            if (key === 'sun') {
+                zoomMultiplier = 2.5; // Closer to sun (it's big)
+            } else if (key === 'moon') {
+                zoomMultiplier = 4; // Close to moon
+            } else {
+                zoomMultiplier = 3; // Close to planets
+            }
+
+            const cameraDistance = baseRadius * zoomMultiplier;
+            const minCameraDistance = 3; // Minimum for planets
+            finalCameraDistance = Math.max(cameraDistance, minCameraDistance);
+            console.log(`   Calculated distance: ${cameraDistance.toFixed(4)} -> final: ${finalCameraDistance.toFixed(4)}`);
         }
 
-        const cameraDistance = baseRadius * zoomMultiplier;
-
-        // Calculate camera position offset (behind and above the object)
-        cameraOffset = new THREE.Vector3(
-            cameraDistance * 0.3,  // Slight side offset
-            cameraDistance * 0.4,  // Above the object
-            cameraDistance         // Behind the object
-        );
+        // Calculate camera position offset
+        // ISS gets PERFECTLY CENTERED view, planets get angled view
+        if (key === 'iss') {
+            // PERFECTLY CENTERED - camera directly in front, looking straight at ISS
+            cameraOffset = new THREE.Vector3(
+                0,  // No side offset - perfectly centered!
+                0,  // No vertical offset - perfectly centered!
+                finalCameraDistance  // Only distance, straight ahead
+            );
+            console.log(`   📷 ISS: Using CENTERED camera view (no offset)`);
+        } else {
+            // Planets get angled view (behind and above)
+            cameraOffset = new THREE.Vector3(
+                finalCameraDistance * 0.3,  // Slight side offset
+                finalCameraDistance * 0.4,  // Above the object
+                finalCameraDistance         // Behind the object
+            );
+        }
 
         // Set new camera position
         const newCameraPosition = targetPosition.clone().add(cameraOffset);
         appCamera.position.copy(newCameraPosition);
+
+        // CRITICAL: Adjust camera near plane for ISS in real mode
+        // Otherwise ISS gets clipped when too close!
+        if (key === 'iss') {
+            const sizeMode = getPlanetSizeMode();
+            if (sizeMode === 'real') {
+                // Set near plane to 0.01 (10x smaller than default 0.1)
+                // This allows us to get very close to tiny ISS without clipping
+                appCamera.near = 0.001;
+                appCamera.updateProjectionMatrix();
+                console.log(`   📷 Camera near plane reduced to ${appCamera.near} for tiny ISS`);
+            } else {
+                // Reset to default near plane
+                appCamera.near = 0.1;
+                appCamera.updateProjectionMatrix();
+                console.log(`   📷 Camera near plane reset to ${appCamera.near}`);
+            }
+        } else {
+            // Reset to default for planets
+            appCamera.near = 0.1;
+            appCamera.updateProjectionMatrix();
+        }
 
         // Update orbit controls target to follow the object
         cameraControls.target.copy(targetPosition);
@@ -1011,7 +1164,10 @@ function handleObjectClick(object) {
         lockedObjectKey = key;
         previousObjectPosition = targetPosition.clone(); // Store initial position
 
-        console.log(`📷 Camera locked onto ${key} at distance ${cameraDistance.toFixed(1)}`);
+        console.log(`📷 Camera locked onto ${key}`);
+        console.log(`   Distance: ${finalCameraDistance.toFixed(2)} (baseRadius: ${baseRadius.toFixed(4)}, multiplier: ${zoomMultiplier})`);
+        console.log(`   Camera pos: (${newCameraPosition.x.toFixed(2)}, ${newCameraPosition.y.toFixed(2)}, ${newCameraPosition.z.toFixed(2)})`);
+        console.log(`   Looking at: (${targetPosition.x.toFixed(2)}, ${targetPosition.y.toFixed(2)}, ${targetPosition.z.toFixed(2)})`);
     }
 
     // Update selected object info panel
@@ -1202,7 +1358,9 @@ export function setISSInfoStatus(message) {
 export function updateCameraFollow(earthObject) {
     // Update camera to follow locked object
     if (lockedObject && cameraControls && previousObjectPosition) {
-        const currentObjectPosition = lockedObject.position.clone();
+        // Get WORLD position (critical for objects like ISS that are children of scene)
+        const currentObjectPosition = new THREE.Vector3();
+        lockedObject.getWorldPosition(currentObjectPosition);
 
         // Calculate how much the object has moved since last frame
         const delta = new THREE.Vector3().subVectors(currentObjectPosition, previousObjectPosition);
@@ -1229,6 +1387,30 @@ export function updateCameraFollow(earthObject) {
 }
 
 /**
+ * Get currently locked object key (for saving state during rebuilds)
+ * @returns {string|null} Locked object key or null
+ */
+export function getLockedObjectKey() {
+    return lockedObjectKey;
+}
+
+/**
+ * Toggle Earth debug reference markers for texture orientation verification
+ */
+function toggleEarthDebugMarkers() {
+    earthDebugMarkersVisible = !earthDebugMarkersVisible;
+
+    if (earthDebugMarkersVisible) {
+        addEarthReferencePoints();
+        console.log('⌨️ Keyboard: Earth debug markers ON (Press D to toggle)');
+        console.log('📍 Markers show major cities to verify Earth texture orientation');
+    } else {
+        removeEarthReferencePoints();
+        console.log('⌨️ Keyboard: Earth debug markers OFF');
+    }
+}
+
+/**
  * Unlock camera from currently followed object
  */
 export function unlockCamera() {
@@ -1246,6 +1428,42 @@ export function unlockCamera() {
     if (selectedInfo) {
         selectedInfo.innerHTML = '<p>Click any planet or the ISS to see details</p>';
     }
+}
+
+/**
+ * Refocus camera on currently locked object (after scale mode change)
+ * @returns {boolean} True if refocused, false if nothing was locked
+ */
+export function refocusOnLockedObject() {
+    if (!lockedObject || !lockedObjectKey) {
+        console.log('📷 No locked object to refocus on');
+        return false;
+    }
+
+    const objectKey = lockedObjectKey;
+    console.log(`📷 Refocusing on locked object: ${objectKey}`);
+    console.log(`   Current scale mode: ${getPlanetSizeMode()}`);
+
+    // Get the newly rebuilt object from clickableObjects
+    const newObject = clickableObjects.get(objectKey);
+    if (!newObject) {
+        console.error(`❌ Locked object ${objectKey} not found in clickableObjects!`);
+        console.log(`   Available objects: ${Array.from(clickableObjects.keys()).join(', ')}`);
+        // Object doesn't exist anymore, unlock camera
+        unlockCamera();
+        return false;
+    }
+
+    console.log(`   ✅ Found new object:`, newObject);
+
+    // Get world position to verify it's not at origin
+    const worldPos = new THREE.Vector3();
+    newObject.getWorldPosition(worldPos);
+    console.log(`   World position: (${worldPos.x.toFixed(2)}, ${worldPos.y.toFixed(2)}, ${worldPos.z.toFixed(2)})`);
+
+    // Re-run the focus logic with the new object (which has new scale)
+    handleObjectClick(newObject);
+    return true;
 }
 
 /**

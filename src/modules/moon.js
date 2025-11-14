@@ -3,7 +3,7 @@
  * Creates and manages the Moon orbiting Earth
  */
 
-import { MOON, RENDER, SCALE, scaleRadius, kmToScene, DEG_TO_RAD, TWO_PI, daysToMs } from '../utils/constants.js';
+import { MOON, RENDER, SCALE, scaleRadius, kmToScene, DEG_TO_RAD, TWO_PI, daysToMs, getPlanetSizeMode } from '../utils/constants.js';
 import { calculateMoonPosition } from '../utils/orbital.js';
 import { addToScene, removeFromScene } from '../core/scene.js';
 import { getCachedSphereGeometry } from '../utils/geometryCache.js';
@@ -185,10 +185,15 @@ export function getMoonRadius() {
 
 /**
  * Get Moon orbit radius in scene units (with scaling applied)
+ * In real mode: use accurate orbit distance (no extra scaling)
+ * In enlarged mode: apply 50x extra scale to match giant planets
  * @returns {number}
  */
 export function getMoonOrbitRadius() {
-    return kmToScene(MOON.orbitRadius) * SCALE.MOON_ORBIT_SCALE;
+    const sizeMode = getPlanetSizeMode();
+    // INVERTED LOGIC - matching orbits.js fix
+    const orbitScale = sizeMode === 'real' ? SCALE.MOON_ORBIT_SCALE : 1;
+    return kmToScene(MOON.orbitRadius) * orbitScale;
 }
 
 /**

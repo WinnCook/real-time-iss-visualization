@@ -110,6 +110,119 @@ export const MOON = {
     rotationPeriod: 27.32 // days (tidally locked)
 };
 
+// ========== ASTEROID BELT ==========
+// Main asteroid belt between Mars and Jupiter
+// Based on real astronomical data
+
+export const ASTEROID_BELT = {
+    // Orbital parameters (in AU)
+    innerRadius: 2.2,      // AU (inner edge, just beyond Mars at 1.52 AU)
+    outerRadius: 3.2,      // AU (outer edge, before Jupiter at 5.2 AU)
+    centerRadius: 2.7,     // AU (peak density at ~2.7 AU)
+
+    // Vertical thickness (in AU)
+    thickness: 0.6,        // AU (±0.3 AU from ecliptic plane)
+
+    // Orbital periods (in Earth years)
+    minPeriod: 3.5,        // years (inner edge orbits faster)
+    maxPeriod: 6.0,        // years (outer edge orbits slower)
+    avgPeriod: 4.6,        // years (average asteroid orbital period)
+
+    // Visual properties
+    asteroidCount: 15000,  // Number of asteroids to render (balance: detail vs performance)
+    minSize: 0.3,          // scene units (smallest asteroids)
+    maxSize: 2.5,          // scene units (largest asteroids)
+    color: 0x8b7355,       // Brownish-gray (carbonaceous chondrite color)
+
+    // Notable large asteroids (optional for future clickable feature)
+    notableAsteroids: {
+        ceres: { name: "Ceres", radius: 473, orbitRadius: 2.77 },      // Dwarf planet
+        vesta: { name: "Vesta", radius: 262.7, orbitRadius: 2.36 },    // Largest asteroid
+        pallas: { name: "Pallas", radius: 256, orbitRadius: 2.77 },
+        hygiea: { name: "Hygiea", radius: 217, orbitRadius: 3.14 }
+    }
+};
+
+// ========== MAJOR MOONS ==========
+// Jupiter's Galilean Moons and Saturn's Major Moons
+// Orbital distances are in km from parent planet, periods in Earth days
+
+export const MAJOR_MOONS = {
+    // Jupiter's Galilean Moons (discovered by Galileo in 1610)
+    io: {
+        name: "Io",
+        color: 0xffcc00, // Yellow-orange (volcanic sulfur)
+        radius: 1821.6, // km (slightly larger than Earth's Moon)
+        orbitRadius: 421700, // km from Jupiter
+        orbitPeriod: 1.769, // days
+        rotationPeriod: 1.769, // days (tidally locked)
+        parentPlanet: 'jupiter',
+        description: "Most volcanically active body in the solar system"
+    },
+    europa: {
+        name: "Europa",
+        color: 0xd4e4f7, // Pale blue-white (icy surface)
+        radius: 1560.8, // km
+        orbitRadius: 671034, // km from Jupiter
+        orbitPeriod: 3.551, // days
+        rotationPeriod: 3.551, // days (tidally locked)
+        parentPlanet: 'jupiter',
+        description: "Subsurface ocean, potential for life"
+    },
+    ganymede: {
+        name: "Ganymede",
+        color: 0xb8b8b8, // Gray-brown (largest moon in solar system)
+        radius: 2634.1, // km (larger than Mercury!)
+        orbitRadius: 1070412, // km from Jupiter
+        orbitPeriod: 7.155, // days
+        rotationPeriod: 7.155, // days (tidally locked)
+        parentPlanet: 'jupiter',
+        description: "Largest moon in solar system, has magnetic field"
+    },
+    callisto: {
+        name: "Callisto",
+        color: 0x8b7355, // Dark brownish-gray (heavily cratered)
+        radius: 2410.3, // km
+        orbitRadius: 1882709, // km from Jupiter
+        orbitPeriod: 16.689, // days
+        rotationPeriod: 16.689, // days (tidally locked)
+        parentPlanet: 'jupiter',
+        description: "Most heavily cratered object in solar system"
+    },
+
+    // Saturn's Major Moons
+    titan: {
+        name: "Titan",
+        color: 0xffa500, // Orange (thick atmosphere with haze)
+        radius: 2574.7, // km (second largest moon in solar system)
+        orbitRadius: 1221870, // km from Saturn
+        orbitPeriod: 15.945, // days
+        rotationPeriod: 15.945, // days (tidally locked)
+        parentPlanet: 'saturn',
+        description: "Only moon with thick atmosphere, lakes of methane"
+    },
+    rhea: {
+        name: "Rhea",
+        color: 0xe0e0e0, // Light gray (icy surface)
+        radius: 763.8, // km
+        orbitRadius: 527108, // km from Saturn
+        orbitPeriod: 4.518, // days
+        rotationPeriod: 4.518, // days (tidally locked)
+        parentPlanet: 'saturn',
+        description: "Second-largest moon of Saturn, icy composition"
+    },
+    iapetus: {
+        name: "Iapetus",
+        color: 0x696969, // Medium gray (two-toned surface)
+        radius: 734.5, // km
+        orbitRadius: 3560820, // km from Saturn
+        orbitPeriod: 79.321, // days
+        rotationPeriod: 79.321, // days (tidally locked)
+        parentPlanet: 'saturn',
+        description: "Two-toned surface: one bright side, one dark side"
+    }
+};
+
 // ========== SCENE SCALING ==========
 // These factors make objects visible while maintaining relative proportions
 
@@ -130,6 +243,10 @@ export const SCALE = {
     // Moon orbit scaling (needed because planets are scaled up 1500x but Moon orbit uses real km distance)
     // This ensures Moon is visible outside Earth's scaled-up surface
     MOON_ORBIT_SCALE: 50, // Makes Moon orbit ~64 units (vs Earth radius of ~32 units)
+
+    // Major moons (Jupiter & Saturn) size and orbit scaling
+    MAJOR_MOON_SIZE: 800, // Slightly smaller than Earth's Moon for visual hierarchy
+    MAJOR_MOON_ORBIT_SCALE: 50, // Same as Earth's Moon for consistent spacing
 
     // Orbit line thickness
     ORBIT_LINE_WIDTH: 2,
@@ -443,6 +560,8 @@ export default {
     ISS_ORBITAL_PERIOD,
     PLANETS,
     MOON,
+    ASTEROID_BELT,
+    MAJOR_MOONS,
     SCALE,
     RENDER,
     PERFORMANCE_PRESETS,

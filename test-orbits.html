@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Orbits Module Test</title>
+    <style>
+        body {
+            background: #1a1a1a;
+            color: #fff;
+            font-family: monospace;
+            padding: 20px;
+        }
+        .status { padding: 10px; margin: 5px 0; border-radius: 4px; }
+        .success { background: #2d5016; border-left: 4px solid #4caf50; }
+        .error { background: #5c1616; border-left: 4px solid #f44336; }
+        .info { background: #1a3d5c; border-left: 4px solid #2196f3; }
+    </style>
+</head>
+<body>
+    <h1>🌐 Orbits Module Test</h1>
+    <div id="output"></div>
+
+    <!-- Three.js CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r160/three.min.js"></script>
+
+    <script type="module">
+        const output = document.getElementById('output');
+
+        function log(message, type = 'info') {
+            const div = document.createElement('div');
+            div.className = `status ${type}`;
+            div.textContent = message;
+            output.appendChild(div);
+        }
+
+        log('Starting orbits module test...', 'info');
+
+        try {
+            // Test 1: Import constants
+            log('Test 1: Importing constants...', 'info');
+            const constantsModule = await import('./src/utils/constants.js');
+            log('✅ Constants loaded successfully', 'success');
+
+            // Test 2: Import scene
+            log('Test 2: Importing scene...', 'info');
+            const sceneModule = await import('./src/core/scene.js');
+            log('✅ Scene module loaded successfully', 'success');
+
+            // Test 3: Import orbits module
+            log('Test 3: Importing orbits module...', 'info');
+            const orbitsModule = await import('./src/modules/orbits.js');
+            log('✅ Orbits module loaded successfully', 'success');
+
+            // Test 4: Try to initialize orbits
+            log('Test 4: Initializing scene...', 'info');
+            const scene = sceneModule.initScene();
+            log('✅ Scene initialized', 'success');
+
+            // Test 5: Initialize orbits
+            log('Test 5: Initializing orbits...', 'info');
+            const orbits = orbitsModule.initOrbits({ name: 'Realistic', flatShading: false, wireframe: false });
+            log(`✅ Orbits initialized: ${Object.keys(orbits).length} orbital paths created`, 'success');
+
+            log('🎉 All tests passed! Orbits module is working correctly.', 'success');
+
+        } catch (error) {
+            log(`❌ Error: ${error.message}`, 'error');
+            log(`Stack: ${error.stack}`, 'error');
+        }
+    </script>
+</body>
+</html>

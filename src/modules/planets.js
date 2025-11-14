@@ -8,6 +8,7 @@ import { calculatePlanetPosition } from '../utils/orbitalElements.js';
 import { addToScene, removeFromScene } from '../core/scene.js';
 import { getCachedSphereGeometry } from '../utils/geometryCache.js';
 import { isRotationEnabled } from './performanceSlider.js';
+import { loadPlanetTextures, loadSaturnRingTexture } from '../utils/textureLoader.js';
 
 /**
  * Planet mesh objects keyed by planet name
@@ -62,24 +63,24 @@ let lastDebugLog = 0;
 const cachedOrbitalData = {};
 
 /**
- * Initialize all planets
+ * Initialize all planets (ASYNC - loads textures for Realistic style)
  * @param {Object} styleConfig - Visual style configuration
- * @returns {Object} Object containing all planet meshes
+ * @returns {Promise<Object>} Object containing all planet meshes
  */
-export function initPlanets(styleConfig = {}) {
+export async function initPlanets(styleConfig = {}) {
     currentStyle = styleConfig;
 
     // Clean up existing planets if any
     disposePlanets();
 
-    // Create each planet
-    Object.keys(PLANETS).forEach(planetKey => {
+    // Create each planet (async for texture loading)
+    for (const planetKey of Object.keys(PLANETS)) {
         const planetData = PLANETS[planetKey];
-        createPlanet(planetKey, planetData, styleConfig);
+        await createPlanet(planetKey, planetData, styleConfig);
 
         // Add rings to Saturn
         if (planetKey === 'saturn' && planetData.rings) {
-            createSaturnRings(planetKey, planetData, styleConfig);
+            await createSaturnRings(planetKey, planetData, styleConfig);
         }
 
         // Pre-calculate and cache orbital data for this planet (OPTIMIZATION)
@@ -88,19 +89,19 @@ export function initPlanets(styleConfig = {}) {
             periodMs: daysToMs(planetData.orbitPeriod),
             rotationSpeedPerSec: (Math.PI * 2) / (planetData.rotationPeriod * 24 * 60 * 60)
         };
-    });
+    }
 
     console.log('✅ Planets initialized: Mercury, Venus, Earth, Mars, Jupiter, Saturn (with rings), Uranus, Neptune');
     return planetMeshes;
 }
 
 /**
- * Create a single planet mesh
+ * Create a single planet mesh (ASYNC - loads textures for Realistic style)
  * @param {string} planetKey - Planet identifier (e.g., 'mercury')
  * @param {Object} planetData - Planet configuration data
  * @param {Object} styleConfig - Visual style configuration
  */
-function createPlanet(planetKey, planetData, styleConfig) {
+async function createPlanet(planetKey, planetData, styleConfig) {
     // Calculate planet radius with scaling (using tiered scaling based on planet category)
     const planetRadius = scaleRadius(planetData.radius, 'planet', planetKey);
 
@@ -111,8 +112,8 @@ function createPlanet(planetKey, planetData, styleConfig) {
         RENDER.SPHERE_SEGMENTS
     );
 
-    // Create planet material based on style
-    const material = createPlanetMaterial(planetData, styleConfig);
+    // Create planet material based on style (async for texture loading)
+    const material = await createPlanetMaterial(planetKey, planetData, styleConfig);
 
     // Create planet mesh
     const planetMesh = new THREE.Mesh(geometry, material);
@@ -136,12 +137,13 @@ function createPlanet(planetKey, planetData, styleConfig) {
 }
 
 /**
- * Create planet material based on visual style
+ * Create planet material based on visual style (ASYNC - loads textures for Realistic style)
+ * @param {string} planetKey - Planet identifier (e.g., 'mercury')
  * @param {Object} planetData - Planet configuration data
  * @param {Object} styleConfig - Visual style configuration
- * @returns {THREE.Material}
+ * @returns {Promise<THREE.Material>}
  */
-function createPlanetMaterial(planetData, styleConfig) {
+async function createPlanetMaterial(planetKey, planetData, styleConfig) {
     const color = planetData.color;
 
     // Check style-specific properties
@@ -152,9 +154,50 @@ function createPlanetMaterial(planetData, styleConfig) {
     const emissive = styleConfig.name === 'Neon/Cyberpunk' ? color : 0x000000;
     const emissiveIntensity = styleConfig.name === 'Neon/Cyberpunk' ? 0.3 : 0;
 
-    // Create material
-    // For realistic style with textures, we would load texture maps here
-    // For now, using solid colors for all styles
+    // REALISTIC STYLE: Load and use planet textures
+    if (styleConfig.name === 'Realistic') {
+        console.log(`  🎨 Loading textures for ${planetKey}...`);
+
+        // Load texture maps (color is required, normal/specular are optional)
+        const textures = await loadPlanetTextures(planetKey, {
+            color: true,
+            normal: false, // TODO: Enable when normal maps are downloaded
+            specular: planetKey === 'earth' // Only Earth has ocean specular reflections
+        });
+
+        if (textures && textures.color) {
+            // Create textured material
+            const materialConfig = {
+                map: textures.color,
+                flatShading: false, // No flat shading with textures
+                wireframe: wireframe,
+                roughness: 0.9,
+                metalness: 0.1
+            };
+
+            // Add normal map if available (surface detail/bumps)
+            if (textures.normal) {
+                materialConfig.normalMap = textures.normal;
+                materialConfig.normalScale = new THREE.Vector2(1, 1);
+            }
+
+            // Add specular map for Earth (ocean shine)
+            if (textures.specular) {
+                materialConfig.roughnessMap = textures.specular;
+                materialConfig.roughness = 0.7; // Lower roughness for Earth's oceans
+                materialConfig.metalness = 0.3;
+            }
+
+            const material = new THREE.MeshStandardMaterial(materialConfig);
+            console.log(`  ✅ ${planetKey} textures loaded successfully`);
+            return material;
+        } else {
+            console.warn(`  ⚠️ Failed to load textures for ${planetKey}, falling back to solid color`);
+            // Fall through to solid color material
+        }
+    }
+
+    // SOLID COLOR MATERIAL (for non-Realistic styles or texture load failure)
     const material = new THREE.MeshStandardMaterial({
         color: color,
         emissive: emissive,
@@ -237,12 +280,12 @@ function createEarthAtmosphere(planetKey, planetRadius, styleConfig) {
 }
 
 /**
- * Create Saturn's ring system
+ * Create Saturn's ring system (ASYNC - loads texture for Realistic style)
  * @param {string} planetKey - Should be 'saturn'
  * @param {Object} planetData - Saturn configuration data with rings property
  * @param {Object} styleConfig - Visual style configuration
  */
-function createSaturnRings(planetKey, planetData, styleConfig) {
+async function createSaturnRings(planetKey, planetData, styleConfig) {
     const planetMesh = planetMeshes[planetKey];
     if (!planetMesh || !planetData.rings) return;
 
@@ -261,18 +304,43 @@ function createSaturnRings(planetKey, planetData, styleConfig) {
     );
 
     // Create ring material
-    const ringMaterial = new THREE.MeshBasicMaterial({
-        color: ringData.color,
-        opacity: ringData.opacity,
-        transparent: true,
-        side: THREE.DoubleSide, // Visible from both sides
-        depthWrite: false // Prevent z-fighting issues
-    });
+    let ringMaterial;
 
-    // For neon style, add some glow
-    if (styleConfig.name === 'Neon/Cyberpunk') {
-        ringMaterial.emissive = new THREE.Color(ringData.color);
-        ringMaterial.emissiveIntensity = 0.5;
+    // REALISTIC STYLE: Load and use ring texture
+    if (styleConfig.name === 'Realistic') {
+        console.log('  🎨 Loading Saturn ring texture...');
+        const ringTexture = await loadSaturnRingTexture();
+
+        if (ringTexture) {
+            ringMaterial = new THREE.MeshBasicMaterial({
+                map: ringTexture,
+                opacity: ringData.opacity,
+                transparent: true,
+                side: THREE.DoubleSide,
+                depthWrite: false
+            });
+            console.log('  ✅ Saturn ring texture loaded successfully');
+        } else {
+            console.warn('  ⚠️ Failed to load Saturn ring texture, using solid color');
+            // Fall through to solid color
+        }
+    }
+
+    // SOLID COLOR (for non-Realistic styles or texture load failure)
+    if (!ringMaterial) {
+        ringMaterial = new THREE.MeshBasicMaterial({
+            color: ringData.color,
+            opacity: ringData.opacity,
+            transparent: true,
+            side: THREE.DoubleSide,
+            depthWrite: false
+        });
+
+        // For neon style, add some glow
+        if (styleConfig.name === 'Neon/Cyberpunk') {
+            ringMaterial.emissive = new THREE.Color(ringData.color);
+            ringMaterial.emissiveIntensity = 0.5;
+        }
     }
 
     // Create ring mesh
@@ -544,36 +612,59 @@ export function toggleOrbitalMode() {
  * Update planet size mode (enlarged vs real proportions)
  * @param {string} mode - 'enlarged' or 'real'
  */
-export function updatePlanetSizeMode(mode) {
+export async function updatePlanetSizeMode(mode) {
     setPlanetSizeMode(mode);
 
-    // Rebuild all celestial objects with new sizes
-    if (currentStyle) {
-        initPlanets(currentStyle);
+    console.log(`🔄 Rebuilding all celestial objects with ${mode.toUpperCase()} sizes...`);
 
-        // Also rebuild Sun, Moon, and ISS with new sizes
-        import('./sun.js').then(({ initSun }) => initSun(currentStyle));
-        import('./moon.js').then(({ initMoon }) => initMoon(currentStyle));
-        import('./iss.js').then(({ initISS }) => initISS(currentStyle));
+    // Rebuild all celestial objects with new sizes - WAIT FOR ALL TO COMPLETE
+    if (currentStyle) {
+        // Save locked object key BEFORE rebuilding
+        let savedLockedKey = null;
+        await import('./ui.js').then(({ getLockedObjectKey }) => {
+            savedLockedKey = getLockedObjectKey();
+            if (savedLockedKey) {
+                console.log(`💾 Saved locked object: ${savedLockedKey}`);
+            }
+        });
+
+        // Rebuild everything in parallel and WAIT
+        await Promise.all([
+            initPlanets(currentStyle),
+            import('./sun.js').then(({ initSun }) => initSun(currentStyle)),
+            import('./moon.js').then(({ initMoon }) => initMoon(currentStyle)),
+            import('./iss.js').then(({ initISS }) => initISS(currentStyle))
+        ]);
 
         // Reset Moon orbit so it gets recreated with correct size mode
-        import('./solarSystem.js').then(({ resetMoonOrbitInitialization }) => {
+        await import('./solarSystem.js').then(({ resetMoonOrbitInitialization }) => {
             resetMoonOrbitInitialization();
         });
+
+        console.log(`✅ All celestial objects rebuilt with ${mode.toUpperCase()} sizes`);
+
+        // Re-register all objects as clickable (needed after size mode change)
+        await import('./ui.js').then(({ reregisterAllClickableObjects }) => {
+            reregisterAllClickableObjects();
+        });
+
+        // Small delay to ensure raycasting is updated
+        await new Promise(resolve => setTimeout(resolve, 100));
+
+        // IMPORTANT: If user had an object selected (locked), refocus on it with new scale
+        await import('./ui.js').then(({ refocusOnLockedObject }) => {
+            const refocused = refocusOnLockedObject();
+            if (!refocused) {
+                // Only reset camera if nothing is locked
+                import('../core/camera.js').then(({ resetCamera }) => {
+                    resetCamera();
+                    console.log('📷 Camera reset to default position (no object locked)');
+                });
+            } else {
+                console.log(`📷 Camera refocused on locked object (${savedLockedKey}) with new scale`);
+            }
+        });
     }
-
-    console.log(`🔄 Celestial objects rebuilt with ${mode.toUpperCase()} sizes`);
-
-    // Re-register all objects as clickable (needed after size mode change)
-    import('./ui.js').then(({ reregisterAllClickableObjects }) => {
-        reregisterAllClickableObjects();
-    });
-
-    // Reset camera to default view position so user can see everything
-    import('../core/camera.js').then(({ resetCamera }) => {
-        resetCamera();
-        console.log('📷 Camera reset to default position after size mode change');
-    });
 }
 
 /**

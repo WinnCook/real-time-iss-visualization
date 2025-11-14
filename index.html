@@ -156,6 +156,10 @@
                         <span>Stars</span>
                     </label>
                     <label class="toggle">
+                        <input type="checkbox" id="toggle-asteroid-belt" checked>
+                        <span>Asteroids</span>
+                    </label>
+                    <label class="toggle">
                         <input type="checkbox" id="toggle-sounds">
                         <span>🔊 Sounds</span>
                     </label>
@@ -278,7 +282,16 @@
         </div>
     </div>
 
-    <!-- VERSION 20250113002 - FIXED CONTROLS -->
+    <!-- VERSION 20250113004 - SWAPPED BUTTON VALUES -->
+
+    <!-- Import Map for ES6 Modules -->
+    <script type="importmap">
+    {
+        "imports": {
+            "three": "https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.module.js"
+        }
+    }
+    </script>
 
     <!-- Load Three.js from CDN (using known working version) -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -291,7 +304,7 @@
 
     <!-- Verify Three.js loaded and make it globally available -->
     <script>
-        console.log('🚨🚨🚨 VERIFICATION SCRIPT RUNNING - VERSION 20250113002 🚨🚨🚨');
+        console.log('🚨🚨🚨 VERIFICATION SCRIPT RUNNING - VERSION 20250113004 🚨🚨🚨');
 
         if (typeof THREE !== 'undefined') {
             window.THREE = THREE;
@@ -317,7 +330,7 @@
     </script>
 
     <!-- Main Application Entry Point (will load other modules as needed) -->
-    <script type="module" src="src/main.js?v=20250113002"></script>
+    <script type="module" src="src/main.js?v=20250113004"></script>
 
     <!-- EMERGENCY INLINE ISS CHASE CAMERA - BYPASS MODULE CACHE -->
     <script>

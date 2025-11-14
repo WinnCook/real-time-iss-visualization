@@ -7,6 +7,8 @@
 import { initSun, updateSun, disposeSun, getSun } from './sun.js';
 import { initPlanets, updatePlanets, getPlanetPosition, disposePlanets, getPlanet } from './planets.js';
 import { initMoon, updateMoon, disposeMoon, getMoon } from './moon.js';
+import { initMajorMoons, updateMajorMoons, disposeMajorMoons, getMoonMesh } from './moons.js';
+import { initAsteroidBelt, updateAsteroidBelt, disposeAsteroidBelt, setAsteroidBeltVisible, isAsteroidBeltVisible } from './asteroidBelt.js';
 import { initISS, updateISS, disposeISS, getISSMesh, registerUICallback, updateModuleLabels, setModuleLabelsEnabled } from './iss.js';
 import { initOrbits, updateOrbits, disposeOrbits, initMoonOrbit, updateMoonOrbit } from './orbits.js';
 import { initStarfield, updateStarfield, disposeStarfield } from './starfield.js';
@@ -24,6 +26,8 @@ const solarSystemState = {
     sun: null,
     planets: null,
     moon: null,
+    majorMoons: null,
+    asteroidBelt: null,
     iss: null,
     orbits: null,
     starfield: null,
@@ -66,9 +70,17 @@ export async function initSolarSystem(config) {
     solarSystemState.sun = initSun(currentStyle);
     console.log('  ✓ Sun initialized');
 
-    // Initialize planets (Mercury, Venus, Earth, Mars)
-    solarSystemState.planets = initPlanets(currentStyle);
+    // Initialize planets (Mercury, Venus, Earth, Mars, Jupiter, Saturn, Uranus, Neptune)
+    solarSystemState.planets = await initPlanets(currentStyle);
     console.log('  ✓ Planets initialized');
+
+    // Initialize major moons (Jupiter & Saturn moons - needs planet meshes)
+    solarSystemState.majorMoons = await initMajorMoons(currentStyle, solarSystemState.planets);
+    console.log('  ✓ Major Moons initialized (Io, Europa, Ganymede, Callisto + Titan, Rhea, Iapetus)');
+
+    // Initialize asteroid belt (between Mars and Jupiter)
+    solarSystemState.asteroidBelt = initAsteroidBelt(currentStyle);
+    console.log('  ✓ Asteroid Belt initialized (15,000 asteroids between Mars and Jupiter)');
 
     // Initialize orbital paths
     solarSystemState.orbits = initOrbits(currentStyle);
@@ -134,6 +146,16 @@ export function updateSolarSystem(deltaTime, simulationTime) {
         updatePlanets(deltaTime, simulationTime);
     }
 
+    // Update major moons animation (Jupiter & Saturn moons)
+    if (solarSystemState.majorMoons) {
+        updateMajorMoons(deltaTime, simulationTime);
+    }
+
+    // Update asteroid belt orbital motion
+    if (solarSystemState.asteroidBelt) {
+        updateAsteroidBelt(deltaTime, simulationTime);
+    }
+
     // Update orbital paths (static, but included for consistency)
     if (solarSystemState.orbits) {
         updateOrbits(deltaTime, simulationTime);
@@ -147,6 +169,7 @@ export function updateSolarSystem(deltaTime, simulationTime) {
             if (!solarSystemState.moonOrbitInitialized) {
                 const planetSizeMode = getPlanetSizeMode();
                 const styleConfig = getCurrentStyle();
+                console.log(`🚨 CREATING MOON ORBIT - Mode: ${planetSizeMode}`);
                 initMoonOrbit(styleConfig, earthPosition, planetSizeMode);
                 solarSystemState.moonOrbitInitialized = true;
                 console.log('  ✓ Moon orbit initialized on first frame at Earth position');
@@ -204,6 +227,16 @@ export function disposeSolarSystem() {
     if (solarSystemState.moon) {
         disposeMoon();
         solarSystemState.moon = null;
+    }
+
+    if (solarSystemState.majorMoons) {
+        disposeMajorMoons();
+        solarSystemState.majorMoons = null;
+    }
+
+    if (solarSystemState.asteroidBelt) {
+        disposeAsteroidBelt();
+        solarSystemState.asteroidBelt = null;
     }
 
     if (solarSystemState.orbits) {
@@ -265,7 +298,7 @@ export async function recreateSolarSystem(styleConfig = null) {
 
 /**
  * Get a specific celestial object
- * @param {string} name - Object name (sun, mercury, venus, earth, mars, moon, iss)
+ * @param {string} name - Object name (sun, planets, moon, major moons, iss)
  * @returns {THREE.Mesh|null} The requested object or null
  */
 export function getCelestialObject(name) {
@@ -283,6 +316,14 @@ export function getCelestialObject(name) {
             return getPlanet(name.toLowerCase());
         case 'moon':
             return getMoon();
+        case 'io':
+        case 'europa':
+        case 'ganymede':
+        case 'callisto':
+        case 'titan':
+        case 'rhea':
+        case 'iapetus':
+            return getMoonMesh(name.toLowerCase());
         case 'iss':
             return getISSMesh();
         default:
@@ -342,11 +383,29 @@ export function getSolarSystemState() {
         hasSun: !!solarSystemState.sun,
         hasPlanets: !!solarSystemState.planets,
         hasMoon: !!solarSystemState.moon,
+        hasMajorMoons: !!solarSystemState.majorMoons,
+        hasAsteroidBelt: !!solarSystemState.asteroidBelt,
         hasISS: !!solarSystemState.iss,
         hasOrbits: !!solarSystemState.orbits,
         hasStarfield: !!solarSystemState.starfield,
         hasLabels: !!solarSystemState.labels
     };
+}
+
+/**
+ * Toggle asteroid belt visibility
+ * @param {boolean} visible - Whether belt should be visible
+ */
+export function toggleAsteroidBelt(visible) {
+    setAsteroidBeltVisible(visible);
+}
+
+/**
+ * Get asteroid belt visibility state
+ * @returns {boolean} Whether belt is visible
+ */
+export function getAsteroidBeltVisibility() {
+    return isAsteroidBeltVisible();
 }
 
 /**
@@ -371,5 +430,7 @@ export default {
     registerISSCallback,
     registerAllObjects,
     getSolarSystemState,
+    toggleAsteroidBelt,
+    getAsteroidBeltVisibility,
     resetMoonOrbitInitialization
 };

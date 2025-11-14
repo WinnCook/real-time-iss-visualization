@@ -14,6 +14,7 @@ import { geographicToScenePosition } from '../utils/coordinates.js';
 import { COLORS, ISS_ORBIT_ALTITUDE, SCALE } from '../utils/constants.js';
 import { scaleRadius } from '../utils/constants.js';
 import { getCachedSphereGeometry } from '../utils/geometryCache.js';
+import { verifyISSTexturePosition } from '../utils/earthDebug.js';
 
 // Module state
 let issMesh = null; // Will be THREE.LOD object
@@ -80,13 +81,24 @@ export async function initISS(styleConfig) {
 
     // Set the LOD object as the main ISS mesh
     issMesh = issLOD;
+
+    // Set INITIAL position (will be updated by API immediately)
+    // Default: above Earth's equator at 0° longitude
+    // This prevents ISS from being at (0,0,0) / sun position before first API update
+    const earthRadius = 6371; // km
+    const initialRadius = earthRadius + ISS_ORBIT_ALTITUDE;
+    const scaleFactorForOrbits = 0.001; // Match coordinate system scaling
+    const initialDistance = initialRadius * scaleFactorForOrbits;
+    issMesh.position.set(initialDistance, 0, 0); // Start at 0° lat, 0° lon
+    console.log(`🛰️ ISS initial position set to (${initialDistance.toFixed(2)}, 0, 0) - will be updated by API`);
+
     addToScene(issMesh);
 
     // Create trail line
     issTrail = createISSTrail(styleConfig);
     addToScene(issTrail);
 
-    // Start fetching ISS position from API
+    // Start fetching ISS position from API (async - will update position)
     startISSTracking();
 
     // Create module labels (hidden by default)
@@ -363,6 +375,9 @@ function updateISSVisualization(isNewData = false) {
             altitude: ISS_ORBIT_ALTITUDE,
             timestamp: currentPosition.timestamp || Math.floor(Date.now() / 1000)
         });
+
+        // DEBUG: Verify ISS texture position alignment
+        verifyISSTexturePosition(currentPosition.latitude, currentPosition.longitude);
     }
 }
 

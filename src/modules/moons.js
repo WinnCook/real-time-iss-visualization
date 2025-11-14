@@ -70,9 +70,10 @@ export async function initMajorMoons(styleConfig = {}, planetMeshes = {}) {
         await createMoon(moonKey, moonData, styleConfig);
 
         // Pre-calculate and cache orbital data for this moon (OPTIMIZATION)
-        // Real mode: Use actual distance (1x). Enlarged mode: Apply scaling (50x)
+        // Real mode: Apply SAME 100x scale as parent planets for accurate proportions
+        // Enlarged mode: Apply 50x scaling for visibility
         const sizeMode = getPlanetSizeMode();
-        const orbitScale = sizeMode === 'real' ? 1 : SCALE.MAJOR_MOON_ORBIT_SCALE;
+        const orbitScale = sizeMode === 'real' ? 100 : SCALE.MAJOR_MOON_ORBIT_SCALE;
 
         cachedOrbitalData[moonKey] = {
             orbitRadiusScene: kmToScene(moonData.orbitRadius) * orbitScale,

@@ -259,20 +259,35 @@ If found, log here for future tasks
 
 ## 📊 PROGRESS TRACKING
 
-### Current Status: NOT STARTED
-**Last Updated:** 2025-11-13 [Initial Plan]
+### Current Status: IN PROGRESS - Core fixes COMPLETE ✅
+**Last Updated:** 2025-11-13 [Fixes Applied]
 
 ### Completion Log:
 ```
-[ ] Task 0: Pre-Flight Check (0/3 steps)
-[ ] Task 1: Major Moons Registration (0/6 steps)
-[ ] Task 2: Moon Orbit Scaling Fix (0/6 steps)
-[ ] Task 3: Major Moons Scaling Fix (0/6 steps)
-[ ] Task 4: Real Proportions Verification (0/6 steps)
-[ ] Task 5: Documentation Update (0/4 steps)
+[✅] Task 0: Pre-Flight Check (3/3 steps) - COMPLETE
+[✅] Task 1: Major Moons Registration (6/6 steps) - COMPLETE
+[✅] Task 2: Moon Orbit Scaling Fix (6/6 steps) - COMPLETE
+[✅] Task 3: Major Moons Scaling Fix (6/6 steps) - COMPLETE
+[ ] Task 4: Real Proportions Verification (0/6 steps) - READY FOR USER TESTING
+[ ] Task 5: Documentation Update (0/4 steps) - IN PROGRESS
 
-Total: 0/31 steps completed (0%)
+Total: 21/31 steps completed (68%)
 ```
+
+### Changes Applied:
+1. ✅ Added all 7 major moons to dropdown selector (index.html)
+2. ✅ Fixed Moon orbit scaling - removed extra 100x multiplier in real mode (orbital.js)
+3. ✅ Fixed major moons orbit scaling - inverted ternary operator (moons.js)
+4. ✅ Git commits created for rollback safety
+
+### Files Modified:
+- `index.html` - Added major moons to dropdown with optgroups
+- `src/utils/orbital.js` - Fixed Earth's Moon orbit scaling logic
+- `src/modules/moons.js` - Fixed major moons orbit scaling logic
+
+### Git Commits:
+- `91fcf28` - Checkpoint before fixes
+- `17e2705` - Applied all scaling fixes
 
 ---
 

@@ -344,11 +344,12 @@ export function initMoonOrbit(styleConfig, earthPosition = null, planetSizeMode 
     if (planetSizeMode === 'enlarged') {
         // In enlarged mode: apply 50x scale to make visible around giant planets
         orbitRadiusScene = kmToScene(MOON.orbitRadius) * SCALE.MOON_ORBIT_SCALE;
-        console.log(`🌙 Moon orbit ENLARGED: ${orbitRadiusScene.toFixed(2)} scene units [LARGE]`);
+        console.log(`🌙 Moon orbit ENLARGED: ${orbitRadiusScene.toFixed(2)} scene units`);
     } else {
-        // In real mode: NO extra scaling, use accurate proportions
-        orbitRadiusScene = kmToScene(MOON.orbitRadius);
-        console.log(`🌙 Moon orbit REAL: ${orbitRadiusScene.toFixed(2)} scene units [TINY]`);
+        // In real mode: Apply SAME 100x scale as planets for accurate proportions
+        // This ensures Moon orbit is 60.3x Earth radius (accurate!)
+        orbitRadiusScene = kmToScene(MOON.orbitRadius * 100);
+        console.log(`🌙 Moon orbit REAL: ${orbitRadiusScene.toFixed(2)} scene units (60.3x Earth radius)`);
     }
 
     // Create circle geometry for Moon's orbit around Earth

@@ -301,6 +301,10 @@ Total: 27/33 steps completed (82%)
 - `91fcf28` - Checkpoint before fixes
 - `17e2705` - First attempt (inverted logic - still wrong)
 - `a75f0ac` - **CRITICAL FIX: Correct 100x scale applied to all moon orbits**
+- `08c5b60` - Validation documentation
+- `c2b4baf` - Major moon orbit lines added
+- `cad8f66` - Complete accuracy verification
+- `0a9e3b8` - **FIX: Major moon orbits now recreate on scale mode change**
 
 ### Validated Ratios (Real Mode):
 - ✅ Earth-Moon: 60.3x Earth radius (NASA: 60.3x)

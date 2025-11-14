@@ -423,8 +423,10 @@ export function getAsteroidBeltVisibility() {
  */
 export function resetMoonOrbitInitialization() {
     solarSystemState.moonOrbitInitialized = false;
-    // Don't call dispose - just reset flag
-    console.log('🔄 Moon orbit will be recreated with new size mode');
+    // Dispose major moon orbits so they get recreated with correct scale
+    disposeMajorMoonOrbits();
+    // Don't call dispose on Moon orbit - just reset flag
+    console.log('🔄 Moon orbits (Earth + major moons) will be recreated with new size mode');
 }
 
 // Export default object with all functions

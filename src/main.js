@@ -17,6 +17,7 @@ import { initTutorial } from './modules/tutorial.js';
 import { initTouchIndicator } from './modules/touchIndicator.js';
 import { initScreenshot } from './utils/screenshot.js';
 import { initURLState, decodeStateFromURL, applyStateFromURL } from './utils/urlState.js';
+import { escapeHTML } from './utils/htmlSanitizer.js';
 
 /**
  * Application state
@@ -109,6 +110,18 @@ async function init() {
         registerClickableObject('uranus', getCelestialObject('uranus'), { type: 'planet', name: 'Uranus' });
         registerClickableObject('neptune', getCelestialObject('neptune'), { type: 'planet', name: 'Neptune' });
         registerClickableObject('moon', getCelestialObject('moon'), { type: 'moon', name: 'Moon' });
+
+        // Register Jupiter's Galilean moons
+        registerClickableObject('io', getCelestialObject('io'), { type: 'major_moon', name: 'Io', parent: 'Jupiter' });
+        registerClickableObject('europa', getCelestialObject('europa'), { type: 'major_moon', name: 'Europa', parent: 'Jupiter' });
+        registerClickableObject('ganymede', getCelestialObject('ganymede'), { type: 'major_moon', name: 'Ganymede', parent: 'Jupiter' });
+        registerClickableObject('callisto', getCelestialObject('callisto'), { type: 'major_moon', name: 'Callisto', parent: 'Jupiter' });
+
+        // Register Saturn's major moons
+        registerClickableObject('titan', getCelestialObject('titan'), { type: 'major_moon', name: 'Titan', parent: 'Saturn' });
+        registerClickableObject('rhea', getCelestialObject('rhea'), { type: 'major_moon', name: 'Rhea', parent: 'Saturn' });
+        registerClickableObject('iapetus', getCelestialObject('iapetus'), { type: 'major_moon', name: 'Iapetus', parent: 'Saturn' });
+
         registerClickableObject('iss', getCelestialObject('iss'), { type: 'spacecraft', name: 'ISS' });
 
         // Register ISS data callback for UI updates
@@ -209,9 +222,11 @@ function showError(message) {
     if (loadingScreen) {
         const content = loadingScreen.querySelector('.loading-content');
         if (content) {
+            // SECURITY FIX: Use escapeHTML to prevent XSS attacks
+            const safeMessage = escapeHTML(message);
             content.innerHTML = `
                 <h1>❌ Error</h1>
-                <p style="color: #f87171;">${message}</p>
+                <p style="color: #f87171;">${safeMessage}</p>
                 <button onclick="location.reload()" style="margin-top: 20px; padding: 10px 20px; cursor: pointer;">
                     Reload Page
                 </button>

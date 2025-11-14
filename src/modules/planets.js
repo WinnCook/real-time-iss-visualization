@@ -44,6 +44,13 @@ let currentStyle = null;
 let useAccurateOrbits = true; // Always use accurate orbits for realistic simulation
 
 /**
+ * CONCURRENCY FIX: Flag to prevent concurrent size mode changes
+ * Protects against race conditions when user rapidly changes size modes
+ * @type {boolean}
+ */
+let sizeChangeInProgress = false;
+
+/**
  * Epoch date for J2000 calculations (January 1, 2000, 12:00 TT)
  * @type {Date}
  */
@@ -158,41 +165,49 @@ async function createPlanetMaterial(planetKey, planetData, styleConfig) {
     if (styleConfig.name === 'Realistic') {
         console.log(`  🎨 Loading textures for ${planetKey}...`);
 
-        // Load texture maps (color is required, normal/specular are optional)
-        const textures = await loadPlanetTextures(planetKey, {
-            color: true,
-            normal: false, // TODO: Enable when normal maps are downloaded
-            specular: planetKey === 'earth' // Only Earth has ocean specular reflections
-        });
+        // ERROR HANDLING FIX: Wrap texture loading in try-catch to prevent crashes
+        try {
+            // Load texture maps (color is required, normal/specular are optional)
+            const textures = await loadPlanetTextures(planetKey, {
+                color: true,
+                normal: false, // TODO: Enable when normal maps are downloaded
+                specular: planetKey === 'earth' // Only Earth has ocean specular reflections
+            });
 
-        if (textures && textures.color) {
-            // Create textured material
-            const materialConfig = {
-                map: textures.color,
-                flatShading: false, // No flat shading with textures
-                wireframe: wireframe,
-                roughness: 0.9,
-                metalness: 0.1
-            };
+            if (textures && textures.color) {
+                // Create textured material
+                const materialConfig = {
+                    map: textures.color,
+                    flatShading: false, // No flat shading with textures
+                    wireframe: wireframe,
+                    roughness: 0.9,
+                    metalness: 0.1
+                };
 
-            // Add normal map if available (surface detail/bumps)
-            if (textures.normal) {
-                materialConfig.normalMap = textures.normal;
-                materialConfig.normalScale = new THREE.Vector2(1, 1);
+                // Add normal map if available (surface detail/bumps)
+                if (textures.normal) {
+                    materialConfig.normalMap = textures.normal;
+                    materialConfig.normalScale = new THREE.Vector2(1, 1);
+                }
+
+                // Add specular map for Earth (ocean shine)
+                if (textures.specular) {
+                    materialConfig.roughnessMap = textures.specular;
+                    materialConfig.roughness = 0.7; // Lower roughness for Earth's oceans
+                    materialConfig.metalness = 0.3;
+                }
+
+                const material = new THREE.MeshStandardMaterial(materialConfig);
+                console.log(`  ✅ ${planetKey} textures loaded successfully`);
+                return material;
+            } else {
+                console.warn(`  ⚠️ Failed to load textures for ${planetKey}, falling back to solid color`);
+                // Fall through to solid color material
             }
-
-            // Add specular map for Earth (ocean shine)
-            if (textures.specular) {
-                materialConfig.roughnessMap = textures.specular;
-                materialConfig.roughness = 0.7; // Lower roughness for Earth's oceans
-                materialConfig.metalness = 0.3;
-            }
-
-            const material = new THREE.MeshStandardMaterial(materialConfig);
-            console.log(`  ✅ ${planetKey} textures loaded successfully`);
-            return material;
-        } else {
-            console.warn(`  ⚠️ Failed to load textures for ${planetKey}, falling back to solid color`);
+        } catch (error) {
+            // ERROR HANDLING FIX: Gracefully handle texture loading errors
+            console.error(`  ❌ Error loading textures for ${planetKey}:`, error);
+            console.warn(`  ⚠️ Using fallback solid color material for ${planetKey}`);
             // Fall through to solid color material
         }
     }
@@ -613,12 +628,21 @@ export function toggleOrbitalMode() {
  * @param {string} mode - 'enlarged' or 'real'
  */
 export async function updatePlanetSizeMode(mode) {
-    setPlanetSizeMode(mode);
+    // CONCURRENCY FIX: Prevent concurrent size mode changes
+    if (sizeChangeInProgress) {
+        console.warn(`⚠️ Size mode change already in progress, ignoring request for '${mode}'`);
+        return;
+    }
 
-    console.log(`🔄 Rebuilding all celestial objects with ${mode.toUpperCase()} sizes...`);
+    sizeChangeInProgress = true;
 
-    // Rebuild all celestial objects with new sizes - WAIT FOR ALL TO COMPLETE
-    if (currentStyle) {
+    try {
+        setPlanetSizeMode(mode);
+
+        console.log(`🔄 Rebuilding all celestial objects with ${mode.toUpperCase()} sizes...`);
+
+        // Rebuild all celestial objects with new sizes - WAIT FOR ALL TO COMPLETE
+        if (currentStyle) {
         // Save locked object key BEFORE rebuilding
         let savedLockedKey = null;
         await import('./ui.js').then(({ getLockedObjectKey }) => {
@@ -671,6 +695,10 @@ export async function updatePlanetSizeMode(mode) {
                 console.log(`📷 Camera refocused on locked object (${savedLockedKey}) with new scale`);
             }
         });
+        }
+    } finally {
+        // CONCURRENCY FIX: Always reset flag, even if error occurs
+        sizeChangeInProgress = false;
     }
 }
 

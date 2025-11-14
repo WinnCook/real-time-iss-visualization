@@ -50,6 +50,7 @@ export function initTouchIndicator() {
     touchIndicator = document.createElement('div');
     touchIndicator.id = 'touch-indicator';
     touchIndicator.className = 'touch-indicator';
+    // SECURITY NOTE: Static HTML structure - safe to use innerHTML
     touchIndicator.innerHTML = `
         <div class="touch-indicator-content">
             <h3>📱 Touch Controls</h3>

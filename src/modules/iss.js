@@ -15,6 +15,7 @@ import { COLORS, ISS_ORBIT_ALTITUDE, SCALE } from '../utils/constants.js';
 import { scaleRadius } from '../utils/constants.js';
 import { getCachedSphereGeometry } from '../utils/geometryCache.js';
 import { verifyISSTexturePosition } from '../utils/earthDebug.js';
+import { escapeHTML } from '../utils/htmlSanitizer.js';
 
 // Module state
 let issMesh = null; // Will be THREE.LOD object
@@ -82,15 +83,15 @@ export async function initISS(styleConfig) {
     // Set the LOD object as the main ISS mesh
     issMesh = issLOD;
 
-    // Set INITIAL position (will be updated by API immediately)
-    // Default: above Earth's equator at 0° longitude
-    // This prevents ISS from being at (0,0,0) / sun position before first API update
-    const earthRadius = 6371; // km
-    const initialRadius = earthRadius + ISS_ORBIT_ALTITUDE;
-    const scaleFactorForOrbits = 0.001; // Match coordinate system scaling
-    const initialDistance = initialRadius * scaleFactorForOrbits;
-    issMesh.position.set(initialDistance, 0, 0); // Start at 0° lat, 0° lon
-    console.log(`🛰️ ISS initial position set to (${initialDistance.toFixed(2)}, 0, 0) - will be updated by API`);
+    // BUG FIX: Set INITIAL position using mock data immediately
+    // Don't wait for API - it might be unreachable and ISS will be stuck at origin (0,0,0)
+    const initialMockPosition = issAPI.getMockPosition();
+    currentPosition = initialMockPosition;
+    console.log(`🛰️ ISS initial mock position: lat=${initialMockPosition.latitude.toFixed(2)}, lon=${initialMockPosition.longitude.toFixed(2)}`);
+
+    // Position ISS immediately so it's not stuck in the sun
+    updateISSVisualization(false);
+    console.log(`🛰️ ISS positioned at mock location - will be updated by API if available`);
 
     addToScene(issMesh);
 
@@ -300,7 +301,9 @@ function startISSTracking() {
 
     // Register callback for position updates
     issAPI.onUpdate((position) => {
+        console.log('🔔 ISS callback triggered with position:', position);
         currentPosition = position;
+        console.log('📍 currentPosition set, calling updateISSVisualization...');
         updateISSVisualization(true); // Pass true - this is new API data
     });
 
@@ -322,9 +325,13 @@ export function stopISSTracking() {
  * Update ISS position from API
  */
 async function updateISSPosition() {
+    console.log('🚀 updateISSPosition() called - fetching from API...');
     try {
+        console.log('📞 Calling issAPI.fetchISSPosition()...');
         const position = await issAPI.fetchISSPosition();
+        console.log('📦 Received position from API:', position);
         currentPosition = position;
+        console.log('✅ currentPosition set, calling updateISSVisualization...');
         updateISSVisualization(true); // Pass true - this is new API data
 
         // Log position for debugging
@@ -335,6 +342,7 @@ async function updateISSPosition() {
         }
     } catch (error) {
         console.error('❌ Failed to update ISS position:', error);
+        console.error('❌ Error stack:', error.stack);
     }
 }
 
@@ -343,7 +351,11 @@ async function updateISSPosition() {
  * @param {boolean} isNewData - Whether this is new API data (not just a visual update)
  */
 function updateISSVisualization(isNewData = false) {
-    if (!currentPosition || !issMesh) return;
+    console.log('🎬 updateISSVisualization called - currentPosition:', currentPosition, 'issMesh:', !!issMesh);
+    if (!currentPosition || !issMesh) {
+        console.warn('⚠️ Cannot update ISS visualization - currentPosition:', !!currentPosition, 'issMesh:', !!issMesh);
+        return;
+    }
 
     // Convert geographic coordinates to 3D scene position
     const scenePos = geographicToScenePosition(
@@ -455,7 +467,10 @@ function createModuleLabels() {
         const label = document.createElement('div');
         label.className = 'iss-module-label';
         label.id = `iss-module-${index}`;
-        label.innerHTML = `<span style="border-left: 3px solid ${module.color}; padding-left: 0.5rem;">${module.name}</span>`;
+        // SECURITY NOTE: ISS_MODULES is a hardcoded constant, but we escape for defense in depth
+        const safeName = escapeHTML(module.name);
+        const safeColor = escapeHTML(module.color);
+        label.innerHTML = `<span style="border-left: 3px solid ${safeColor}; padding-left: 0.5rem;">${safeName}</span>`;
         label.style.position = 'absolute';
         label.style.color = 'rgba(255, 255, 255, 0.9)';
         label.style.fontSize = '0.75rem';
@@ -717,12 +732,13 @@ export function disposeISS() {
     }
 
     // Clear trail data
-    trailPositions = [];
+    trailPositions.length = 0; // MEMORY FIX: Clear array properly to prevent memory leaks
     currentPosition = null;
 
     // Clear solar panel references
-    solarPanelsDetailed = [];
-    solarPanelsSimple = [];
+    // MEMORY FIX: Clear arrays completely to ensure garbage collection
+    solarPanelsDetailed.length = 0;
+    solarPanelsSimple.length = 0;
 
     // Clear model references
     issDetailedModel = null;

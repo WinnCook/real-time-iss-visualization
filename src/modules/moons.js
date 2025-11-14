@@ -186,15 +186,27 @@ export function updateMajorMoons(deltaTime, simulationTime) {
         const cached = cachedOrbitalData[moonKey];
         const angle = startAngles[moonKey] + (simulationTime / cached.periodMs) * TWO_PI;
 
-        // Calculate position on circular orbit (XZ plane around parent)
+        // Calculate position on circular orbit in parent's equatorial plane
+        // Step 1: Calculate position in flat XZ plane
         const localX = Math.cos(angle) * cached.orbitRadiusScene;
+        const localY = 0; // Start flat
         const localZ = Math.sin(angle) * cached.orbitRadiusScene;
 
-        // Set moon position = parent position + local orbit offset
+        // Step 2: Apply parent planet's axial tilt to rotate orbital plane
+        // Moons orbit in their parent's equatorial plane, not the ecliptic plane
+        const parentPlanetData = PLANETS[parentPlanetKey];
+        const axialTiltRadians = parentPlanetData.tilt * DEG_TO_RAD;
+
+        // Rotate around X-axis by axial tilt angle
+        // This tilts the orbital plane to match the parent's equator
+        const rotatedY = localY * Math.cos(axialTiltRadians) - localZ * Math.sin(axialTiltRadians);
+        const rotatedZ = localY * Math.sin(axialTiltRadians) + localZ * Math.cos(axialTiltRadians);
+
+        // Set moon position = parent position + tilted orbit offset
         moonMesh.position.set(
             parentPosition.x + localX,
-            parentPosition.y, // Same Y as parent (moons orbit in equatorial plane)
-            parentPosition.z + localZ
+            parentPosition.y + rotatedY, // NOW includes tilt!
+            parentPosition.z + rotatedZ
         );
 
         // DEBUG: Log actual distance for first update of Callisto

@@ -26,6 +26,13 @@ let currentStyleConfig = STYLES.realistic;
 let recreateObjectsCallback = null;
 
 /**
+ * CONCURRENCY FIX: Flag to prevent concurrent style changes
+ * Protects against race conditions when user rapidly clicks style buttons
+ * @type {boolean}
+ */
+let styleChangeInProgress = false;
+
+/**
  * Initialize the styles system
  * @param {string} initialStyle - Initial style key (default: 'realistic')
  * @param {Function} recreateCallback - Callback to recreate objects on style change
@@ -79,7 +86,7 @@ export function getAvailableStyles() {
  * @param {string} newStyleKey - The style key to switch to
  * @returns {boolean} True if style was changed, false if already active or invalid
  */
-export function switchStyle(newStyleKey) {
+export async function switchStyle(newStyleKey) {
     // Validate style exists
     if (!STYLES[newStyleKey]) {
         console.error(`❌ Invalid style key: ${newStyleKey}`);
@@ -92,25 +99,38 @@ export function switchStyle(newStyleKey) {
         return false;
     }
 
-    console.log(`🎨 Switching style from '${currentStyleKey}' to '${newStyleKey}'...`);
-
-    // Update current style
-    currentStyleKey = newStyleKey;
-    currentStyleConfig = STYLES[newStyleKey];
-
-    // Apply new style to scene
-    applyStyleToScene(currentStyleConfig);
-
-    // Recreate all celestial objects with new style
-    if (recreateObjectsCallback) {
-        recreateObjectsCallback(currentStyleConfig);
+    // CONCURRENCY FIX: Prevent concurrent style changes
+    if (styleChangeInProgress) {
+        console.warn(`⚠️ Style change already in progress, ignoring request for '${newStyleKey}'`);
+        return false;
     }
 
-    // Update UI to reflect active style
-    updateStyleButtons(newStyleKey);
+    styleChangeInProgress = true;
 
-    console.log(`✅ Style switched to '${newStyleKey}'`);
-    return true;
+    try {
+        console.log(`🎨 Switching style from '${currentStyleKey}' to '${newStyleKey}'...`);
+
+        // Update current style
+        currentStyleKey = newStyleKey;
+        currentStyleConfig = STYLES[newStyleKey];
+
+        // Apply new style to scene
+        applyStyleToScene(currentStyleConfig);
+
+        // Recreate all celestial objects with new style
+        if (recreateObjectsCallback) {
+            await recreateObjectsCallback(currentStyleConfig);
+        }
+
+        // Update UI to reflect active style
+        updateStyleButtons(newStyleKey);
+
+        console.log(`✅ Style switched to '${newStyleKey}'`);
+        return true;
+    } finally {
+        // CONCURRENCY FIX: Always reset flag, even if error occurs
+        styleChangeInProgress = false;
+    }
 }
 
 /**

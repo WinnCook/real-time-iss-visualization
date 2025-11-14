@@ -121,6 +121,7 @@ function createTutorialOverlay() {
     // Create tutorial box
     tutorialBox = document.createElement('div');
     tutorialBox.className = 'tutorial-box';
+    // SECURITY NOTE: Static HTML structure - safe to use innerHTML
     tutorialBox.innerHTML = `
         <div class="tutorial-content">
             <h2 id="tutorial-title"></h2>
@@ -188,6 +189,7 @@ function updateTutorialStep() {
 
     // Update content
     document.getElementById('tutorial-title').textContent = step.title;
+    // SECURITY NOTE: tutorialSteps is a hardcoded constant array - safe trusted source
     document.getElementById('tutorial-text').innerHTML = step.content;
     document.getElementById('tutorial-step-counter').textContent =
         `Step ${currentStep + 1} of ${tutorialSteps.length}`;

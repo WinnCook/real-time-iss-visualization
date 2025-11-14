@@ -32,20 +32,46 @@ class ISSAPIManager {
         this.isUpdating = true;
 
         try {
-            // Create abort controller for timeout
-            const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), API.TIMEOUT);
+            console.log(`🌐 fetchISSPosition: Starting fetch to ${API.ISS_URL}`);
+            console.log(`⏱️ Timeout set to ${API.TIMEOUT}ms`);
 
-            // Fetch from API
-            const response = await fetch(API.ISS_URL, {
-                signal: controller.signal,
-                method: 'GET',
-                headers: {
-                    'Accept': 'application/json'
+            // BUG FIX: Use Promise.race to guarantee timeout works
+            // AbortController doesn't always work reliably in all environments
+            const fetchPromise = (async () => {
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => {
+                    console.log('⏰ Fetch timeout! Aborting...');
+                    controller.abort();
+                }, API.TIMEOUT);
+
+                try {
+                    console.log('📡 Calling fetch()...');
+                    const response = await fetch(API.ISS_URL, {
+                        signal: controller.signal,
+                        method: 'GET',
+                        headers: {
+                            'Accept': 'application/json'
+                        }
+                    });
+                    clearTimeout(timeoutId);
+                    return response;
+                } catch (error) {
+                    clearTimeout(timeoutId);
+                    throw error;
                 }
+            })();
+
+            // Timeout promise that rejects after API.TIMEOUT
+            const timeoutPromise = new Promise((_, reject) => {
+                setTimeout(() => {
+                    reject(new Error('Fetch timeout (Promise.race)'));
+                }, API.TIMEOUT);
             });
 
-            clearTimeout(timeoutId);
+            // Race between fetch and timeout
+            console.log('🏁 Racing fetch vs timeout...');
+            const response = await Promise.race([fetchPromise, timeoutPromise]);
+            console.log('✅ Fetch won the race!');
 
             // Check if response is OK
             if (!response.ok) {
@@ -91,13 +117,20 @@ class ISSAPIManager {
             // If we have a cached position, return it
             if (this.lastPosition) {
                 console.warn('Using cached ISS position');
+                // BUG FIX: Notify callbacks with cached position
+                this.notifyCallbacks(this.lastPosition);
                 return this.lastPosition;
             }
 
             // If too many errors, use mock data
             if (this.errorCount >= this.maxErrorCount) {
                 console.warn('Too many API errors, using mock ISS data');
-                return this.getMockPosition();
+                const mockPosition = this.getMockPosition();
+
+                // BUG FIX: Notify callbacks with mock position so ISS actually moves
+                this.notifyCallbacks(mockPosition);
+
+                return mockPosition;
             }
 
             throw error;
@@ -185,6 +218,7 @@ class ISSAPIManager {
      * @param {Object} position - Position data to send to callbacks
      */
     notifyCallbacks(position) {
+        console.log(`📢 Notifying ${this.updateCallbacks.length} callback(s) with position:`, position);
         this.updateCallbacks.forEach(callback => {
             try {
                 callback(position);

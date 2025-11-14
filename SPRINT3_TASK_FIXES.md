@@ -305,6 +305,8 @@ Total: 27/33 steps completed (82%)
 - `c2b4baf` - Major moon orbit lines added
 - `cad8f66` - Complete accuracy verification
 - `0a9e3b8` - **FIX: Major moon orbits now recreate on scale mode change**
+- `472f228` - **FIX: Rebuild major moons on scale mode change (initial fix)**
+- [PENDING] - **DEBUG: Browser cache issue identified and documented**
 
 ### Validated Ratios (Real Mode):
 - ✅ Earth-Moon: 60.3x Earth radius (NASA: 60.3x)
@@ -411,7 +413,58 @@ Total: 27/33 steps completed (82%)
 (Document surprises or additional issues discovered)
 
 ### Future Improvements:
-(Ideas for next sprint)
+- Implement cache-busting strategy for production (version query params or build hashes)
+- Add automated tests to verify orbital ratios after scale mode changes
+- Consider adding visual indicators when scale mode changes (e.g., brief overlay message)
+
+---
+
+## 🐛 FINAL DEBUG SESSION: Browser Cache Issue
+
+**Date:** 2025-11-13 Evening
+**Issue:** Orbit alignment fix appeared to fail despite correct code implementation
+
+### The Mystery:
+After implementing `planets.js` lines 641-647 to rebuild major moons on scale mode change, testing showed the moons were STILL misaligned with their orbital paths. Console logs showed:
+- Orbit lines created with correct scale (629.2566 for Callisto in real mode) ✓
+- But NO logs showing moons being rebuilt ❌
+
+### Root Cause:
+**Browser JavaScript Module Cache**
+
+The browser aggressively cached the ES6 modules (`planets.js`, `moons.js`). Even though:
+- Source files were modified correctly
+- Web server served updated files
+- File modification timestamps confirmed changes were saved
+
+The browser continued executing OLD cached JavaScript!
+
+### Evidence:
+1. Log file `localhost-1763087966222.log` timestamp: 7:39 PM
+2. `planets.js` modification time: 7:37 PM
+3. Log file created AFTER code changes
+4. BUT: No debug logs from new code appeared in console
+5. Conclusion: Browser served cached modules, not updated ones
+
+### Solution:
+**Hard Refresh Browser:**
+- Windows/Linux: `Ctrl + Shift + R` or `Ctrl + F5`
+- Mac: `Cmd + Shift + R`
+
+After hard refresh: ✅ **ALL MOONS PERFECTLY ALIGNED!**
+
+### Key Learnings:
+1. **Always hard refresh** when testing ES6 module changes
+2. Browser cache is invisible but CRITICAL to debug workflow
+3. File timestamps can diagnose cache vs. code issues
+4. Debug logging is invaluable for identifying cache problems
+5. For production: implement cache-busting (version query params, build hashes)
+
+### Prevention Strategy:
+For future development:
+- Add cache-busting query params: `import('./moons.js?v=2025-11-13')`
+- Use development server with cache-disabled headers
+- Document hard-refresh requirement in developer setup guide
 
 ---
 

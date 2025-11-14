@@ -194,9 +194,40 @@ Next frame: Recreate orbit lines (read new scale)
 
 ## ✅ STATUS
 
-**FIXED:** Commit `472f228`
+**FIXED:** Commit `472f228` (initial fix) + Browser cache issue resolved
 **Verified:** All major moons now stay on their orbital paths in both scale modes
 **Impact:** CRITICAL fix - Makes orbit visualization educationally accurate
+
+---
+
+## 🔧 FINAL DEBUGGING: Browser Cache Issue
+
+### The Mystery:
+After implementing the fix in `planets.js` (lines 641-647) to rebuild major moons when scale mode changes, the issue **STILL persisted** in testing.
+
+### Root Cause Discovery:
+Analysis of console logs revealed:
+- The code changes were present in `planets.js`
+- The file modification timestamp confirmed changes were saved
+- BUT: Console logs showed NO evidence of `initMajorMoons()` being called
+- Log file timestamp was AFTER code modification time
+
+**The culprit: BROWSER JAVASCRIPT MODULE CACHE**
+
+Modern browsers aggressively cache ES6 modules. Even though the server was serving new files, the browser continued using cached versions of `planets.js` and `moons.js`.
+
+### Solution:
+**Hard refresh** the browser to clear JavaScript module cache:
+- **Windows/Linux:** `Ctrl + Shift + R` or `Ctrl + F5`
+- **Mac:** `Cmd + Shift + R`
+
+After hard refresh, the fix worked perfectly! 🎯
+
+### Key Learnings:
+1. **Always hard refresh** when testing JavaScript module changes
+2. In production, use cache-busting strategies (version query params, build hashes)
+3. Debug logs are invaluable for identifying cache vs. code issues
+4. File modification timestamps can help diagnose cache problems
 
 ---
 

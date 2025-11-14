@@ -629,12 +629,19 @@ export async function updatePlanetSizeMode(mode) {
         });
 
         // Rebuild everything in parallel and WAIT
+        // Get reference to planets for major moons
+        let rebuiltPlanets = null;
         await Promise.all([
-            initPlanets(currentStyle),
+            initPlanets(currentStyle).then(planets => { rebuiltPlanets = planets; }),
             import('./sun.js').then(({ initSun }) => initSun(currentStyle)),
             import('./moon.js').then(({ initMoon }) => initMoon(currentStyle)),
             import('./iss.js').then(({ initISS }) => initISS(currentStyle))
         ]);
+
+        // CRITICAL: Also rebuild major moons with new scale
+        await import('./moons.js').then(({ initMajorMoons }) =>
+            initMajorMoons(currentStyle, rebuiltPlanets)
+        );
 
         // Reset Moon orbit so it gets recreated with correct size mode
         await import('./solarSystem.js').then(({ resetMoonOrbitInitialization }) => {

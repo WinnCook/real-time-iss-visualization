@@ -10,7 +10,7 @@ import { initMoon, updateMoon, disposeMoon, getMoon } from './moon.js';
 import { initMajorMoons, updateMajorMoons, disposeMajorMoons, getMoonMesh } from './moons.js';
 import { initAsteroidBelt, updateAsteroidBelt, disposeAsteroidBelt, setAsteroidBeltVisible, isAsteroidBeltVisible } from './asteroidBelt.js';
 import { initISS, updateISS, disposeISS, getISSMesh, registerUICallback, updateModuleLabels, setModuleLabelsEnabled } from './iss.js';
-import { initOrbits, updateOrbits, disposeOrbits, initMoonOrbit, updateMoonOrbit } from './orbits.js';
+import { initOrbits, updateOrbits, disposeOrbits, initMoonOrbit, updateMoonOrbit, initMajorMoonOrbits, updateMajorMoonOrbits, disposeMajorMoonOrbits } from './orbits.js';
 import { initStarfield, updateStarfield, disposeStarfield } from './starfield.js';
 import { initLabels, registerObject, registerObjectGetter, updateLabels, disposeLabels } from './labels.js';
 import { initShootingStars, updateShootingStars, disposeShootingStars } from './shootingStars.js';
@@ -171,6 +171,10 @@ export function updateSolarSystem(deltaTime, simulationTime) {
                 const styleConfig = getCurrentStyle();
                 console.log(`🚨 CREATING MOON ORBIT - Mode: ${planetSizeMode}`);
                 initMoonOrbit(styleConfig, earthPosition, planetSizeMode);
+
+                // Also initialize major moon orbits (Jupiter & Saturn moons)
+                initMajorMoonOrbits(styleConfig, solarSystemState.planets);
+
                 solarSystemState.moonOrbitInitialized = true;
                 console.log('  ✓ Moon orbit initialized on first frame at Earth position');
             }
@@ -179,6 +183,11 @@ export function updateSolarSystem(deltaTime, simulationTime) {
             // Also update Moon's orbit position to follow Earth
             updateMoonOrbit(earthPosition);
         }
+    }
+
+    // Update major moon orbits to follow parent planets
+    if (solarSystemState.majorMoons && solarSystemState.planets) {
+        updateMajorMoonOrbits(solarSystemState.planets);
     }
 
     // Update ISS animation (needs Earth's position)

@@ -1,9 +1,9 @@
 /**
  * Orbits Module - Orbital path visualization
- * Creates and manages orbital path lines for all planets and the Moon
+ * Creates and manages orbital path lines for all planets, Earth's Moon, and major moons
  */
 
-import { PLANETS, SCALE, auToScene, MOON, kmToScene } from '../utils/constants.js';
+import { PLANETS, SCALE, auToScene, MOON, MAJOR_MOONS, kmToScene, getPlanetSizeMode } from '../utils/constants.js';
 import { addToScene, removeFromScene } from '../core/scene.js';
 import { isUsingAccurateOrbits } from './planets.js';
 import { calculatePlanetPosition } from '../utils/orbitalElements.js';
@@ -19,6 +19,12 @@ const orbitLines = {};
  * @type {THREE.LineLoop|null}
  */
 let moonOrbitLine = null;
+
+/**
+ * Major moons orbit lines (Jupiter & Saturn moons)
+ * @type {Object<string, THREE.LineLoop>}
+ */
+const majorMoonOrbitLines = {};
 
 /**
  * Current visual style configuration
@@ -214,22 +220,28 @@ export function updateOrbitsStyle(styleConfig) {
 }
 
 /**
- * Toggle visibility of all orbital paths (including Moon orbit)
+ * Toggle visibility of all orbital paths (including Moon and major moon orbits)
  * @param {boolean} visible - Whether orbits should be visible
  */
 export function setOrbitsVisible(visible) {
     orbitsVisible = visible;
 
+    // Toggle planet orbits
     Object.values(orbitLines).forEach(orbitLine => {
         orbitLine.visible = visible;
     });
 
-    // Also toggle Moon orbit visibility
+    // Toggle Moon orbit
     if (moonOrbitLine) {
         moonOrbitLine.visible = visible;
     }
 
-    console.log(`🌐 Orbital paths ${visible ? 'shown' : 'hidden'}`);
+    // Toggle major moon orbits
+    Object.values(majorMoonOrbitLines).forEach(orbitLine => {
+        orbitLine.visible = visible;
+    });
+
+    console.log(`🌐 Orbital paths ${visible ? 'shown' : 'hidden'} (planets + moons)`);
 }
 
 /**
@@ -428,6 +440,113 @@ export function getMoonOrbit() {
     return moonOrbitLine;
 }
 
+/**
+ * Initialize major moon orbits (Jupiter & Saturn moons)
+ * @param {Object} styleConfig - Visual style configuration
+ * @param {Object} planetMeshes - Planet mesh objects to get positions
+ */
+export function initMajorMoonOrbits(styleConfig, planetMeshes) {
+    // Clean up existing major moon orbits
+    disposeMajorMoonOrbits();
+
+    const sizeMode = getPlanetSizeMode();
+    const orbitScale = sizeMode === 'real' ? 100 : SCALE.MAJOR_MOON_ORBIT_SCALE;
+
+    // Get orbit line color from style
+    const orbitColor = styleConfig.orbitColor || 0x555555;
+
+    // Create orbit line for each major moon
+    Object.keys(MAJOR_MOONS).forEach(moonKey => {
+        const moonData = MAJOR_MOONS[moonKey];
+        const parentPlanetKey = moonData.parentPlanet;
+        const parentPlanet = planetMeshes[parentPlanetKey];
+
+        if (!parentPlanet) {
+            console.warn(`⚠️ Parent planet ${parentPlanetKey} not found for moon ${moonKey}`);
+            return;
+        }
+
+        // Calculate orbit radius
+        const orbitRadiusScene = kmToScene(moonData.orbitRadius) * orbitScale;
+
+        // Create circle geometry for orbit
+        const points = [];
+        for (let i = 0; i <= ORBIT_SEGMENTS; i++) {
+            const angle = (i / ORBIT_SEGMENTS) * Math.PI * 2;
+            const x = Math.cos(angle) * orbitRadiusScene;
+            const z = Math.sin(angle) * orbitRadiusScene;
+            points.push(new THREE.Vector3(x, 0, z));
+        }
+
+        const geometry = new THREE.BufferGeometry().setFromPoints(points);
+
+        // Create line material (slightly dimmer than planet orbits)
+        const material = new THREE.LineBasicMaterial({
+            color: orbitColor,
+            opacity: 0.3,
+            transparent: true,
+            depthWrite: false
+        });
+
+        // Create orbit line
+        const orbitLine = new THREE.LineLoop(geometry, material);
+        orbitLine.name = `${moonData.name} Orbit`;
+
+        // Position orbit at parent planet's location
+        orbitLine.position.copy(parentPlanet.position);
+
+        // Set render order (orbits render before most objects)
+        orbitLine.renderOrder = 1;
+
+        // Set visibility based on current orbits visibility state
+        orbitLine.visible = orbitsVisible;
+
+        addToScene(orbitLine);
+
+        // Store reference
+        majorMoonOrbitLines[moonKey] = orbitLine;
+    });
+
+    console.log(`✅ Major moon orbits initialized (7 moons)`);
+}
+
+/**
+ * Update major moon orbit positions to follow their parent planets
+ * @param {Object} planetMeshes - Planet mesh objects
+ */
+export function updateMajorMoonOrbits(planetMeshes) {
+    Object.keys(MAJOR_MOONS).forEach(moonKey => {
+        const orbitLine = majorMoonOrbitLines[moonKey];
+        if (!orbitLine) return;
+
+        const moonData = MAJOR_MOONS[moonKey];
+        const parentPlanetKey = moonData.parentPlanet;
+        const parentPlanet = planetMeshes[parentPlanetKey];
+
+        if (parentPlanet) {
+            orbitLine.position.copy(parentPlanet.position);
+        }
+    });
+}
+
+/**
+ * Dispose all major moon orbits
+ */
+export function disposeMajorMoonOrbits() {
+    Object.values(majorMoonOrbitLines).forEach(orbitLine => {
+        if (orbitLine) {
+            removeFromScene(orbitLine);
+            orbitLine.geometry.dispose();
+            orbitLine.material.dispose();
+        }
+    });
+
+    // Clear the object
+    Object.keys(majorMoonOrbitLines).forEach(key => delete majorMoonOrbitLines[key]);
+
+    console.log('✅ Major moon orbits disposed');
+}
+
 // Export default object
 export default {
     initOrbits,
@@ -440,6 +559,9 @@ export default {
     getAllOrbits,
     setOrbitVisible,
     disposeOrbits,
+    initMajorMoonOrbits,
+    updateMajorMoonOrbits,
+    disposeMajorMoonOrbits,
     removeOrbits,
     hasOrbits,
     getOrbitCount,

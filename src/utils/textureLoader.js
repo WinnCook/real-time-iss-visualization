@@ -1,173 +1,165 @@
 /**
  * Texture Loader Utility
- * Handles loading and caching of planet textures
+ *
+ * Handles asynchronous loading of planet and moon textures with:
+ * - Progress tracking for loading screen updates
+ * - Error handling with fallback to solid colors
+ * - Texture caching to avoid reloading
+ * - Proper texture settings (anisotropy, wrapping, etc.)
+ *
+ * Usage:
+ *   const textures = await loadAllTextures(onProgress);
+ *   const earthTexture = textures.earth;
  */
 
-// Use global THREE from the loaded script
-const THREE = window.THREE;
+import * as THREE from '../../../assets/js/three.module.js';
 
-// Texture cache to avoid reloading same textures
+/**
+ * Texture cache to avoid reloading
+ * @type {Map<string, THREE.Texture>}
+ */
 const textureCache = new Map();
 
-// Loading manager for tracking progress
-let loadingManager = null;
+/**
+ * Three.js TextureLoader instance (shared for all loads)
+ */
+const loader = new THREE.TextureLoader();
 
 /**
- * Set loading manager for texture loading progress tracking
- * @param {THREE.LoadingManager} manager - Three.js loading manager
+ * Load a single texture with error handling
+ *
+ * @param {string} path - Path to texture file
+ * @param {string} name - Name of the celestial body (for logging)
+ * @returns {Promise<THREE.Texture|null>} Loaded texture or null on error
  */
-export function setTextureLoadingManager(manager) {
-    loadingManager = manager;
-}
-
-/**
- * Load a texture from URL with caching
- * @param {string} url - Path to texture file
- * @param {Object} options - Texture options (wrapS, wrapT, etc.)
- * @returns {Promise<THREE.Texture>} Loaded texture
- */
-export function loadTexture(url, options = {}) {
+export async function loadTexture(path, name) {
     // Check cache first
-    if (textureCache.has(url)) {
-        console.log(`  📦 Using cached texture: ${url}`);
-        return Promise.resolve(textureCache.get(url));
+    if (textureCache.has(path)) {
+        console.log(`=� Using cached texture: ${name}`);
+        return textureCache.get(path);
     }
 
-    return new Promise((resolve, reject) => {
-        const loader = loadingManager
-            ? new THREE.TextureLoader(loadingManager)
-            : new THREE.TextureLoader();
-
-        console.log(`  🎨 Loading texture: ${url}`);
-
+    return new Promise((resolve) => {
         loader.load(
-            url,
+            path,
+            // onLoad callback
             (texture) => {
-                // Apply options
-                if (options.wrapS) texture.wrapS = options.wrapS;
-                if (options.wrapT) texture.wrapT = options.wrapT;
-                if (options.repeat) texture.repeat.set(options.repeat.x, options.repeat.y);
-                if (options.anisotropy !== undefined) {
-                    texture.anisotropy = options.anisotropy;
-                }
+                // Configure texture settings for optimal quality
+                texture.anisotropy = 16; // Maximum anisotropic filtering for sharp textures
+                texture.wrapS = THREE.ClampToEdgeWrapping; // Prevent seam at poles
+                texture.wrapT = THREE.ClampToEdgeWrapping;
+                texture.minFilter = THREE.LinearMipmapLinearFilter; // Smooth when far away
+                texture.magFilter = THREE.LinearFilter; // Smooth when close
+                texture.generateMipmaps = true; // Generate mipmaps for better performance
+                texture.needsUpdate = true;
 
-                // Default settings for planet textures
-                texture.minFilter = THREE.LinearFilter;
-                texture.magFilter = THREE.LinearFilter;
+                // Cache the loaded texture
+                textureCache.set(path, texture);
 
-                // Cache the texture
-                textureCache.set(url, texture);
-
-                console.log(`  ✅ Texture loaded: ${url}`);
+                console.log(` Loaded texture: ${name} (${path})`);
                 resolve(texture);
             },
-            undefined, // onProgress (handled by loading manager)
+            // onProgress callback (optional, used by loader internally)
+            undefined,
+            // onError callback
             (error) => {
-                console.error(`  ❌ Failed to load texture: ${url}`, error);
-                reject(error);
+                console.error(`L Failed to load texture: ${name} (${path})`, error);
+                resolve(null); // Return null instead of rejecting to allow graceful fallback
             }
         );
     });
 }
 
 /**
- * Load planet texture set (color, normal, specular maps)
- * @param {string} planetName - Name of planet (lowercase)
- * @param {Object} maps - Which maps to load {color: true, normal: true, specular: true}
- * @returns {Promise<Object>} Object with loaded textures
+ * Load all planet and moon textures
+ *
+ * @param {Object} texturePaths - Object mapping body names to texture paths
+ * @param {Function} onProgress - Progress callback (current, total)
+ * @returns {Promise<Object>} Object with loaded textures (keys: body names)
  */
-export async function loadPlanetTextures(planetName, maps = { color: true }) {
+export async function loadAllTextures(texturePaths, onProgress = null) {
+    const textureNames = Object.keys(texturePaths);
+    const totalTextures = textureNames.length;
+    let loadedCount = 0;
+
     const textures = {};
-    const basePath = 'assets/textures/planets';
 
-    try {
-        // Load color/albedo map
-        if (maps.color) {
-            textures.color = await loadTexture(`${basePath}/${planetName}_color.jpg`, {
-                wrapS: THREE.RepeatWrapping,
-                wrapT: THREE.ClampToEdgeWrapping,
-                anisotropy: 4
-            });
+    console.log(`=� Starting texture loading: ${totalTextures} textures`);
+
+    // Load all textures in parallel for faster loading
+    const loadPromises = textureNames.map(async (name) => {
+        const path = texturePaths[name];
+        const texture = await loadTexture(path, name);
+
+        textures[name] = texture;
+        loadedCount++;
+
+        // Report progress
+        if (onProgress) {
+            onProgress(loadedCount, totalTextures);
         }
 
-        // Load normal map (bump mapping)
-        if (maps.normal) {
-            try {
-                textures.normal = await loadTexture(`${basePath}/${planetName}_normal.jpg`, {
-                    wrapS: THREE.RepeatWrapping,
-                    wrapT: THREE.ClampToEdgeWrapping
-                });
-            } catch (e) {
-                console.log(`  ⚠️ No normal map for ${planetName} (optional)`);
-            }
-        }
+        return { name, texture };
+    });
 
-        // Load specular map (shininess - Earth oceans)
-        if (maps.specular) {
-            try {
-                textures.specular = await loadTexture(`${basePath}/${planetName}_specular.jpg`, {
-                    wrapS: THREE.RepeatWrapping,
-                    wrapT: THREE.ClampToEdgeWrapping
-                });
-            } catch (e) {
-                console.log(`  ⚠️ No specular map for ${planetName} (optional)`);
-            }
-        }
+    // Wait for all textures to finish loading
+    await Promise.all(loadPromises);
 
-        console.log(`✅ Planet textures loaded for ${planetName}`);
-        return textures;
+    console.log(` Texture loading complete: ${loadedCount}/${totalTextures} loaded`);
 
-    } catch (error) {
-        console.error(`❌ Failed to load textures for ${planetName}:`, error);
-        return null;
-    }
+    return textures;
 }
 
 /**
- * Load Saturn ring texture
- * @returns {Promise<THREE.Texture>} Ring texture with transparency
- */
-export async function loadSaturnRingTexture() {
-    try {
-        const texture = await loadTexture('assets/textures/planets/saturn_ring.png', {
-            wrapS: THREE.ClampToEdgeWrapping,
-            wrapT: THREE.ClampToEdgeWrapping,
-            anisotropy: 4
-        });
-        return texture;
-    } catch (error) {
-        console.error('❌ Failed to load Saturn ring texture:', error);
-        return null;
-    }
-}
-
-/**
- * Clear texture cache (for memory management)
+ * Clear texture cache (useful for memory management)
  */
 export function clearTextureCache() {
-    textureCache.forEach(texture => {
+    textureCache.forEach((texture, path) => {
         texture.dispose();
+        console.log(`=� Disposed texture: ${path}`);
     });
     textureCache.clear();
-    console.log('🧹 Texture cache cleared');
+    console.log(' Texture cache cleared');
 }
 
 /**
- * Get texture cache stats
- * @returns {Object} Cache statistics
+ * Get texture from cache
+ *
+ * @param {string} path - Path to texture file
+ * @returns {THREE.Texture|null} Cached texture or null
  */
-export function getTextureCacheStats() {
+export function getCachedTexture(path) {
+    return textureCache.get(path) || null;
+}
+
+/**
+ * Check if texture is in cache
+ *
+ * @param {string} path - Path to texture file
+ * @returns {boolean} True if texture is cached
+ */
+export function isTextureCached(path) {
+    return textureCache.has(path);
+}
+
+/**
+ * Get cache statistics
+ *
+ * @returns {Object} Cache stats (count, paths)
+ */
+export function getTextureStats() {
     return {
         count: textureCache.size,
-        urls: Array.from(textureCache.keys())
+        paths: Array.from(textureCache.keys())
     };
 }
 
+// Export for use in other modules
 export default {
-    setTextureLoadingManager,
     loadTexture,
-    loadPlanetTextures,
-    loadSaturnRingTexture,
+    loadAllTextures,
     clearTextureCache,
-    getTextureCacheStats
+    getCachedTexture,
+    isTextureCached,
+    getTextureStats
 };

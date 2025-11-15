@@ -12,6 +12,7 @@ const loadingTasks = [
     { name: 'Initializing renderer', weight: 10, completed: false },
     { name: 'Creating scene', weight: 5, completed: false },
     { name: 'Setting up camera', weight: 5, completed: false },
+    { name: 'Loading textures', weight: 15, completed: false },
     { name: 'Loading starfield', weight: 10, completed: false },
     { name: 'Creating sun', weight: 10, completed: false },
     { name: 'Creating planets', weight: 15, completed: false },

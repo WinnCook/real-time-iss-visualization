@@ -12,12 +12,14 @@ import { initSolarSystem, updateSolarSystem, recreateSolarSystem, getCelestialOb
 import { initPerformanceSlider } from './modules/performanceSlider.js';
 import { initStyles, getCurrentStyle } from './modules/styles.js';
 import { initUI, registerClickableObject, updateFPS, updateSimulationDate, updateISSInfo, updateCameraFollow } from './modules/ui.js';
-import { initLoadingManager, completeTask, hideLoadingScreen } from './core/loadingManager.js';
+import { initLoadingManager, completeTask, hideLoadingScreen, setProgress } from './core/loadingManager.js';
 import { initTutorial } from './modules/tutorial.js';
 import { initTouchIndicator } from './modules/touchIndicator.js';
 import { initScreenshot } from './utils/screenshot.js';
 import { initURLState, decodeStateFromURL, applyStateFromURL } from './utils/urlState.js';
 import { escapeHTML } from './utils/htmlSanitizer.js';
+import { loadAllTextures } from './utils/textureLoader.js';
+import { TEXTURE_PATHS } from './utils/constants.js';
 
 /**
  * Application state
@@ -29,6 +31,7 @@ const app = {
     controls: null,
     animation: null,
     solarSystem: null,
+    textures: null, // Loaded planet/moon textures
     isInitialized: false
 };
 
@@ -76,6 +79,17 @@ async function init() {
         // Get initial style config
         const initialStyle = getCurrentStyle();
 
+        // Load all planet and moon textures
+        console.log('🎨 Loading planet and moon textures...');
+        app.textures = await loadAllTextures(TEXTURE_PATHS, (current, total) => {
+            // Update loading screen progress (show as substatus)
+            const percent = Math.round((current / total) * 100);
+            setProgress(null, `Loading textures: ${current}/${total}`);
+            console.log(`📦 Texture loading progress: ${current}/${total} (${percent}%)`);
+        });
+        console.log('✅ All textures loaded successfully');
+        completeTask('Loading textures');
+
         // Initialize solar system with all celestial objects (ASYNC - waits for ISS 3D model)
         completeTask('Loading starfield');
         completeTask('Creating sun');
@@ -86,7 +100,8 @@ async function init() {
         app.solarSystem = await initSolarSystem({
             camera: app.camera,
             renderer: app.renderer,
-            styleConfig: initialStyle
+            styleConfig: initialStyle,
+            textures: app.textures // Pass loaded textures to solar system
         });
         console.log('✅ Solar system fully initialized with 3D ISS model');
 
@@ -282,6 +297,14 @@ window.getShareState = function() {
         timeManager: timeManager
     };
 };
+
+/**
+ * Get loaded textures (for use by other modules)
+ * @returns {Object} Loaded textures object
+ */
+export function getTextures() {
+    return app.textures;
+}
 
 // Optional: Enable debug mode only in development
 const DEBUG_MODE = false; // Set to true only during development

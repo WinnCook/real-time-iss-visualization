@@ -36,6 +36,7 @@ const solarSystemState = {
     labels: null,
     camera: null,
     renderer: null,
+    textures: null, // Loaded planet/moon textures
     isInitialized: false,
     moonOrbitInitialized: false
 };
@@ -51,11 +52,14 @@ const solarSystemState = {
 export async function initSolarSystem(config) {
     console.log('🌌 Initializing Solar System...');
 
-    const { camera, renderer, styleConfig = null } = config;
+    const { camera, renderer, styleConfig = null, textures = null } = config;
 
     // Store camera and renderer references
     solarSystemState.camera = camera;
     solarSystemState.renderer = renderer;
+
+    // Store textures for later use
+    solarSystemState.textures = textures;
 
     // Get current style or use provided one
     const currentStyle = styleConfig || getCurrentStyle();
@@ -79,7 +83,7 @@ export async function initSolarSystem(config) {
     }
 
     // Initialize planets (Mercury, Venus, Earth, Mars, Jupiter, Saturn, Uranus, Neptune)
-    solarSystemState.planets = await initPlanets(currentStyle);
+    solarSystemState.planets = await initPlanets(currentStyle, textures);
     console.log('  ✓ Planets initialized');
 
     // Initialize major moons (Jupiter & Saturn moons - needs planet meshes)

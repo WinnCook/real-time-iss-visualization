@@ -588,7 +588,7 @@ export const SIMULATION = {
 // ========== API SETTINGS ==========
 
 export const API = {
-    ISS_URL: 'https://api.open-notify.org/iss-now.json', // SECURITY FIX: Changed to HTTPS
+    ISS_URL: 'http://api.open-notify.org/iss-now.json', // Note: Open Notify API only supports HTTP
     UPDATE_INTERVAL: 5000, // milliseconds (5 seconds)
     TIMEOUT: 10000, // Request timeout
     RETRY_DELAY: 10000 // Delay before retry on error
@@ -604,6 +604,37 @@ export const COLORS = {
     ISS_TRAIL: 0xff3838,
     LABEL_COLOR: '#ffffff',
     GRID_COLOR: 0x333333
+};
+
+// ========== TEXTURE PATHS ==========
+// Planet and moon texture maps (2K resolution)
+// Source: Solar System Scope (CC BY 4.0 License)
+// https://www.solarsystemscope.com/textures/
+
+export const TEXTURE_PATHS = {
+    // Planets (8 total)
+    mercury: './assets/textures/planets/mercury_color.jpg',
+    venus: './assets/textures/planets/venus_color.jpg',
+    earth: './assets/textures/planets/earth_color.jpg',
+    mars: './assets/textures/planets/mars_color.jpg',
+    jupiter: './assets/textures/planets/jupiter_color.jpg',
+    saturn: './assets/textures/planets/saturn_color.jpg',
+    uranus: './assets/textures/planets/uranus_color.jpg',
+    neptune: './assets/textures/planets/neptune_color.jpg',
+
+    // Moons
+    moon: './assets/textures/moons/moon_color.jpg'
+};
+
+// Texture settings for Three.js
+export const TEXTURE_SETTINGS = {
+    anisotropy: 16,                           // Max anisotropic filtering (sharp at angles)
+    wrapS: 'ClampToEdge',                     // Wrapping mode horizontal (prevents seams at poles)
+    wrapT: 'ClampToEdge',                     // Wrapping mode vertical
+    minFilter: 'LinearMipmapLinearFilter',    // Smooth when far away
+    magFilter: 'LinearFilter',                // Smooth when close
+    generateMipmaps: true,                    // Generate mipmaps for performance
+    encoding: 'sRGBEncoding'                  // Color space (for realistic colors)
 };
 
 // ========== VISUAL STYLES ==========
@@ -777,6 +808,8 @@ export default {
     SIMULATION,
     API,
     COLORS,
+    TEXTURE_PATHS,
+    TEXTURE_SETTINGS,
     STYLES,
     DEG_TO_RAD,
     RAD_TO_DEG,

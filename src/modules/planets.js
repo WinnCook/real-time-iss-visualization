@@ -8,7 +8,6 @@ import { calculatePlanetPosition } from '../utils/orbitalElements.js';
 import { addToScene, removeFromScene } from '../core/scene.js';
 import { getCachedSphereGeometry } from '../utils/geometryCache.js';
 import { isRotationEnabled } from './performanceSlider.js';
-import { loadPlanetTextures, loadSaturnRingTexture } from '../utils/textureLoader.js';
 import { initAtmosphere, createAtmosphere, updateAtmospherePosition, removeAtmosphere, disposeAtmospheres, updateAtmosphereStyle, shouldHaveAtmosphere } from './atmosphere.js';
 
 /**
@@ -73,10 +72,16 @@ const cachedOrbitalData = {};
 /**
  * Initialize all planets (ASYNC - loads textures for Realistic style)
  * @param {Object} styleConfig - Visual style configuration
+ * @param {Object} loadedTextures - Pre-loaded textures from main.js
  * @returns {Promise<Object>} Object containing all planet meshes
  */
-export async function initPlanets(styleConfig = {}) {
+export async function initPlanets(styleConfig = {}, loadedTextures = null) {
     currentStyle = styleConfig;
+
+    // Store loaded textures for use in material creation
+    if (loadedTextures) {
+        console.log('  📦 Using pre-loaded textures for planets');
+    }
 
     // Initialize atmosphere module with Three.js reference
     if (typeof THREE !== 'undefined') {
@@ -89,11 +94,11 @@ export async function initPlanets(styleConfig = {}) {
     // Create each planet (async for texture loading)
     for (const planetKey of Object.keys(PLANETS)) {
         const planetData = PLANETS[planetKey];
-        await createPlanet(planetKey, planetData, styleConfig);
+        await createPlanet(planetKey, planetData, styleConfig, loadedTextures);
 
         // Add rings to Saturn
         if (planetKey === 'saturn' && planetData.rings) {
-            await createSaturnRings(planetKey, planetData, styleConfig);
+            await createSaturnRings(planetKey, planetData, styleConfig, loadedTextures);
         }
 
         // Add atmosphere to planets that have them (Earth, Venus, Mars)
@@ -122,7 +127,7 @@ export async function initPlanets(styleConfig = {}) {
  * @param {Object} planetData - Planet configuration data
  * @param {Object} styleConfig - Visual style configuration
  */
-async function createPlanet(planetKey, planetData, styleConfig) {
+async function createPlanet(planetKey, planetData, styleConfig, loadedTextures = null) {
     // Calculate planet radius with scaling (using tiered scaling based on planet category)
     const planetRadius = scaleRadius(planetData.radius, 'planet', planetKey);
 
@@ -134,7 +139,7 @@ async function createPlanet(planetKey, planetData, styleConfig) {
     );
 
     // Create planet material based on style (async for texture loading)
-    const material = await createPlanetMaterial(planetKey, planetData, styleConfig);
+    const material = await createPlanetMaterial(planetKey, planetData, styleConfig, loadedTextures);
 
     // Create planet mesh
     const planetMesh = new THREE.Mesh(geometry, material);
@@ -162,9 +167,10 @@ async function createPlanet(planetKey, planetData, styleConfig) {
  * @param {string} planetKey - Planet identifier (e.g., 'mercury')
  * @param {Object} planetData - Planet configuration data
  * @param {Object} styleConfig - Visual style configuration
+ * @param {Object} loadedTextures - Pre-loaded textures from main.js
  * @returns {Promise<THREE.Material>}
  */
-async function createPlanetMaterial(planetKey, planetData, styleConfig) {
+async function createPlanetMaterial(planetKey, planetData, styleConfig, loadedTextures = null) {
     const color = planetData.color;
 
     // Check style-specific properties
@@ -175,44 +181,30 @@ async function createPlanetMaterial(planetKey, planetData, styleConfig) {
     const emissive = styleConfig.name === 'Neon/Cyberpunk' ? color : 0x000000;
     const emissiveIntensity = styleConfig.name === 'Neon/Cyberpunk' ? 0.3 : 0;
 
-    // REALISTIC STYLE: Load and use planet textures
-    if (styleConfig.name === 'Realistic') {
-        console.log(`  🎨 Loading textures for ${planetKey}...`);
+    // REALISTIC STYLE: Use pre-loaded planet textures
+    if (styleConfig.name === 'Realistic' && loadedTextures && loadedTextures[planetKey]) {
+        console.log(`  🎨 Using texture for ${planetKey}...`);
 
         // ERROR HANDLING FIX: Wrap texture loading in try-catch to prevent crashes
         try {
-            // Load texture maps (color is required, normal/specular are optional)
-            const textures = await loadPlanetTextures(planetKey, {
-                color: true,
-                normal: false, // TODO: Enable when normal maps are downloaded
-                specular: planetKey === 'earth' // Only Earth has ocean specular reflections
-            });
+            // Use the pre-loaded texture
+            const texture = loadedTextures[planetKey];
 
-            if (textures && textures.color) {
+            if (texture) {
                 // Create textured material
                 const materialConfig = {
-                    map: textures.color,
+                    map: texture,
                     flatShading: false, // No flat shading with textures
                     wireframe: wireframe,
                     roughness: 0.9,
                     metalness: 0.1
                 };
 
-                // Add normal map if available (surface detail/bumps)
-                if (textures.normal) {
-                    materialConfig.normalMap = textures.normal;
-                    materialConfig.normalScale = new THREE.Vector2(1, 1);
-                }
-
-                // Add specular map for Earth (ocean shine)
-                if (textures.specular) {
-                    materialConfig.roughnessMap = textures.specular;
-                    materialConfig.roughness = 0.7; // Lower roughness for Earth's oceans
-                    materialConfig.metalness = 0.3;
-                }
+                // TODO: Add normal and specular maps when available
+                // These would be loaded separately in the future
 
                 const material = new THREE.MeshStandardMaterial(materialConfig);
-                console.log(`  ✅ ${planetKey} textures loaded successfully`);
+                console.log(`  ✅ ${planetKey} texture applied successfully`);
                 return material;
             } else {
                 console.warn(`  ⚠️ Failed to load textures for ${planetKey}, falling back to solid color`);
@@ -314,7 +306,7 @@ function createEarthAtmosphere(planetKey, planetRadius, styleConfig) {
  * @param {Object} planetData - Saturn configuration data with rings property
  * @param {Object} styleConfig - Visual style configuration
  */
-async function createSaturnRings(planetKey, planetData, styleConfig) {
+async function createSaturnRings(planetKey, planetData, styleConfig, loadedTextures = null) {
     const planetMesh = planetMeshes[planetKey];
     if (!planetMesh || !planetData.rings) return;
 
@@ -335,10 +327,11 @@ async function createSaturnRings(planetKey, planetData, styleConfig) {
     // Create ring material
     let ringMaterial;
 
-    // REALISTIC STYLE: Load and use ring texture
-    if (styleConfig.name === 'Realistic') {
-        console.log('  🎨 Loading Saturn ring texture...');
-        const ringTexture = await loadSaturnRingTexture();
+    // REALISTIC STYLE: Use pre-loaded ring texture (if available)
+    // Note: Saturn ring texture needs to be added to TEXTURE_PATHS in constants.js
+    if (styleConfig.name === 'Realistic' && loadedTextures && loadedTextures.saturn_ring) {
+        console.log('  🎨 Using Saturn ring texture...');
+        const ringTexture = loadedTextures.saturn_ring;
 
         if (ringTexture) {
             ringMaterial = new THREE.MeshBasicMaterial({
@@ -348,9 +341,9 @@ async function createSaturnRings(planetKey, planetData, styleConfig) {
                 side: THREE.DoubleSide,
                 depthWrite: false
             });
-            console.log('  ✅ Saturn ring texture loaded successfully');
+            console.log('  ✅ Saturn ring texture applied successfully');
         } else {
-            console.warn('  ⚠️ Failed to load Saturn ring texture, using solid color');
+            console.warn('  ⚠️ Saturn ring texture not found, using solid color');
             // Fall through to solid color
         }
     }

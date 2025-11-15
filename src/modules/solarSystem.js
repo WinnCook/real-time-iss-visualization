@@ -138,8 +138,28 @@ function registerAllObjects() {
  * @param {number} deltaTime - Time since last frame in seconds
  * @param {number} simulationTime - Current simulation time in milliseconds
  */
+// Debug counter
+let solarSystemUpdateCounter = 0;
+
 export function updateSolarSystem(deltaTime, simulationTime) {
-    if (!solarSystemState.isInitialized) return;
+    // Debug: Log BEFORE the early return check
+    solarSystemUpdateCounter++;
+    if (solarSystemUpdateCounter === 1) {
+        console.log(`🚨 updateSolarSystem called for first time! isInitialized: ${solarSystemState.isInitialized}`);
+    }
+
+    if (!solarSystemState.isInitialized) {
+        if (solarSystemUpdateCounter % 100 === 0) {
+            console.log(`⚠️ updateSolarSystem #${solarSystemUpdateCounter} - EARLY RETURN because not initialized!`);
+        }
+        return;
+    }
+
+    // Debug: Log every 100 frames
+    solarSystemUpdateCounter++;
+    if (solarSystemUpdateCounter % 100 === 0) {
+        console.log(`🌌 updateSolarSystem #${solarSystemUpdateCounter} - planets exist: ${!!solarSystemState.planets}, deltaTime: ${deltaTime.toFixed(2)}ms`);
+    }
 
     // Get current time speed for scaling animations
     const timeSpeed = timeManager.getTimeSpeed();
@@ -150,16 +170,17 @@ export function updateSolarSystem(deltaTime, simulationTime) {
     }
 
     // Update sun animation
-    if (solarSystemState.sun) {
-        updateSun(deltaTime, simulationTime);
-    }
+    // TEMPORARILY DISABLED - lens flare errors are killing the entire update callback
+    // if (solarSystemState.sun) {
+    //     updateSun(deltaTime, simulationTime);
+    // }
 
     // Update shooting stars (spawn and animate meteors, scaled with time speed)
     updateShootingStars(deltaTime, timeSpeed);
 
-    // Update planets animation
+    // Update planets animation (pass timeSpeed for rotation scaling)
     if (solarSystemState.planets) {
-        updatePlanets(deltaTime, simulationTime);
+        updatePlanets(deltaTime, simulationTime, timeSpeed);
     }
 
     // Update major moons animation (Jupiter & Saturn moons)

@@ -626,15 +626,133 @@ export const TEXTURE_PATHS = {
     moon: './assets/textures/moons/moon_color.jpg'
 };
 
+// Texture rotation offsets (in radians) to align prime meridians correctly
+// These values are empirically determined to align textures with astronomical standards
+export const TEXTURE_ROTATION_OFFSETS = {
+    mercury: 0,                              // No major features to align
+    venus: 0,                                // Obscured by clouds, no surface features
+    earth: -Math.PI / 2,                     // -90° to align Greenwich prime meridian (0° longitude)
+    mars: 0,                                 // TBD - needs verification with Syrtis Major
+    jupiter: 0,                              // TBD - needs verification with Great Red Spot
+    saturn: 0,                               // No major reference features
+    uranus: 0,                               // Nearly featureless
+    neptune: 0,                              // Nearly featureless
+    moon: 0                                  // TBD - needs verification with maria pattern
+};
+
 // Texture settings for Three.js
 export const TEXTURE_SETTINGS = {
     anisotropy: 16,                           // Max anisotropic filtering (sharp at angles)
-    wrapS: 'ClampToEdge',                     // Wrapping mode horizontal (prevents seams at poles)
-    wrapT: 'ClampToEdge',                     // Wrapping mode vertical
+    wrapS: 'RepeatWrapping',                  // Wrapping mode horizontal (wraps around sphere) - FIXED
+    wrapT: 'ClampToEdge',                     // Wrapping mode vertical (prevents pole distortion)
     minFilter: 'LinearMipmapLinearFilter',    // Smooth when far away
     magFilter: 'LinearFilter',                // Smooth when close
     generateMipmaps: true,                    // Generate mipmaps for performance
     encoding: 'sRGBEncoding'                  // Color space (for realistic colors)
+};
+
+// ========== MATH HELPERS ==========
+
+export const DEG_TO_RAD = Math.PI / 180;
+export const RAD_TO_DEG = 180 / Math.PI;
+export const TWO_PI = Math.PI * 2;
+
+// ========== PLANETARY ROTATION DATA ==========
+// Accurate rotation periods and speeds for axial rotation implementation
+// Source: NASA Planetary Fact Sheets, compiled 2025-01-15
+
+/**
+ * Rotation periods for all planets and the Moon (in hours)
+ * Negative values indicate retrograde (backwards) rotation
+ *
+ * @constant {Object} ROTATION_PERIODS
+ */
+export const ROTATION_PERIODS = {
+    mercury: 1407.6,      // hours (58.646 days) - Very slow rotation
+    venus: -5832.5,       // hours (-243.025 days) - RETROGRADE, slowest rotation
+    earth: 23.9345,       // hours (0.9973 days) - Reference period
+    mars: 24.6229,        // hours (1.0260 days) - Similar to Earth
+    jupiter: 9.9259,      // hours (0.4136 days) - Fastest rotation!
+    saturn: 10.656,       // hours (0.4440 days) - Fast rotation
+    uranus: -17.24,       // hours (-0.7183 days) - RETROGRADE rotation
+    neptune: 16.11,       // hours (0.6713 days) - Fast rotation
+    moon: 655.728         // hours (27.322 days) - Tidally locked to Earth
+};
+
+/**
+ * Rotation speeds (angular velocity) in radians per second
+ * Calculated from rotation periods: speed = (2π / period_in_seconds)
+ * Negative values for retrograde rotation (Venus, Uranus)
+ *
+ * These values are used in the animation loop to update planet rotation
+ *
+ * @constant {Object} ROTATION_SPEEDS
+ */
+export const ROTATION_SPEEDS = {
+    mercury: (Math.PI * 2) / (1407.6 * 3600),      // rad/s = 0.000001240 rad/s
+    venus: -(Math.PI * 2) / (5832.5 * 3600),       // rad/s = -0.000000299 rad/s (retrograde)
+    earth: (Math.PI * 2) / (23.9345 * 3600),       // rad/s = 0.000072921 rad/s
+    mars: (Math.PI * 2) / (24.6229 * 3600),        // rad/s = 0.000070882 rad/s
+    jupiter: (Math.PI * 2) / (9.9259 * 3600),      // rad/s = 0.000175640 rad/s
+    saturn: (Math.PI * 2) / (10.656 * 3600),       // rad/s = 0.000163667 rad/s
+    uranus: -(Math.PI * 2) / (17.24 * 3600),       // rad/s = -0.000101134 rad/s (retrograde)
+    neptune: (Math.PI * 2) / (16.11 * 3600),       // rad/s = 0.000108239 rad/s
+    moon: (Math.PI * 2) / (655.728 * 3600)         // rad/s = 0.000002662 rad/s (tidally locked)
+};
+
+/**
+ * Retrograde rotation flags
+ * True for planets that rotate backwards (Venus, Uranus)
+ *
+ * @constant {Object} IS_RETROGRADE
+ */
+export const IS_RETROGRADE = {
+    mercury: false,
+    venus: true,      // Venus rotates backwards
+    earth: false,
+    mars: false,
+    jupiter: false,
+    saturn: false,
+    uranus: true,     // Uranus rotates backwards
+    neptune: false,
+    moon: false
+};
+
+/**
+ * Axial tilt angles (obliquity) in degrees
+ * This is the angle between a planet's rotational axis and its orbital plane
+ * Source: NASA Planetary Fact Sheets
+ *
+ * @constant {Object} AXIAL_TILTS
+ */
+export const AXIAL_TILTS = {
+    mercury: 0.034,    // Nearly upright
+    venus: 177.4,      // Upside down! (tilt > 90° = inverted)
+    earth: 23.44,      // Causes Earth's seasons
+    mars: 25.19,       // Similar to Earth, has seasons
+    jupiter: 3.13,     // Nearly upright
+    saturn: 26.73,     // Rings align with this tilt
+    uranus: 97.77,     // Extreme tilt - rotates on its side!
+    neptune: 28.32,    // Similar to Earth/Mars/Saturn
+    moon: 6.688        // Relative to ecliptic
+};
+
+/**
+ * Axial tilt angles in radians (for Three.js)
+ * Converted from degrees: radians = degrees * (π / 180)
+ *
+ * @constant {Object} AXIAL_TILTS_RAD
+ */
+export const AXIAL_TILTS_RAD = {
+    mercury: 0.034 * DEG_TO_RAD,
+    venus: 177.4 * DEG_TO_RAD,
+    earth: 23.44 * DEG_TO_RAD,
+    mars: 25.19 * DEG_TO_RAD,
+    jupiter: 3.13 * DEG_TO_RAD,
+    saturn: 26.73 * DEG_TO_RAD,
+    uranus: 97.77 * DEG_TO_RAD,
+    neptune: 28.32 * DEG_TO_RAD,
+    moon: 6.688 * DEG_TO_RAD
 };
 
 // ========== VISUAL STYLES ==========
@@ -681,12 +799,6 @@ export const STYLES = {
         wireframe: false
     }
 };
-
-// ========== MATH HELPERS ==========
-
-export const DEG_TO_RAD = Math.PI / 180;
-export const RAD_TO_DEG = 180 / Math.PI;
-export const TWO_PI = Math.PI * 2;
 
 // ========== CONVERSION HELPERS ==========
 
@@ -810,6 +922,11 @@ export default {
     COLORS,
     TEXTURE_PATHS,
     TEXTURE_SETTINGS,
+    ROTATION_PERIODS,
+    ROTATION_SPEEDS,
+    IS_RETROGRADE,
+    AXIAL_TILTS,
+    AXIAL_TILTS_RAD,
     STYLES,
     DEG_TO_RAD,
     RAD_TO_DEG,

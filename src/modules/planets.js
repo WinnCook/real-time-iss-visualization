@@ -3,7 +3,7 @@
  * Creates and manages Mercury, Venus, Earth, and Mars
  */
 
-import { PLANETS, RENDER, scaleRadius, auToScene, DEG_TO_RAD, TWO_PI, daysToMs, ASTRONOMICAL_UNIT, setPlanetSizeMode } from '../utils/constants.js';
+import { PLANETS, RENDER, scaleRadius, auToScene, DEG_TO_RAD, TWO_PI, daysToMs, ASTRONOMICAL_UNIT, setPlanetSizeMode, TEXTURE_ROTATION_OFFSETS, ROTATION_SPEEDS, IS_RETROGRADE } from '../utils/constants.js';
 import { calculatePlanetPosition } from '../utils/orbitalElements.js';
 import { addToScene, removeFromScene } from '../core/scene.js';
 import { getCachedSphereGeometry } from '../utils/geometryCache.js';
@@ -110,11 +110,17 @@ export async function initPlanets(styleConfig = {}, loadedTextures = null) {
         }
 
         // Pre-calculate and cache orbital data for this planet (OPTIMIZATION)
+        const rotationSpeed = ROTATION_SPEEDS[planetKey];
+        console.log(`🔄 ${planetKey} rotation speed from ROTATION_SPEEDS: ${rotationSpeed} rad/s`);
+
         cachedOrbitalData[planetKey] = {
             orbitRadiusScene: auToScene(planetData.orbitRadius),
             periodMs: daysToMs(planetData.orbitPeriod),
-            rotationSpeedPerSec: (Math.PI * 2) / (planetData.rotationPeriod * 24 * 60 * 60)
+            // Use accurate rotation speed from NASA data (includes retrograde for Venus/Uranus)
+            rotationSpeedPerSec: rotationSpeed
         };
+
+        console.log(`✅ Cached ${planetKey}:`, cachedOrbitalData[planetKey]);
     }
 
     console.log('✅ Planets initialized: Mercury, Venus, Earth, Mars, Jupiter, Saturn (with rings), Uranus, Neptune');
@@ -144,6 +150,13 @@ async function createPlanet(planetKey, planetData, styleConfig, loadedTextures =
     // Create planet mesh
     const planetMesh = new THREE.Mesh(geometry, material);
     planetMesh.name = planetData.name;
+
+    // Apply initial rotation offset to align prime meridian (texture alignment)
+    const rotationOffset = TEXTURE_ROTATION_OFFSETS[planetKey] || 0;
+    if (rotationOffset !== 0) {
+        planetMesh.rotation.y = rotationOffset;
+        console.log(`  🔄 Applied ${(rotationOffset * 180 / Math.PI).toFixed(1)}° initial rotation to align ${planetKey} prime meridian`);
+    }
 
     // Apply axial tilt if specified
     if (planetData.tilt) {
@@ -390,9 +403,18 @@ async function createSaturnRings(planetKey, planetData, styleConfig, loadedTextu
  * @param {number} deltaTime - Time since last frame in milliseconds
  * @param {number} simulationTime - Current simulation time in milliseconds
  */
-export function updatePlanets(deltaTime, simulationTime) {
-    // Convert deltaTime from milliseconds to seconds for rotation calculations
-    const deltaTimeSeconds = deltaTime / 1000;
+// Debug counter for logging
+let updateCounter = 0;
+
+export function updatePlanets(deltaTime, simulationTime, timeSpeed = 1) {
+    // Convert deltaTime from milliseconds to seconds, scaled by time speed
+    const deltaTimeSeconds = (deltaTime / 1000) * timeSpeed;
+
+    // Debug: Log every 100 frames (about once per 2 seconds at 60fps)
+    updateCounter++;
+    if (updateCounter % 100 === 0) {
+        console.log(`🔄 updatePlanets #${updateCounter} - deltaTime: ${deltaTime.toFixed(2)}ms, timeSpeed: ${timeSpeed}x, deltaTimeSeconds: ${deltaTimeSeconds.toFixed(6)}s, isRotationEnabled: ${isRotationEnabled()}`);
+    }
 
     // Debug logging every 5 seconds (only when accurate orbits enabled)
     const currentTime = Date.now();
@@ -443,7 +465,8 @@ export function updatePlanets(deltaTime, simulationTime) {
         // Skip rotation if performance level is ultra-low (optimization)
         if (isRotationEnabled()) {
             const cached = cachedOrbitalData[planetKey];
-            planetMesh.rotation.y += cached.rotationSpeedPerSec * deltaTimeSeconds;
+            const rotationDelta = cached.rotationSpeedPerSec * deltaTimeSeconds;
+            planetMesh.rotation.y += rotationDelta;
         }
 
         // Update world matrix so labels can get correct positions

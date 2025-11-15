@@ -243,7 +243,16 @@ export const MOON = {
     radius: 1737.4, // km
     orbitRadius: 384400, // km from Earth
     orbitPeriod: 27.32, // days
-    rotationPeriod: 27.32 // days (tidally locked)
+    rotationPeriod: 27.32, // days (tidally locked)
+    // Orbital elements for accurate positioning
+    orbitalElements: {
+        semiMajorAxis: 384400,  // km (from Earth)
+        eccentricity: 0.0549,   // Slightly elliptical
+        inclination: 5.145,     // degrees (relative to ecliptic, not Earth's equator!)
+        longitudeOfAscendingNode: 125.08,  // degrees at J2000
+        argumentOfPeriapsis: 318.15,       // degrees at J2000
+        meanAnomalyAtEpoch: 135.27         // degrees at J2000
+    }
 };
 
 // ========== ASTEROID BELT ==========
@@ -293,7 +302,16 @@ export const MAJOR_MOONS = {
         orbitPeriod: 1.769, // days
         rotationPeriod: 1.769, // days (tidally locked)
         parentPlanet: 'jupiter',
-        description: "Most volcanically active body in the solar system"
+        description: "Most volcanically active body in the solar system",
+        // Orbital elements for accurate positioning
+        orbitalElements: {
+            semiMajorAxis: 421700, // km (from Jupiter)
+            eccentricity: 0.004,   // Nearly circular
+            inclination: 0.05,     // degrees (relative to Jupiter's equator)
+            longitudeOfAscendingNode: 43.9,  // degrees
+            argumentOfPeriapsis: 84.1,        // degrees
+            meanAnomalyAtEpoch: 90.0          // degrees at J2000
+        }
     },
     europa: {
         name: "Europa",
@@ -303,7 +321,16 @@ export const MAJOR_MOONS = {
         orbitPeriod: 3.551, // days
         rotationPeriod: 3.551, // days (tidally locked)
         parentPlanet: 'jupiter',
-        description: "Subsurface ocean, potential for life"
+        description: "Subsurface ocean, potential for life",
+        // Orbital elements for accurate positioning
+        orbitalElements: {
+            semiMajorAxis: 671034, // km (from Jupiter)
+            eccentricity: 0.009,   // Nearly circular
+            inclination: 0.47,     // degrees (relative to Jupiter's equator)
+            longitudeOfAscendingNode: 334.7,  // degrees
+            argumentOfPeriapsis: 88.9,        // degrees
+            meanAnomalyAtEpoch: 120.0         // degrees at J2000
+        }
     },
     ganymede: {
         name: "Ganymede",
@@ -313,7 +340,16 @@ export const MAJOR_MOONS = {
         orbitPeriod: 7.155, // days
         rotationPeriod: 7.155, // days (tidally locked)
         parentPlanet: 'jupiter',
-        description: "Largest moon in solar system, has magnetic field"
+        description: "Largest moon in solar system, has magnetic field",
+        // Orbital elements for accurate positioning
+        orbitalElements: {
+            semiMajorAxis: 1070412, // km (from Jupiter)
+            eccentricity: 0.001,    // Nearly circular
+            inclination: 0.20,      // degrees (relative to Jupiter's equator)
+            longitudeOfAscendingNode: 63.5,  // degrees
+            argumentOfPeriapsis: 192.4,       // degrees
+            meanAnomalyAtEpoch: 180.0         // degrees at J2000
+        }
     },
     callisto: {
         name: "Callisto",
@@ -323,7 +359,16 @@ export const MAJOR_MOONS = {
         orbitPeriod: 16.689, // days
         rotationPeriod: 16.689, // days (tidally locked)
         parentPlanet: 'jupiter',
-        description: "Most heavily cratered object in solar system"
+        description: "Most heavily cratered object in solar system",
+        // Orbital elements for accurate positioning
+        orbitalElements: {
+            semiMajorAxis: 1882709, // km (from Jupiter)
+            eccentricity: 0.007,    // Nearly circular
+            inclination: 0.51,      // degrees (relative to Jupiter's equator)
+            longitudeOfAscendingNode: 298.8,  // degrees
+            argumentOfPeriapsis: 52.6,        // degrees
+            meanAnomalyAtEpoch: 270.0         // degrees at J2000
+        }
     },
 
     // Saturn's Major Moons
@@ -335,7 +380,16 @@ export const MAJOR_MOONS = {
         orbitPeriod: 15.945, // days
         rotationPeriod: 15.945, // days (tidally locked)
         parentPlanet: 'saturn',
-        description: "Only moon with thick atmosphere, lakes of methane"
+        description: "Only moon with thick atmosphere, lakes of methane",
+        // Orbital elements for accurate positioning
+        orbitalElements: {
+            semiMajorAxis: 1221870, // km (from Saturn)
+            eccentricity: 0.029,    // Slightly elliptical
+            inclination: 0.34,      // degrees (relative to Saturn's equator)
+            longitudeOfAscendingNode: 28.0,   // degrees
+            argumentOfPeriapsis: 180.5,       // degrees
+            meanAnomalyAtEpoch: 0.0           // degrees at J2000
+        }
     },
     rhea: {
         name: "Rhea",
@@ -345,7 +399,16 @@ export const MAJOR_MOONS = {
         orbitPeriod: 4.518, // days
         rotationPeriod: 4.518, // days (tidally locked)
         parentPlanet: 'saturn',
-        description: "Second-largest moon of Saturn, icy composition"
+        description: "Second-largest moon of Saturn, icy composition",
+        // Orbital elements for accurate positioning
+        orbitalElements: {
+            semiMajorAxis: 527108,  // km (from Saturn)
+            eccentricity: 0.001,    // Nearly circular
+            inclination: 0.35,      // degrees (relative to Saturn's equator)
+            longitudeOfAscendingNode: 169.5,  // degrees
+            argumentOfPeriapsis: 241.6,       // degrees
+            meanAnomalyAtEpoch: 60.0          // degrees at J2000
+        }
     },
     iapetus: {
         name: "Iapetus",
@@ -355,7 +418,16 @@ export const MAJOR_MOONS = {
         orbitPeriod: 79.321, // days
         rotationPeriod: 79.321, // days (tidally locked)
         parentPlanet: 'saturn',
-        description: "Two-toned surface: one bright side, one dark side"
+        description: "Two-toned surface: one bright side, one dark side",
+        // Orbital elements for accurate positioning
+        orbitalElements: {
+            semiMajorAxis: 3560820, // km (from Saturn)
+            eccentricity: 0.029,    // Slightly elliptical
+            inclination: 15.47,     // degrees (highly inclined!)
+            longitudeOfAscendingNode: 75.8,   // degrees
+            argumentOfPeriapsis: 275.9,       // degrees
+            meanAnomalyAtEpoch: 330.0         // degrees at J2000
+        }
     }
 };
 

@@ -14,8 +14,7 @@ import { initOrbits, updateOrbits, disposeOrbits, initMoonOrbit, updateMoonOrbit
 import { initStarfield, updateStarfield, disposeStarfield } from './starfield.js';
 import { initLabels, registerObject, registerObjectGetter, updateLabels, disposeLabels } from './labels.js';
 import { initShootingStars, updateShootingStars, disposeShootingStars } from './shootingStars.js';
-// TEMPORARY: Commented out to debug
-// import { initOrbitalMarkers, setOrbitalMarkersVisible, areOrbitalMarkersVisible, disposeOrbitalMarkers } from './orbitalMarkers.js';
+import { initOrbitalMarkers, setOrbitalMarkersVisible, areOrbitalMarkersVisible, disposeOrbitalMarkers } from './orbitalMarkers.js';
 import { clearGeometryCache } from '../utils/geometryCache.js';
 import { getCurrentStyle } from './styles.js';
 import { timeManager } from '../utils/time.js';
@@ -90,9 +89,8 @@ export async function initSolarSystem(config) {
     console.log('  ✓ Orbits initialized');
 
     // Initialize orbital markers (perihelion/aphelion)
-    // TEMPORARY: Commented out to debug
-    // solarSystemState.orbitalMarkers = initOrbitalMarkers(currentStyle);
-    // console.log('  ✓ Orbital markers initialized (perihelion/aphelion points)');
+    solarSystemState.orbitalMarkers = initOrbitalMarkers(currentStyle);
+    console.log('  ✓ Orbital markers initialized (perihelion/aphelion points)');
 
     // Initialize the moon
     solarSystemState.moon = initMoon(currentStyle);

@@ -365,13 +365,23 @@ export function initMoonOrbit(styleConfig, earthPosition = null, planetSizeMode 
     }
 
     // Create circle geometry for Moon's orbit around Earth
+    // The Moon's orbit is inclined 5.145° to the ecliptic
+    const moonInclinationRadians = MOON.orbitalElements ?
+        (MOON.orbitalElements.inclination * Math.PI / 180) :
+        (5.145 * Math.PI / 180); // Default to 5.145° if no orbital elements
+
     const points = [];
     for (let i = 0; i <= ORBIT_SEGMENTS; i++) {
         const angle = (i / ORBIT_SEGMENTS) * Math.PI * 2;
         const x = Math.cos(angle) * orbitRadiusScene;
-        const z = Math.sin(angle) * orbitRadiusScene;
-        // Moon orbits in XZ plane relative to Earth
-        points.push(new THREE.Vector3(x, 0, z));
+        const localZ = Math.sin(angle) * orbitRadiusScene;
+
+        // Apply Moon's inclination relative to ecliptic
+        // Note: Moon's inclination is relative to ecliptic, not Earth's equator
+        const y = -localZ * Math.sin(moonInclinationRadians);
+        const z = localZ * Math.cos(moonInclinationRadians);
+
+        points.push(new THREE.Vector3(x, y, z));
     }
 
     const geometry = new THREE.BufferGeometry().setFromPoints(points);
@@ -480,12 +490,40 @@ export function initMajorMoonOrbits(styleConfig, planetMeshes) {
         console.log(`  Orbit radius (scene): ${orbitRadiusScene.toFixed(4)}`);
 
         // Create circle geometry for orbit
+        // Moons have two types of inclination:
+        // 1. Their own orbital inclination relative to parent's equator (from orbitalElements)
+        // 2. Parent planet's axial tilt relative to ecliptic
+        const parentPlanetData = PLANETS[parentPlanetKey];
+        const axialTiltRadians = parentPlanetData.tilt * (Math.PI / 180); // Parent's axial tilt
+
+        // Get moon's orbital inclination if it has orbital elements
+        let moonInclinationRadians = 0;
+        if (moonData.orbitalElements && moonData.orbitalElements.inclination) {
+            // Moon's inclination is relative to parent's equator
+            moonInclinationRadians = moonData.orbitalElements.inclination * (Math.PI / 180);
+        }
+
         const points = [];
         for (let i = 0; i <= ORBIT_SEGMENTS; i++) {
             const angle = (i / ORBIT_SEGMENTS) * Math.PI * 2;
             const x = Math.cos(angle) * orbitRadiusScene;
-            const z = Math.sin(angle) * orbitRadiusScene;
-            points.push(new THREE.Vector3(x, 0, z));
+            const localZ = Math.sin(angle) * orbitRadiusScene;
+
+            // First apply moon's inclination relative to parent's equator
+            let y1 = 0;
+            let z1 = localZ;
+
+            // Apply moon's own inclination (relative to parent's equator)
+            if (moonInclinationRadians !== 0) {
+                y1 = -localZ * Math.sin(moonInclinationRadians);
+                z1 = localZ * Math.cos(moonInclinationRadians);
+            }
+
+            // Then apply parent planet's axial tilt to transform to ecliptic
+            const rotatedY = y1 * Math.cos(axialTiltRadians) - z1 * Math.sin(axialTiltRadians);
+            const rotatedZ = y1 * Math.sin(axialTiltRadians) + z1 * Math.cos(axialTiltRadians);
+
+            points.push(new THREE.Vector3(x, rotatedY, rotatedZ));
         }
 
         const geometry = new THREE.BufferGeometry().setFromPoints(points);

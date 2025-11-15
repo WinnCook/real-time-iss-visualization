@@ -380,27 +380,5 @@ export function disposeLensFlare() {
     renderer = null;
 }
 
-// Add THREE.js dependencies
-window.THREE = window.THREE || {};
-if (!window.THREE.Vector3) {
-    window.THREE.Vector3 = class Vector3 {
-        constructor(x = 0, y = 0, z = 0) {
-            this.x = x; this.y = y; this.z = z;
-        }
-        clone() { return new Vector3(this.x, this.y, this.z); }
-        sub(v) { this.x -= v.x; this.y -= v.y; this.z -= v.z; return this; }
-        normalize() {
-            const length = Math.sqrt(this.x * this.x + this.y * this.y + this.z * this.z);
-            if (length > 0) { this.x /= length; this.y /= length; this.z /= length; }
-            return this;
-        }
-        dot(v) { return this.x * v.x + this.y * v.y + this.z * v.z; }
-        project() { return this; } // Simplified for lens flare
-    };
-}
-if (!window.THREE.Raycaster) {
-    window.THREE.Raycaster = class Raycaster {
-        set() {}
-        intersectObjects() { return []; }
-    };
-}
+// Note: THREE.js is loaded globally from assets/js/three.min.js
+// All THREE.js classes (Vector3, Raycaster, etc.) are available via the global THREE object

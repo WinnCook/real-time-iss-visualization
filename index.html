@@ -382,53 +382,5 @@
 
     <!-- Main Application Entry Point (will load other modules as needed) -->
     <script type="module" src="src/main.js?v=20250113004"></script>
-
-    <!-- EMERGENCY INLINE ISS CHASE CAMERA - BYPASS MODULE CACHE -->
-    <script>
-        console.log('🚨🚨🚨 INLINE EMERGENCY ISS CHASE SETUP LOADED 🚨🚨🚨');
-
-        // Wait for page to fully load
-        window.addEventListener('load', () => {
-            console.log('🚨 PAGE LOADED - SETTING UP ISS CHASE BUTTON');
-
-            setTimeout(() => {
-                const issChaseBtn = document.getElementById('iss-chase-camera');
-                console.log('🔍 ISS Chase Button found?', issChaseBtn);
-
-                if (issChaseBtn) {
-                    console.log('✅✅✅ ISS CHASE BUTTON FOUND IN INLINE SCRIPT!');
-
-                    issChaseBtn.addEventListener('click', function(e) {
-                        console.log('🚨🚨🚨 ISS CHASE BUTTON CLICKED (INLINE)!!!');
-                        e.preventDefault();
-                        e.stopPropagation();
-
-                        // Debug what's available
-                        console.log('  typeof window.activateISSChaseCamera:', typeof window.activateISSChaseCamera);
-                        console.log('  window.activateISSChaseCamera:', window.activateISSChaseCamera);
-
-                        // Try to call the globally exposed function
-                        if (typeof window.activateISSChaseCamera === 'function') {
-                            console.log('✅ Calling window.activateISSChaseCamera NOW!');
-                            try {
-                                window.activateISSChaseCamera();
-                            } catch (err) {
-                                console.error('❌ Error calling activateISSChaseCamera:', err);
-                                alert('Error: ' + err.message);
-                            }
-                        } else {
-                            console.error('❌ window.activateISSChaseCamera is NOT a function!');
-                            console.error('   Type:', typeof window.activateISSChaseCamera);
-                            alert('ISS Chase Camera function not loaded yet. Wait a moment and try again.');
-                        }
-                    });
-
-                    console.log('✅ ISS Chase button event listener attached (INLINE)');
-                } else {
-                    console.error('❌ ISS Chase button not found in DOM');
-                }
-            }, 2000); // Wait 2 seconds to ensure DOM is ready
-        });
-    </script>
 </body>
 </html>

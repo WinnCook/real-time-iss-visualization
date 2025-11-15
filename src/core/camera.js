@@ -78,7 +78,7 @@ export function initControls(domElement) {
     controls.staticMoving = false;       // Enable momentum/inertia
     controls.dynamicDampingFactor = 0.2; // Slightly less aggressive damping for smoother control
 
-    controls.minDistance = 10;           // Minimum zoom distance to prevent going inside objects
+    controls.minDistance = 0.001;        // Allow extreme zoom-in for Real Proportions mode (ISS scale)
     controls.maxDistance = 999999;       // Maximum zoom distance (see full solar system)
 
     // TrackballControls has NO angle limits - you can spin infinitely in ANY direction!

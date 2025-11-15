@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Sun Corona Test</title>
+    <style>
+        body { margin: 0; padding: 20px; font-family: Arial; background: #000; color: #fff; }
+        h1 { color: #ffa500; }
+        .status { padding: 10px; margin: 10px 0; background: #222; border-radius: 5px; }
+        .error { color: #ff6b6b; }
+        .success { color: #51cf66; }
+    </style>
+</head>
+<body>
+    <h1>🌟 Sun Corona Module Test</h1>
+
+    <div class="status">
+        <h2>Testing Module Import...</h2>
+        <div id="import-status">Loading...</div>
+    </div>
+
+    <div class="status">
+        <h2>Testing Three.js Availability...</h2>
+        <div id="three-status">Checking...</div>
+    </div>
+
+    <div class="status">
+        <h2>Testing Constants Import...</h2>
+        <div id="constants-status">Checking...</div>
+    </div>
+
+    <!-- Load Three.js from CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
+
+    <script type="module">
+        // Test 1: Check if THREE is available
+        const threeStatus = document.getElementById('three-status');
+        if (typeof THREE !== 'undefined') {
+            threeStatus.innerHTML = '<span class="success">✅ THREE.js loaded successfully!</span>';
+            threeStatus.innerHTML += '<br>Version: ' + THREE.REVISION;
+        } else {
+            threeStatus.innerHTML = '<span class="error">❌ THREE.js not found!</span>';
+        }
+
+        // Test 2: Try to import constants
+        const constantsStatus = document.getElementById('constants-status');
+        try {
+            const { SUN_RADIUS, scaleRadius } = await import('./src/utils/constants.js');
+            constantsStatus.innerHTML = '<span class="success">✅ Constants imported successfully!</span>';
+            constantsStatus.innerHTML += '<br>SUN_RADIUS: ' + SUN_RADIUS + ' km';
+            constantsStatus.innerHTML += '<br>Scaled radius: ' + scaleRadius(SUN_RADIUS, 'sun');
+        } catch (error) {
+            constantsStatus.innerHTML = '<span class="error">❌ Error importing constants: ' + error.message + '</span>';
+        }
+
+        // Test 3: Try to import sunCorona module
+        const importStatus = document.getElementById('import-status');
+        try {
+            const sunCorona = await import('./src/modules/sunCorona.js');
+            importStatus.innerHTML = '<span class="success">✅ sunCorona.js module loaded successfully!</span>';
+            importStatus.innerHTML += '<br>Available functions: ' + Object.keys(sunCorona).join(', ');
+        } catch (error) {
+            importStatus.innerHTML = '<span class="error">❌ Error loading sunCorona.js: ' + error.message + '</span>';
+            console.error('Full error:', error);
+        }
+    </script>
+</body>
+</html>

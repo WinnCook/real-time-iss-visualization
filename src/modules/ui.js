@@ -15,6 +15,7 @@ import { setOrbitsVisible } from './orbits.js';
 import { setLabelsVisible } from './labels.js';
 import { setISSTrailVisible } from './iss.js';
 import { setStarfieldVisible } from './starfield.js';
+import { setCoronaEnabled } from './sunCorona.js';
 import { setPerformanceLevel, getPerformanceSettings } from './performanceSlider.js';
 import { showTutorial } from './tutorial.js';
 import { captureScreenshot } from '../utils/screenshot.js';
@@ -203,6 +204,58 @@ function setupTimeControls() {
             updateRealTimeViewButtonState();
         });
     });
+
+    // Time Travel slider
+    const timeTravelSlider = document.getElementById('time-travel-slider');
+    const timeTravelYear = document.getElementById('time-travel-year');
+    const jumpToDateBtn = document.getElementById('jump-to-date-btn');
+
+    if (timeTravelSlider && timeTravelYear) {
+        // Update year display as slider moves
+        timeTravelSlider.addEventListener('input', (e) => {
+            const decimalYear = parseFloat(e.target.value);
+            const year = Math.floor(decimalYear);
+            const monthFraction = (decimalYear - year) * 12;
+            const month = Math.floor(monthFraction) + 1;
+
+            // Format display with month if not January
+            if (month > 1) {
+                const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+                                   'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+                timeTravelYear.textContent = `${monthNames[month - 1]} ${year}`;
+            } else {
+                timeTravelYear.textContent = `${year}`;
+            }
+        });
+
+        // Jump to selected date when button is clicked
+        if (jumpToDateBtn) {
+            jumpToDateBtn.addEventListener('click', () => {
+                const decimalYear = parseFloat(timeTravelSlider.value);
+                const targetDate = timeManager.getDateFromDecimalYear(decimalYear);
+
+                // Set the simulation date
+                timeManager.setSimulationDate(targetDate);
+
+                // Set time speed to 1x for better viewing
+                timeManager.setTimeSpeed(1);
+
+                // Update UI elements
+                const speedSlider = document.getElementById('time-speed');
+                const speedValue = document.getElementById('speed-value');
+                if (speedSlider) speedSlider.value = 1;
+                if (speedValue) speedValue.textContent = '1x';
+
+                // Update Real-Time View button state
+                updateRealTimeViewButtonState();
+
+                // Play click sound
+                playClickSound();
+
+                console.log(`🕰️ Time travel to: ${targetDate.toISOString()}`);
+            });
+        }
+    }
 }
 
 /**
@@ -342,6 +395,16 @@ function setupDisplayToggles() {
             setStarfieldVisible(e.target.checked);
             playToggleSound();
             console.log(`⭐ Stars ${e.target.checked ? 'shown' : 'hidden'}`);
+        });
+    }
+
+    // Sun Corona toggle
+    const toggleCorona = document.getElementById('toggle-corona');
+    if (toggleCorona) {
+        toggleCorona.addEventListener('change', (e) => {
+            setCoronaEnabled(e.target.checked);
+            playToggleSound();
+            console.log(`🌟 Sun Corona ${e.target.checked ? 'enabled' : 'disabled'}`);
         });
     }
 
@@ -1290,6 +1353,16 @@ export function updateFPS(fps) {
 }
 
 /**
+ * Update the simulation date display
+ */
+export function updateSimulationDate() {
+    const dateDisplay = document.getElementById('simulation-date');
+    if (dateDisplay) {
+        dateDisplay.textContent = timeManager.formatSimulationDate();
+    }
+}
+
+/**
  * Update ISS info panel with real-time data
  * @param {Object} issData - ISS data from API
  * @param {Object} issData.position - Geographic position {lat, lon}
@@ -1514,6 +1587,7 @@ export default {
     initUI,
     registerClickableObject,
     updateFPS,
+    updateSimulationDate,
     updateISSInfo,
     setISSInfoStatus,
     updateCameraFollow,

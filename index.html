@@ -78,6 +78,34 @@
                 </p>
             </div>
 
+            <!-- Simulation Date/Time Display -->
+            <div class="control-group">
+                <label>Simulation Date:</label>
+                <div id="simulation-date" style="font-size: 1rem; color: #fff; background: rgba(0,0,0,0.3); padding: 8px; border-radius: 4px; text-align: center;">
+                    Loading...
+                </div>
+                <p style="font-size: 0.85rem; color: rgba(255,255,255,0.7); margin-top: 0.5rem;">
+                    Current date in the simulation
+                </p>
+            </div>
+
+            <!-- Time Travel Slider -->
+            <div class="control-group">
+                <label for="time-travel-slider">Time Travel: <span id="time-travel-year">2025</span></label>
+                <input type="range" id="time-travel-slider" min="1900" max="2100" value="2025" step="0.01">
+                <div class="performance-markers">
+                    <span>1900</span>
+                    <span>2000</span>
+                    <span>2100</span>
+                </div>
+                <button id="jump-to-date-btn" class="btn-secondary" style="width: 100%; margin-top: 0.5rem;">
+                    🕰️ Jump to Selected Date
+                </button>
+                <p style="font-size: 0.85rem; color: rgba(255,255,255,0.7); margin-top: 0.5rem;">
+                    Drag to select any date from 1900-2100
+                </p>
+            </div>
+
             <!-- Visual Style Switcher -->
             <div class="control-group">
                 <label>Visual Style:</label>
@@ -154,6 +182,10 @@
                     <label class="toggle">
                         <input type="checkbox" id="toggle-stars" checked>
                         <span>Stars</span>
+                    </label>
+                    <label class="toggle">
+                        <input type="checkbox" id="toggle-corona" checked>
+                        <span>🌟 Sun Corona</span>
                     </label>
                     <label class="toggle">
                         <input type="checkbox" id="toggle-asteroid-belt" checked>

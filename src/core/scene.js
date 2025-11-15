@@ -89,6 +89,10 @@ export function removeFromScene(object) {
  * @param {string} name - Name of the object
  * @returns {THREE.Object3D|undefined}
  */
+export function getScene() {
+    return scene;
+}
+
 export function getSceneObject(name) {
     if (scene) {
         return scene.getObjectByName(name);

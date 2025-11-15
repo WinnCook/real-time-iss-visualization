@@ -13,14 +13,35 @@
 git clone <repo-url>
 cd real-time-geometric-visualization
 
-# Open in browser (no build needed!)
-# Option 1: Just open index.html directly in Chrome/Firefox
-# Option 2: Run a local server
+# ⚠️ CRITICAL: This project REQUIRES a local server due to ES6 modules and CORS!
+# DO NOT open index.html directly - it will fail with CORS errors!
+
+# Run a local server (REQUIRED):
 python -m http.server 8000
 # Then visit: http://localhost:8000
 ```
 
 **That's it!** No npm install, no build process, no dependencies to install.
+
+### ⚠️ CRITICAL FOR AI AGENTS: Testing After Making Changes
+
+**EVERY TIME you complete a task that modifies code, you MUST:**
+
+1. **Start the local server** (not optional - direct file:// access will fail):
+   ```bash
+   cd real-time-geometric-visualization
+   python -m http.server 8000
+   ```
+
+2. **Open in browser** at `http://localhost:8000` (NOT file://)
+
+3. **Check the browser console** (F12) for errors before marking task complete
+
+4. **Why?** ES6 modules (`import/export`) are blocked by CORS when opened via `file://`
+   - Opening `index.html` directly = CORS errors, nothing works
+   - Opening via `http://localhost:8000` = Works perfectly
+
+**AI Agent Rule:** Do NOT mark a coding task as complete until you've verified it works on localhost!
 
 ---
 

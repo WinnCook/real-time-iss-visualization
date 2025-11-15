@@ -4,6 +4,7 @@
  */
 
 import { SIMULATION, daysToMs } from './constants.js';
+import { validateNumber, validatePositive } from './validation.js';
 
 /**
  * Time manager class for simulation time control
@@ -100,8 +101,13 @@ class TimeManager {
     /**
      * Set time speed multiplier
      * @param {number} speed - New speed (will be clamped to valid range)
+     * @throws {ValidationError} If speed is not a valid number
      */
     setTimeSpeed(speed) {
+        // Validate input is a number
+        validateNumber(speed, 'speed');
+
+        // Clamp to valid range
         this.timeSpeed = Math.max(
             SIMULATION.MIN_TIME_SPEED,
             Math.min(SIMULATION.MAX_TIME_SPEED, speed)

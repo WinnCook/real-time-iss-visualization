@@ -4,6 +4,14 @@
  */
 
 import { TWO_PI, daysToMs, auToScene, kmToScene, SCALE, getPlanetSizeMode } from './constants.js';
+import {
+    validateNumber,
+    validatePositive,
+    validateNonNegative,
+    validateObject,
+    validatePosition3D,
+    validateRange
+} from './validation.js';
 
 /**
  * Calculate orbital position at given time for circular orbit
@@ -11,9 +19,16 @@ import { TWO_PI, daysToMs, auToScene, kmToScene, SCALE, getPlanetSizeMode } from
  * @param {number} orbitRadius - Radius of orbit in scene units
  * @param {number} orbitPeriod - Orbital period in days
  * @param {number} startAngle - Starting angle offset in radians (default 0)
- * @returns {Object} Position {x, y, z}
+ * @returns {{x: number, y: number, z: number}} Position {x, y, z}
+ * @throws {ValidationError} If parameters are invalid
  */
 export function calculateOrbitalPosition(simulationTime, orbitRadius, orbitPeriod, startAngle = 0) {
+    // Validate inputs
+    validateNumber(simulationTime, 'simulationTime');
+    validatePositive(orbitRadius, 'orbitRadius');
+    validatePositive(orbitPeriod, 'orbitPeriod');
+    validateNumber(startAngle, 'startAngle');
+
     // Calculate current angle based on time
     const periodMs = daysToMs(orbitPeriod);
     const angle = startAngle + (simulationTime / periodMs) * TWO_PI;
@@ -30,11 +45,19 @@ export function calculateOrbitalPosition(simulationTime, orbitRadius, orbitPerio
  * Calculate orbital position for a planet at given time
  * Handles conversion from AU to scene units
  * @param {number} simulationTime - Current simulation time in milliseconds
- * @param {Object} planetData - Planet data with orbitRadius (AU) and orbitPeriod (days)
+ * @param {{orbitRadius: number, orbitPeriod: number}} planetData - Planet data with orbitRadius (AU) and orbitPeriod (days)
  * @param {number} startAngle - Starting angle offset in radians (default 0)
- * @returns {Object} Position {x, y, z}
+ * @returns {{x: number, y: number, z: number}} Position {x, y, z}
+ * @throws {ValidationError} If parameters are invalid
  */
 export function calculatePlanetPosition(simulationTime, planetData, startAngle = 0) {
+    // Validate inputs
+    validateNumber(simulationTime, 'simulationTime');
+    validateObject(planetData, ['orbitRadius', 'orbitPeriod'], 'planetData');
+    validatePositive(planetData.orbitRadius, 'planetData.orbitRadius');
+    validatePositive(planetData.orbitPeriod, 'planetData.orbitPeriod');
+    validateNumber(startAngle, 'startAngle');
+
     const orbitRadiusScene = auToScene(planetData.orbitRadius);
     return calculateOrbitalPosition(
         simulationTime,
@@ -47,12 +70,20 @@ export function calculatePlanetPosition(simulationTime, planetData, startAngle =
 /**
  * Calculate Moon's position relative to Earth
  * @param {number} simulationTime - Current simulation time in milliseconds
- * @param {Object} earthPosition - Earth's current position {x, y, z}
- * @param {Object} moonData - Moon data with orbitRadius (km) and orbitPeriod (days)
+ * @param {{x: number, y: number, z: number}} earthPosition - Earth's current position {x, y, z}
+ * @param {{orbitRadius: number, orbitPeriod: number}} moonData - Moon data with orbitRadius (km) and orbitPeriod (days)
  * @param {number} startAngle - Starting angle offset in radians (default 0)
- * @returns {Object} Position {x, y, z}
+ * @returns {{x: number, y: number, z: number}} Position {x, y, z}
+ * @throws {ValidationError} If parameters are invalid
  */
 export function calculateMoonPosition(simulationTime, earthPosition, moonData, startAngle = 0) {
+    // Validate inputs
+    validateNumber(simulationTime, 'simulationTime');
+    validatePosition3D(earthPosition);
+    validateObject(moonData, ['orbitRadius', 'orbitPeriod'], 'moonData');
+    validatePositive(moonData.orbitRadius, 'moonData.orbitRadius');
+    validatePositive(moonData.orbitPeriod, 'moonData.orbitPeriod');
+    validateNumber(startAngle, 'startAngle');
     // Moon orbit distance depends on planet size mode
     const planetSizeMode = getPlanetSizeMode();
     let orbitRadiusScene;
@@ -88,8 +119,12 @@ export function calculateMoonPosition(simulationTime, earthPosition, moonData, s
  * @param {number} orbitRadius - Radius of orbit (any units)
  * @param {number} orbitPeriod - Orbital period in days
  * @returns {number} Orbital velocity (same units as radius per millisecond)
+ * @throws {ValidationError} If parameters are invalid
  */
 export function calculateOrbitalVelocity(orbitRadius, orbitPeriod) {
+    validatePositive(orbitRadius, 'orbitRadius');
+    validatePositive(orbitPeriod, 'orbitPeriod');
+
     const periodMs = daysToMs(orbitPeriod);
     const circumference = TWO_PI * orbitRadius;
     return circumference / periodMs;
@@ -99,8 +134,11 @@ export function calculateOrbitalVelocity(orbitRadius, orbitPeriod) {
  * Calculate mean orbital angular velocity (radians per millisecond)
  * @param {number} orbitPeriod - Orbital period in days
  * @returns {number} Angular velocity in radians per millisecond
+ * @throws {ValidationError} If parameters are invalid
  */
 export function calculateAngularVelocity(orbitPeriod) {
+    validatePositive(orbitPeriod, 'orbitPeriod');
+
     const periodMs = daysToMs(orbitPeriod);
     return TWO_PI / periodMs;
 }
@@ -168,9 +206,13 @@ export function calculateEllipticalOrbit(
  * Useful for rendering orbit lines
  * @param {number} orbitRadius - Radius of circular orbit in scene units
  * @param {number} segments - Number of line segments (default 128)
- * @returns {Array} Array of {x, y, z} positions
+ * @returns {Array<{x: number, y: number, z: number}>} Array of {x, y, z} positions
+ * @throws {ValidationError} If parameters are invalid
  */
 export function generateOrbitPath(orbitRadius, segments = 128) {
+    validatePositive(orbitRadius, 'orbitRadius');
+    validatePositive(segments, 'segments');
+
     const points = [];
     const angleStep = TWO_PI / segments;
 

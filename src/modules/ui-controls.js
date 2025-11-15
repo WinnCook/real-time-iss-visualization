@@ -15,6 +15,7 @@ import { setPerformanceLevel, getPerformanceSettings } from './performanceSlider
 import { setMeteorFrequency, getMeteorFrequencyLabel } from './shootingStars.js';
 import { updatePlanetSizeMode } from './planets.js';
 import { playClickSound, playToggleSound } from '../utils/sounds.js';
+import { validateUserInput, validateRange } from '../utils/validation.js';
 
 /**
  * References to app state (set during initialization)
@@ -88,13 +89,21 @@ function setupTimeControls() {
         speedValue.textContent = '100000x';
 
         timeSpeedSlider.addEventListener('input', (e) => {
-            const speed = parseFloat(e.target.value);
-            timeManager.setTimeSpeed(speed);
-            speedValue.textContent = `${speed}x`;
+            try {
+                // Validate user input (1x to 500000x)
+                const speed = validateUserInput(e.target.value, 1, 500000, 'time speed');
+                timeManager.setTimeSpeed(speed);
+                speedValue.textContent = `${speed}x`;
 
-            // Update Real-Time View button state
-            if (updateRealTimeViewButtonCallback) {
-                updateRealTimeViewButtonCallback();
+                // Update Real-Time View button state
+                if (updateRealTimeViewButtonCallback) {
+                    updateRealTimeViewButtonCallback();
+                }
+            } catch (error) {
+                console.error('Invalid time speed input:', error.message);
+                // Reset to safe default
+                timeManager.setTimeSpeed(100000);
+                speedValue.textContent = '100000x';
             }
         });
     }
@@ -179,24 +188,33 @@ function setupPerformanceControls() {
 
     if (performanceSlider && performanceValue) {
         performanceSlider.addEventListener('input', (e) => {
-            const level = parseInt(e.target.value);
+            try {
+                // Validate user input (0 to 100)
+                const level = validateUserInput(e.target.value, 0, 100, 'performance level');
 
-            // Update performance level immediately (renderer settings only)
-            if (appRenderer) {
-                const settings = setPerformanceLevel(level, appRenderer);
+                // Update performance level immediately (renderer settings only)
+                if (appRenderer) {
+                    const settings = setPerformanceLevel(level, appRenderer);
 
-                // Update display
-                performanceValue.textContent = `${settings.description}`;
-            }
-
-            // Debounce object recreation (wait 500ms after user stops moving slider)
-            clearTimeout(sliderDebounceTimer);
-            sliderDebounceTimer = setTimeout(() => {
-                console.log(`🎨 Recreating objects for performance level: ${level}%`);
-                if (recreateObjectsCallback) {
-                    recreateObjectsCallback();
+                    // Update display
+                    performanceValue.textContent = `${settings.description}`;
                 }
-            }, 500);
+
+                // Debounce object recreation (wait 500ms after user stops moving slider)
+                clearTimeout(sliderDebounceTimer);
+                sliderDebounceTimer = setTimeout(() => {
+                    console.log(`🎨 Recreating objects for performance level: ${level}%`);
+                    if (recreateObjectsCallback) {
+                        recreateObjectsCallback();
+                    }
+                }, 500);
+            } catch (error) {
+                console.error('Invalid performance level input:', error.message);
+                // Reset to balanced default (50%)
+                if (appRenderer) {
+                    setPerformanceLevel(50, appRenderer);
+                }
+            }
         });
 
         // Set initial value

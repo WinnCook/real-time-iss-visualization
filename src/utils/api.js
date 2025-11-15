@@ -4,6 +4,7 @@
  */
 
 import { API, ISS_ORBIT_ALTITUDE } from './constants.js';
+import { validateISSResponse, validateCoordinates, validateNumber, validatePositive } from './validation.js';
 
 /**
  * ISS API Manager class
@@ -81,24 +82,23 @@ class ISSAPIManager {
             // Parse JSON response
             const data = await response.json();
 
-            // Validate response structure
-            if (!data.iss_position || !data.timestamp) {
-                throw new Error('Invalid API response structure');
-            }
+            // Validate response structure using validation utility
+            validateISSResponse(data);
 
             // Extract and format position data
+            const latitude = parseFloat(data.iss_position.latitude);
+            const longitude = parseFloat(data.iss_position.longitude);
+
+            // Validate coordinates using validation utility
+            validateCoordinates(latitude, longitude);
+
             const position = {
-                latitude: parseFloat(data.iss_position.latitude),
-                longitude: parseFloat(data.iss_position.longitude),
+                latitude,
+                longitude,
                 altitude: ISS_ORBIT_ALTITUDE, // API doesn't provide altitude, use constant
                 timestamp: data.timestamp * 1000, // Convert to milliseconds
                 message: data.message || 'success'
             };
-
-            // Validate coordinates
-            if (isNaN(position.latitude) || isNaN(position.longitude)) {
-                throw new Error('Invalid coordinate data');
-            }
 
             // Update cache
             this.lastPosition = position;
@@ -191,8 +191,11 @@ class ISSAPIManager {
      * Check if cached position is stale
      * @param {number} maxAge - Maximum age in milliseconds (default: API.UPDATE_INTERVAL * 3)
      * @returns {boolean} True if position is stale
+     * @throws {ValidationError} If maxAge is invalid
      */
     isPositionStale(maxAge = API.UPDATE_INTERVAL * 3) {
+        validatePositive(maxAge, 'maxAge');
+
         if (!this.lastPosition) return true;
         return this.getTimeSinceLastUpdate() > maxAge;
     }

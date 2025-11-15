@@ -102,8 +102,8 @@ export async function initSolarSystem(config) {
     solarSystemState.orbitalMarkers = initOrbitalMarkers(currentStyle);
     console.log('  ✓ Orbital markers initialized (perihelion/aphelion points)');
 
-    // Initialize the moon
-    solarSystemState.moon = initMoon(currentStyle);
+    // Initialize the moon (with textures)
+    solarSystemState.moon = initMoon(currentStyle, textures);
     console.log('  ✓ Moon initialized');
 
     // Initialize the ISS (ASYNC - loads 3D model)
@@ -298,6 +298,9 @@ export function disposeSolarSystem() {
 export async function recreateSolarSystem(styleConfig = null) {
     console.log('🔄 Recreating Solar System with new settings...');
 
+    // CRITICAL FIX: Save textures BEFORE disposing (so they persist across recreation)
+    const savedTextures = solarSystemState.textures;
+
     // Dispose existing objects
     disposeSolarSystem();
 
@@ -312,7 +315,8 @@ export async function recreateSolarSystem(styleConfig = null) {
         await initSolarSystem({
             camera: solarSystemState.camera,
             renderer: solarSystemState.renderer,
-            styleConfig: currentStyle
+            styleConfig: currentStyle,
+            textures: savedTextures // CRITICAL: Pass saved textures to preserve them
         });
 
         // Re-register all objects as clickable (needed after recreation)
@@ -421,6 +425,15 @@ export function getSolarSystemState() {
         hasStarfield: !!solarSystemState.starfield,
         hasLabels: !!solarSystemState.labels
     };
+}
+
+/**
+ * Get loaded textures from solar system state
+ * CRITICAL: This allows textures to persist when rebuilding celestial objects
+ * @returns {Object|null} Loaded textures or null
+ */
+export function getSolarSystemTextures() {
+    return solarSystemState.textures;
 }
 
 /**

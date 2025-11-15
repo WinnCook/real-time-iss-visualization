@@ -673,11 +673,29 @@ export async function updatePlanetSizeMode(mode) {
 
         // Rebuild everything in parallel and WAIT
         // Get reference to planets for major moons
+        // Get stored textures from solar system state to preserve them during rebuild
+        let storedTextures = null;
+        await import('./solarSystem.js').then(({ getSolarSystemState }) => {
+            // Access internal state to retrieve textures (private but necessary for texture persistence)
+            const state = getSolarSystemState();
+            // Note: We need to add a getter for textures in solarSystem.js
+            // For now, we'll import and access directly
+        });
+
         let rebuiltPlanets = null;
         await Promise.all([
-            initPlanets(currentStyle).then(planets => { rebuiltPlanets = planets; }),
+            // CRITICAL FIX: Pass textures to initPlanets to preserve them during size mode change
+            import('./solarSystem.js').then(async ({ getSolarSystemTextures }) => {
+                storedTextures = getSolarSystemTextures();
+                rebuiltPlanets = await initPlanets(currentStyle, storedTextures);
+            }),
             import('./sun.js').then(({ initSun }) => initSun(currentStyle)),
-            import('./moon.js').then(({ initMoon }) => initMoon(currentStyle)),
+            // CRITICAL FIX: Pass textures to initMoon to preserve Moon texture during size mode change
+            import('./moon.js').then(async ({ initMoon }) => {
+                const { getSolarSystemTextures } = await import('./solarSystem.js');
+                const textures = getSolarSystemTextures();
+                initMoon(currentStyle, textures);
+            }),
             import('./iss.js').then(({ initISS }) => initISS(currentStyle))
         ]);
 

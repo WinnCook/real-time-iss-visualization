@@ -29,16 +29,17 @@ let currentStyle = null;
 /**
  * Initialize the Moon
  * @param {Object} styleConfig - Visual style configuration
+ * @param {Object} loadedTextures - Pre-loaded textures from main.js
  * @returns {THREE.Mesh|null} The moon mesh
  */
-export function initMoon(styleConfig = {}) {
+export function initMoon(styleConfig = {}, loadedTextures = null) {
     currentStyle = styleConfig;
 
     // Clean up existing moon if any
     disposeMoon();
 
-    // Create the Moon
-    createMoon(styleConfig);
+    // Create the Moon (pass textures)
+    createMoon(styleConfig, loadedTextures);
 
     console.log('✅ Moon initialized');
     return moonMesh;
@@ -47,8 +48,9 @@ export function initMoon(styleConfig = {}) {
 /**
  * Create the Moon mesh
  * @param {Object} styleConfig - Visual style configuration
+ * @param {Object} loadedTextures - Pre-loaded textures from main.js
  */
-function createMoon(styleConfig) {
+function createMoon(styleConfig, loadedTextures = null) {
     // Calculate moon radius with scaling
     const moonRadius = scaleRadius(MOON.radius, 'moon');
 
@@ -59,8 +61,8 @@ function createMoon(styleConfig) {
         RENDER.SPHERE_SEGMENTS
     );
 
-    // Create moon material based on style
-    const material = createMoonMaterial(styleConfig);
+    // Create moon material based on style (pass textures)
+    const material = createMoonMaterial(styleConfig, loadedTextures);
 
     // Create moon mesh
     moonMesh = new THREE.Mesh(geometry, material);
@@ -73,9 +75,10 @@ function createMoon(styleConfig) {
 /**
  * Create moon material based on visual style
  * @param {Object} styleConfig - Visual style configuration
+ * @param {Object} loadedTextures - Pre-loaded textures from main.js
  * @returns {THREE.Material}
  */
-function createMoonMaterial(styleConfig) {
+function createMoonMaterial(styleConfig, loadedTextures = null) {
     const color = MOON.color;
 
     // Check style-specific properties
@@ -86,7 +89,36 @@ function createMoonMaterial(styleConfig) {
     const emissive = styleConfig.name === 'Neon/Cyberpunk' ? color : 0x000000;
     const emissiveIntensity = styleConfig.name === 'Neon/Cyberpunk' ? 0.2 : 0;
 
-    // Create material
+    // REALISTIC STYLE: Use pre-loaded Moon texture
+    if (styleConfig.name === 'Realistic' && loadedTextures && loadedTextures.moon) {
+        console.log('  🎨 Using texture for Moon...');
+
+        try {
+            // Use the pre-loaded texture
+            const texture = loadedTextures.moon;
+
+            if (texture) {
+                // Create textured material
+                const material = new THREE.MeshStandardMaterial({
+                    map: texture,
+                    flatShading: false, // No flat shading with textures
+                    wireframe: wireframe,
+                    roughness: 0.9, // Moon has a rough, dusty surface
+                    metalness: 0.1
+                });
+
+                console.log('  ✅ Moon texture applied successfully');
+                return material;
+            } else {
+                console.warn('  ⚠️ Moon texture not loaded, falling back to solid color');
+            }
+        } catch (error) {
+            console.error('  ❌ Error applying Moon texture:', error);
+            console.warn('  ⚠️ Using fallback solid color material for Moon');
+        }
+    }
+
+    // SOLID COLOR MATERIAL (for non-Realistic styles or texture load failure)
     // Moon has a slightly rougher surface than planets
     const material = new THREE.MeshStandardMaterial({
         color: color,

@@ -114,6 +114,9 @@ class ISSAPIManager {
             this.errorCount++;
             console.error(`ISS API Error (${this.errorCount}/${this.maxErrorCount}):`, error.message);
 
+            // Notify user of API issues
+            this.notifyAPIError(error);
+
             // If we have a cached position, return it
             if (this.lastPosition) {
                 console.warn('Using cached ISS position');
@@ -126,6 +129,9 @@ class ISSAPIManager {
             if (this.errorCount >= this.maxErrorCount) {
                 console.warn('Too many API errors, using mock ISS data');
                 const mockPosition = this.getMockPosition();
+
+                // Notify user we're in offline mode
+                this.notifyOfflineMode();
 
                 // BUG FIX: Notify callbacks with mock position so ISS actually moves
                 this.notifyCallbacks(mockPosition);
@@ -260,6 +266,56 @@ class ISSAPIManager {
      */
     resetErrors() {
         this.errorCount = 0;
+    }
+
+    /**
+     * Notify user of API errors
+     * @private
+     * @param {Error} error - The error that occurred
+     */
+    notifyAPIError(error) {
+        // Only show notification on first error and every 3rd error after that
+        if (this.errorCount === 1 || this.errorCount % 3 === 0) {
+            this.showUserNotification(
+                'ISS Data Connection Issue',
+                `Unable to fetch real-time ISS data (attempt ${this.errorCount}/${this.maxErrorCount}). Using cached data.`
+            );
+        }
+    }
+
+    /**
+     * Notify user that offline mode is active
+     * @private
+     */
+    notifyOfflineMode() {
+        // Only show this once when we first enter offline mode
+        if (this.errorCount === this.maxErrorCount) {
+            this.showUserNotification(
+                'ISS Offline Mode Active',
+                'Real-time ISS tracking unavailable. Showing simulated orbital data until connection is restored.'
+            );
+        }
+    }
+
+    /**
+     * Show user notification (tries to use UI module, falls back to console)
+     * @private
+     * @param {string} title - Notification title
+     * @param {string} message - Notification message
+     */
+    showUserNotification(title, message) {
+        try {
+            // Try to use UI panels notification
+            import('../modules/ui-panels.js').then(module => {
+                module.showNotification(title, message);
+            }).catch(() => {
+                // Fallback to console if UI not available
+                console.warn(`📢 ${title}: ${message}`);
+            });
+        } catch (error) {
+            // Fallback to console
+            console.warn(`📢 ${title}: ${message}`);
+        }
     }
 
     /**

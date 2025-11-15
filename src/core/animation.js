@@ -190,7 +190,9 @@ function animate() {
     }
 
     // Call all registered update callbacks with improved error handling
-    updateCallbacks.forEach((callback, index) => {
+    // Note: Using traditional for loop instead of forEach to handle index changes during iteration
+    for (let i = updateCallbacks.length - 1; i >= 0; i--) {
+        const callback = updateCallbacks[i];
         try {
             callback(deltaTime, timeManager.getSimulationTime());
             // Reset error count on successful execution
@@ -203,19 +205,32 @@ function animate() {
 
             // Only log first few errors to avoid console spam
             if (callback.errorCount <= 3) {
-                console.error(`Error in update callback (${callback.errorCount}/3):`, error);
+                console.error(`⚠️ Error in update callback #${i} (${callback.errorCount}/3):`, error);
+                console.error('Stack trace:', error.stack);
             } else if (callback.errorCount === 4) {
-                console.error(`Callback disabled after 3 errors. Last error:`, error);
+                console.error(`❌ Callback #${i} disabled after 3 consecutive errors. Last error:`, error);
                 // Remove the problematic callback
-                updateCallbacks.splice(index, 1);
-                console.warn('Removed problematic callback from animation loop');
+                updateCallbacks.splice(i, 1);
+                console.warn('🗑️ Removed problematic callback from animation loop');
+
+                // Notify user of critical error
+                notifyErrorBoundary('Animation Error', `A system component encountered repeated errors and was disabled to prevent crashes.`);
             }
         }
-    });
+    }
 
-    // Render the scene
-    if (renderer && scene && camera) {
-        renderer.render(scene, camera);
+    // Render the scene with error boundary
+    try {
+        if (renderer && scene && camera) {
+            renderer.render(scene, camera);
+        }
+    } catch (error) {
+        console.error('❌ CRITICAL: Render error:', error);
+        console.error('Stack trace:', error.stack);
+
+        // Attempt recovery by stopping animation
+        stopAnimation();
+        notifyErrorBoundary('Render Error', 'Critical rendering error. Please refresh the page.');
     }
 }
 
@@ -260,6 +275,87 @@ function updateFPSDisplay(currentFPS) {
             fpsElement.style.color = '#f87171'; // Red
         }
     }
+}
+
+/**
+ * Notify user of error boundary events
+ * Creates a user-visible notification for critical errors
+ * @param {string} title - Error title
+ * @param {string} message - Error message
+ */
+function notifyErrorBoundary(title, message) {
+    // Try to use the UI panels notification system
+    try {
+        // Dynamic import to avoid circular dependencies
+        import('../modules/ui-panels.js').then(module => {
+            module.showNotification(title, message);
+        }).catch(() => {
+            // Fallback: Create notification directly
+            createErrorNotification(title, message);
+        });
+    } catch (error) {
+        // Fallback: Create notification directly
+        createErrorNotification(title, message);
+    }
+}
+
+/**
+ * Create error notification directly (fallback method)
+ * @param {string} title - Error title
+ * @param {string} message - Error message
+ */
+function createErrorNotification(title, message) {
+    const notification = document.createElement('div');
+    notification.className = 'error-notification';
+    notification.style.cssText = `
+        position: fixed;
+        top: 80px;
+        right: 20px;
+        background: rgba(220, 38, 38, 0.95);
+        color: white;
+        padding: 16px 20px;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        z-index: 10000;
+        max-width: 400px;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        opacity: 0;
+        transform: translateX(20px);
+        transition: all 0.3s ease;
+    `;
+    notification.innerHTML = `
+        <strong style="display: block; margin-bottom: 8px; font-size: 14px;">❌ ${escapeHTML(title)}</strong>
+        <p style="margin: 0; font-size: 13px; line-height: 1.4;">${escapeHTML(message)}</p>
+    `;
+    document.body.appendChild(notification);
+
+    // Show notification
+    setTimeout(() => {
+        notification.style.opacity = '1';
+        notification.style.transform = 'translateX(0)';
+    }, 10);
+
+    // Hide and remove after 8 seconds (longer for errors)
+    setTimeout(() => {
+        notification.style.opacity = '0';
+        notification.style.transform = 'translateX(20px)';
+        setTimeout(() => {
+            if (notification.parentNode) {
+                notification.parentNode.removeChild(notification);
+            }
+        }, 300);
+    }, 8000);
+}
+
+/**
+ * Escape HTML to prevent XSS attacks
+ * @param {string} text - Text to escape
+ * @returns {string} Escaped text
+ */
+function escapeHTML(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
 }
 
 /**

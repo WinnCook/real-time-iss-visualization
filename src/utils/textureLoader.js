@@ -3,7 +3,8 @@
  * Handles loading and caching of planet textures
  */
 
-import * as THREE from 'three';
+// Use global THREE from the loaded script
+const THREE = window.THREE;
 
 // Texture cache to avoid reloading same textures
 const textureCache = new Map();

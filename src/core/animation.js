@@ -184,17 +184,32 @@ function animate() {
     // Update TimeManager (simulation time)
     timeManager.update(deltaTime);
 
-    // Update orbit controls (for smooth damping)
-    if (controls && controls.enableDamping) {
+    // Update controls (TrackballControls needs update() called every frame)
+    if (controls) {
         controls.update();
     }
 
-    // Call all registered update callbacks
-    updateCallbacks.forEach(callback => {
+    // Call all registered update callbacks with improved error handling
+    updateCallbacks.forEach((callback, index) => {
         try {
             callback(deltaTime, timeManager.getSimulationTime());
+            // Reset error count on successful execution
+            if (callback.errorCount) {
+                callback.errorCount = 0;
+            }
         } catch (error) {
-            console.error('Error in update callback:', error);
+            // Track error count per callback
+            callback.errorCount = (callback.errorCount || 0) + 1;
+
+            // Only log first few errors to avoid console spam
+            if (callback.errorCount <= 3) {
+                console.error(`Error in update callback (${callback.errorCount}/3):`, error);
+            } else if (callback.errorCount === 4) {
+                console.error(`Callback disabled after 3 errors. Last error:`, error);
+                // Remove the problematic callback
+                updateCallbacks.splice(index, 1);
+                console.warn('Removed problematic callback from animation loop');
+            }
         }
     });
 

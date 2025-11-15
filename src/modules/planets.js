@@ -9,6 +9,7 @@ import { addToScene, removeFromScene } from '../core/scene.js';
 import { getCachedSphereGeometry } from '../utils/geometryCache.js';
 import { isRotationEnabled } from './performanceSlider.js';
 import { loadPlanetTextures, loadSaturnRingTexture } from '../utils/textureLoader.js';
+import { initAtmosphere, createAtmosphere, updateAtmospherePosition, removeAtmosphere, disposeAtmospheres, updateAtmosphereStyle, shouldHaveAtmosphere } from './atmosphere.js';
 
 /**
  * Planet mesh objects keyed by planet name
@@ -77,6 +78,11 @@ const cachedOrbitalData = {};
 export async function initPlanets(styleConfig = {}) {
     currentStyle = styleConfig;
 
+    // Initialize atmosphere module with Three.js reference
+    if (typeof THREE !== 'undefined') {
+        initAtmosphere(THREE);
+    }
+
     // Clean up existing planets if any
     disposePlanets();
 
@@ -88,6 +94,14 @@ export async function initPlanets(styleConfig = {}) {
         // Add rings to Saturn
         if (planetKey === 'saturn' && planetData.rings) {
             await createSaturnRings(planetKey, planetData, styleConfig);
+        }
+
+        // Add atmosphere to planets that have them (Earth, Venus, Mars)
+        if (shouldHaveAtmosphere(planetKey)) {
+            const planetMesh = planetMeshes[planetKey];
+            if (planetMesh) {
+                createAtmosphere(planetKey, planetMesh);
+            }
         }
 
         // Pre-calculate and cache orbital data for this planet (OPTIMIZATION)
@@ -427,6 +441,11 @@ export function updatePlanets(deltaTime, simulationTime) {
             planetMesh.position.set(x, 0, z);
         }
 
+        // Update atmosphere position to follow planet
+        if (shouldHaveAtmosphere(planetKey)) {
+            updateAtmospherePosition(planetKey, planetMesh.position);
+        }
+
         // Update planet rotation on its axis (using cached rotation speed)
         // Skip rotation if performance level is ultra-low (optimization)
         if (isRotationEnabled()) {
@@ -457,6 +476,9 @@ export function updatePlanetsStyle(styleConfig) {
         planetMesh.material.dispose();
         planetMesh.material = newMaterial;
     });
+
+    // Update atmosphere styles
+    updateAtmosphereStyle();
 
     console.log(`✅ Planets style updated to: ${styleConfig.name}`);
 }
@@ -546,6 +568,10 @@ function disposePlanet(planetKey) {
  * Dispose of all planet resources
  */
 export function disposePlanets() {
+    // Dispose atmospheres first
+    disposeAtmospheres();
+
+    // Then dispose planet meshes
     Object.keys(planetMeshes).forEach(planetKey => {
         disposePlanet(planetKey);
     });

@@ -4,7 +4,7 @@
  * Provides unified interface for initialization, updates, and disposal
  */
 
-import { initSun, updateSun, disposeSun, getSun } from './sun.js';
+import { initSun, updateSun, disposeSun, getSun, initSunLensFlare } from './sun.js';
 import { initPlanets, updatePlanets, getPlanetPosition, disposePlanets, getPlanet } from './planets.js';
 import { initMoon, updateMoon, disposeMoon, getMoon } from './moon.js';
 import { initMajorMoons, updateMajorMoons, disposeMajorMoons, getMoonMesh } from './moons.js';
@@ -71,6 +71,12 @@ export async function initSolarSystem(config) {
     // Initialize the sun
     solarSystemState.sun = initSun(currentStyle);
     console.log('  ✓ Sun initialized');
+
+    // Initialize lens flare for sun (needs camera and renderer)
+    if (camera && renderer) {
+        initSunLensFlare(camera, renderer);
+        console.log('  ✓ Lens flare initialized');
+    }
 
     // Initialize planets (Mercury, Venus, Earth, Mars, Jupiter, Saturn, Uranus, Neptune)
     solarSystemState.planets = await initPlanets(currentStyle);

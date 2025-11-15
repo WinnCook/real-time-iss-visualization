@@ -217,6 +217,79 @@ class TimeManager {
         }
         return `${this.timeSpeed}x`;
     }
+
+    /**
+     * Get current simulation date as a JavaScript Date object
+     * @returns {Date} The current date in the simulation
+     */
+    getSimulationDate() {
+        const J2000_EPOCH = new Date('2000-01-01T12:00:00Z');
+        return new Date(J2000_EPOCH.getTime() + this.simulationTime);
+    }
+
+    /**
+     * Format the current simulation date as a readable string
+     * @returns {string} Formatted date string
+     */
+    formatSimulationDate() {
+        const date = this.getSimulationDate();
+        const options = {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit',
+            timeZone: 'UTC',
+            timeZoneName: 'short'
+        };
+        return date.toLocaleString('en-US', options);
+    }
+
+    /**
+     * Set simulation time to a specific date
+     * @param {Date|string|number} date - The date to jump to (Date object, ISO string, or year)
+     */
+    setSimulationDate(date) {
+        const J2000_EPOCH = new Date('2000-01-01T12:00:00Z');
+
+        let targetDate;
+        if (typeof date === 'number') {
+            // If it's a number, treat it as a year
+            targetDate = new Date(`${date}-01-01T00:00:00Z`);
+        } else if (typeof date === 'string') {
+            // If it's a string, parse it as a date
+            targetDate = new Date(date);
+        } else if (date instanceof Date) {
+            // If it's already a Date object, use it directly
+            targetDate = date;
+        } else {
+            console.error('Invalid date format provided to setSimulationDate');
+            return;
+        }
+
+        // Calculate milliseconds since J2000 epoch
+        this.simulationTime = targetDate.getTime() - J2000_EPOCH.getTime();
+
+        console.log(`⏰ Simulation time set to: ${this.formatSimulationDate()}`);
+    }
+
+    /**
+     * Get the year from a decimal year value (e.g., 2025.5 = July 2025)
+     * @param {number} decimalYear - The decimal year value
+     * @returns {Date} The corresponding date
+     */
+    getDateFromDecimalYear(decimalYear) {
+        const year = Math.floor(decimalYear);
+        const yearFraction = decimalYear - year;
+
+        // Calculate the date based on year fraction
+        const yearStart = new Date(`${year}-01-01T00:00:00Z`);
+        const yearEnd = new Date(`${year + 1}-01-01T00:00:00Z`);
+        const yearDuration = yearEnd.getTime() - yearStart.getTime();
+
+        return new Date(yearStart.getTime() + yearDuration * yearFraction);
+    }
 }
 
 // Create singleton instance

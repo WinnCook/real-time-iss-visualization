@@ -188,6 +188,14 @@
                         <span>🌟 Sun Corona</span>
                     </label>
                     <label class="toggle">
+                        <input type="checkbox" id="toggle-atmosphere" checked>
+                        <span>🌍 Atmosphere</span>
+                    </label>
+                    <label class="toggle">
+                        <input type="checkbox" id="toggle-lens-flare" checked>
+                        <span>✨ Lens Flare</span>
+                    </label>
+                    <label class="toggle">
                         <input type="checkbox" id="toggle-asteroid-belt" checked>
                         <span>Asteroids</span>
                     </label>
@@ -334,22 +342,16 @@
     <!-- VERSION 20250113004 - SWAPPED BUTTON VALUES -->
 
     <!-- Import Map for ES6 Modules -->
-    <script type="importmap">
-    {
-        "imports": {
-            "three": "https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.module.js"
-        }
-    }
-    </script>
+    <!-- Import map removed - all code uses global THREE from script tag -->
 
-    <!-- Load Three.js from CDN (using known working version) -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <!-- Load Three.js from LOCAL FILES (r128 - Pinned Version) -->
+    <script src="assets/js/three.min.js"></script>
 
     <!-- ONLY LOAD TRACKBALLCONTROLS - NO ORBITCONTROLS (conflict removed) -->
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/TrackballControls.js"></script>
+    <script src="assets/js/TrackballControls.js"></script>
 
     <!-- Load GLTFLoader for 3D models -->
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+    <script src="assets/js/GLTFLoader.js"></script>
 
     <!-- Verify Three.js loaded and make it globally available -->
     <script>

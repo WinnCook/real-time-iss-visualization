@@ -7,6 +7,7 @@ import { SUN_RADIUS, COLORS, RENDER, scaleRadius } from '../utils/constants.js';
 import { addToScene, removeFromScene, getScene } from '../core/scene.js';
 import { getCachedSphereGeometry } from '../utils/geometryCache.js';
 import { initSunCorona, updateSunCorona, disposeSunCorona, recreateSunCorona } from './sunCorona.js';
+import { initLensFlare, updateLensFlare, disposeLensFlare, recreateLensFlare, setLensFlareEnabled } from './lensFlare.js';
 
 /**
  * The sun mesh object
@@ -33,12 +34,26 @@ let coronaInitialized = false;
 let currentStyle = null;
 
 /**
+ * Camera and renderer references for lens flare
+ * @type {Object}
+ */
+let lensFlareRefs = null;
+
+/**
+ * Flag to track if lens flare is initialized
+ * @type {boolean}
+ */
+let lensFlareInitialized = false;
+
+/**
  * Initialize the sun at the origin (0, 0, 0)
  * @param {Object} styleConfig - Visual style configuration
+ * @param {Object} refs - Optional camera and renderer references for lens flare
  * @returns {THREE.Mesh} The sun mesh
  */
-export function initSun(styleConfig = {}) {
+export function initSun(styleConfig = {}, refs = null) {
     currentStyle = styleConfig;
+    lensFlareRefs = refs;
 
     // Clean up existing sun if any
     if (sunMesh) {
@@ -76,6 +91,12 @@ export function initSun(styleConfig = {}) {
     if (scene) {
         initSunCorona(scene, sunMesh);
         coronaInitialized = true;
+    }
+
+    // Initialize lens flare system if camera and renderer are provided
+    if (refs && refs.camera && refs.renderer && !lensFlareInitialized) {
+        initLensFlare(refs.camera, sunMesh, scene, refs.renderer);
+        lensFlareInitialized = true;
     }
 
     console.log('✅ Sun initialized at origin with glow effects');
@@ -199,6 +220,11 @@ export function updateSunStyle(styleConfig) {
         }
     }
 
+    // Handle lens flare system - recreate with new style
+    if (lensFlareInitialized) {
+        recreateLensFlare();
+    }
+
     console.log(`✅ Sun style updated to: ${styleConfig.name}`);
 }
 
@@ -227,6 +253,11 @@ export function updateSun(deltaTime, simulationTime) {
     // Update advanced corona particle system
     if (coronaInitialized) {
         updateSunCorona(deltaTime);
+    }
+
+    // Update lens flare system
+    if (lensFlareInitialized) {
+        updateLensFlare(deltaTime);
     }
 }
 
@@ -276,6 +307,36 @@ export function disposeSun() {
     if (coronaInitialized) {
         disposeSunCorona();
         coronaInitialized = false;
+    }
+
+    // Dispose lens flare system
+    if (lensFlareInitialized) {
+        disposeLensFlare();
+        lensFlareInitialized = false;
+    }
+}
+
+/**
+ * Initialize lens flare system (can be called after sun creation)
+ * @param {THREE.Camera} camera - The camera reference
+ * @param {THREE.WebGLRenderer} renderer - The renderer reference
+ */
+export function initSunLensFlare(camera, renderer) {
+    if (sunMesh && !lensFlareInitialized) {
+        const scene = getScene();
+        initLensFlare(camera, sunMesh, scene, renderer);
+        lensFlareInitialized = true;
+        console.log('✅ Lens flare initialized for sun');
+    }
+}
+
+/**
+ * Set lens flare enabled state
+ * @param {boolean} enabled - Whether lens flares should be shown
+ */
+export function setSunLensFlareEnabled(enabled) {
+    if (lensFlareInitialized) {
+        setLensFlareEnabled(enabled);
     }
 }
 

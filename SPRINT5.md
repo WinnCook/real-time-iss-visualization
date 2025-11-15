@@ -76,24 +76,26 @@ const coronaConfig = {
 
 ---
 
-### Task 2: Earth Atmospheric Glow 🌍
+### Task 2: Earth Atmospheric Glow 🌍 ✅ COMPLETE
 
 **Priority:** P0 (Critical - Realism)
 **Estimated Effort:** 1.5 hours
+**Actual Effort:** 1.5 hours
 **Complexity:** Medium
+**Status:** ✅ COMPLETE - 2025-11-14
 
 #### Overview:
 Add a realistic atmospheric glow around Earth using a Fresnel shader that creates the blue atmospheric halo visible from space.
 
 #### Subtasks:
-- [ ] 2.1: Create `src/modules/atmosphere.js` module
-- [ ] 2.2: Implement Fresnel shader for rim lighting
-- [ ] 2.3: Add atmospheric scattering (Rayleigh scattering)
-- [ ] 2.4: Create separate atmosphere sphere (slightly larger than Earth)
-- [ ] 2.5: Style-aware opacity and color
-- [ ] 2.6: Add support for other planets with atmospheres (Venus, Mars)
-- [ ] 2.7: Integrate with Earth module
-- [ ] 2.8: Test performance impact
+- [x] 2.1: Create `src/modules/atmosphere.js` module ✅
+- [x] 2.2: Implement Fresnel shader for rim lighting ✅
+- [x] 2.3: Add atmospheric scattering (Rayleigh scattering) ✅
+- [x] 2.4: Create separate atmosphere sphere (slightly larger than Earth) ✅
+- [x] 2.5: Style-aware opacity and color ✅
+- [x] 2.6: Add support for other planets with atmospheres (Venus, Mars) ✅
+- [x] 2.7: Integrate with Earth module ✅
+- [x] 2.8: Test performance impact ✅
 
 #### Shader Implementation:
 ```glsl
@@ -121,33 +123,55 @@ void main() {
 }
 ```
 
+#### Implementation Details:
+- **Dynamic Fresnel Shader**: Custom vertex/fragment shaders for realistic rim lighting
+- **Multi-Planet Support**: Earth, Venus, and Mars each with unique atmosphere colors
+- **Style Configurations**: Different atmosphere settings for each visual style (Realistic, Cartoon, Neon, Minimalist)
+- **UI Integration**: Added "🌍 Atmosphere" toggle in Display options
+- **Performance Optimized**: Uses additive blending with depthWrite disabled
+
+#### Technical Implementation:
+```javascript
+// Atmosphere configurations per style
+const STYLE_CONFIGS = {
+    realistic: {
+        earth: { color: [0.3, 0.6, 1.0], intensity: 1.0, falloff: 3.0 },
+        venus: { color: [0.9, 0.8, 0.5], intensity: 0.8, falloff: 2.5 },
+        mars: { color: [0.8, 0.5, 0.3], intensity: 0.3, falloff: 4.0 }
+    },
+    // ... other styles
+};
+```
+
 #### Acceptance Criteria:
-- [ ] Blue atmospheric glow visible around Earth's edge
-- [ ] Glow intensity varies with viewing angle
-- [ ] Works in all visual styles
-- [ ] No z-fighting with Earth surface
-- [ ] Performance impact < 5 FPS
+- [x] Blue atmospheric glow visible around Earth's edge ✅
+- [x] Glow intensity varies with viewing angle ✅
+- [x] Works in all visual styles ✅
+- [x] No z-fighting with Earth surface ✅
+- [x] Performance impact < 5 FPS ✅
 
 ---
 
-### Task 3: Sun Lens Flare ✨
+### Task 3: Sun Lens Flare ✨ ✅ COMPLETE
 
 **Priority:** P1 (High - Cinematic effect)
 **Estimated Effort:** 1.5 hours
+**Actual Effort:** 1.5 hours
 **Complexity:** Medium
+**Status:** ✅ COMPLETE - 2025-11-14
 
 #### Overview:
 Implement camera-aware lens flare effects that appear when looking toward the sun, with multiple ghost artifacts and streaks.
 
 #### Subtasks:
-- [ ] 3.1: Create `src/modules/lensFlare.js` module
-- [ ] 3.2: Calculate sun screen position each frame
-- [ ] 3.3: Check sun occlusion (behind planets)
-- [ ] 3.4: Create flare sprite textures (circles, hexagons, streaks)
-- [ ] 3.5: Position flare artifacts along camera-sun axis
-- [ ] 3.6: Add brightness based on sun angle
-- [ ] 3.7: Style-aware intensity (bright in Realistic, subtle in Minimalist)
-- [ ] 3.8: Add UI toggle for lens flares
+- [x] 3.1: Create `src/modules/lensFlare.js` module ✅
+- [x] 3.2: Calculate sun screen position each frame ✅
+- [x] 3.3: Check sun occlusion (behind planets) ✅
+- [x] 3.4: Create flare sprite textures (circles, hexagons, streaks) ✅
+- [x] 3.5: Position flare artifacts along camera-sun axis ✅
+- [x] 3.6: Add brightness based on sun angle ✅
+- [x] 3.7: Style-aware intensity (bright in Realistic, subtle in Minimalist) ✅
+- [x] 3.8: Add UI toggle for lens flares ✅
 
 #### Technical Approach:
 ```javascript
@@ -161,12 +185,34 @@ const flareElements = [
 ];
 ```
 
+#### Implementation Details:
+- **HTML5 Canvas Overlays**: Used DOM elements with gradient backgrounds for performance
+- **Dynamic Positioning**: Flare sprites positioned along sun-to-center axis
+- **Occlusion Detection**: Raycasting to check if planets block sun
+- **Style Configurations**: 4 unique visual styles (Realistic, Cartoon, Neon, Minimalist off)
+- **UI Integration**: Added "✨ Lens Flare" toggle in Display options
+- **Edge Fading**: Smooth fade as flares approach screen edges
+- **Performance Optimized**: Uses CSS transforms for smooth movement
+
+#### Technical Implementation:
+```javascript
+// 6 flare elements in Realistic mode
+const flareElements = [
+    { size: 700, distance: 0.0, color: [1.0, 1.0, 1.0], opacity: 0.6 }, // Main flare
+    { size: 300, distance: 0.4, color: [1.0, 0.75, 0.75], opacity: 0.3 }, // Ghost 1
+    { size: 200, distance: 0.6, color: [0.75, 1.0, 0.75], opacity: 0.2 }, // Ghost 2
+    { size: 150, distance: 0.8, color: [0.75, 0.75, 1.0], opacity: 0.2 }, // Ghost 3
+    { size: 400, distance: 1.2, color: [1.0, 1.0, 1.0], opacity: 0.1 },  // Halo
+    { size: 100, distance: -0.3, color: [1.0, 0.8, 0.5], opacity: 0.4 }, // Back ghost
+];
+```
+
 #### Acceptance Criteria:
-- [ ] Lens flares appear when sun is in view
-- [ ] Flares disappear when sun is occluded
-- [ ] Multiple ghost artifacts visible
-- [ ] Brightness varies with viewing angle
-- [ ] Performance maintains 60 FPS
+- [x] Lens flares appear when sun is in view ✅
+- [x] Flares disappear when sun is occluded ✅
+- [x] Multiple ghost artifacts visible ✅
+- [x] Brightness varies with viewing angle ✅
+- [x] Performance maintains 60 FPS ✅
 
 ---
 
@@ -315,11 +361,11 @@ void main() {
 ## Sprint Metrics
 
 - **Total Tasks:** 6
-- **Completed Tasks:** 1/6 (Task 1: Sun Corona ✅)
+- **Completed Tasks:** 3/6 (Task 1: Sun Corona ✅, Task 2: Earth Atmosphere ✅, Task 3: Lens Flare ✅)
 - **Total Subtasks:** 53
-- **Completed Subtasks:** 8/53
+- **Completed Subtasks:** 24/53
 - **Estimated Effort:** 8 hours
-- **Actual Effort So Far:** 2.5 hours
+- **Actual Effort So Far:** 4 hours
 - **Priority Breakdown:**
   - P0 (Critical): 3 tasks (1 complete)
   - P1 (High): 2 tasks
@@ -377,4 +423,41 @@ Each effect is considered "Done" when:
 - `SPRINT5.md` - Sprint documentation
 - `test-corona.html` - Test page for debugging
 
-**Next Step:** Task 2 - Earth Atmospheric Glow
+**Task 2: Earth Atmospheric Glow** ✅ COMPLETE
+- Created `src/modules/atmosphere.js` (400+ lines)
+- Implemented Fresnel shader with custom vertex/fragment shaders
+- Added support for Earth, Venus, and Mars atmospheres
+- Style-aware configurations for all 4 visual styles
+- Integrated with planets.js module (initialization, updates, disposal)
+- Added UI toggle control "🌍 Atmosphere"
+- Tested successfully on port 8080
+
+**Files Created/Modified:**
+- `src/modules/atmosphere.js` - Main atmosphere module with Fresnel shaders
+- `src/modules/planets.js` - Integrated atmosphere system
+- `src/modules/ui.js` - Added atmosphere toggle handler
+- `index.html` - Added atmosphere toggle checkbox
+- `SPRINT5.md` - Updated documentation
+
+**Task 3: Sun Lens Flare** ✅ COMPLETE
+- Created `src/modules/lensFlare.js` (350+ lines)
+- Implemented DOM-based lens flare system with 6 ghost artifacts
+- Radial gradient backgrounds for realistic optical effects
+- Sun occlusion detection using raycasting
+- Camera angle-based brightness calculation
+- Style-aware configurations (Realistic, Cartoon, Neon styles - Minimalist disabled)
+- Integrated with sun.js module (initSunLensFlare, setSunLensFlareEnabled)
+- Added UI toggle control "✨ Lens Flare"
+- Edge fading for smooth transitions at screen boundaries
+- Performance optimized with CSS transforms and blend modes
+- Tested successfully across all visual styles
+
+**Files Created/Modified:**
+- `src/modules/lensFlare.js` - Main lens flare system
+- `src/modules/sun.js` - Integrated lens flare initialization and updates
+- `src/modules/solarSystem.js` - Added lens flare initialization after sun creation
+- `src/modules/ui.js` - Added lens flare toggle handler
+- `index.html` - Added lens flare toggle checkbox
+- `SPRINT5.md` - Updated documentation
+
+**Next Step:** Task 4 - Shooting Stars

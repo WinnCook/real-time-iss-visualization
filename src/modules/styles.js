@@ -110,7 +110,8 @@ export async function switchStyle(newStyleKey) {
     try {
         console.log(`🎨 Switching style from '${currentStyleKey}' to '${newStyleKey}'...`);
 
-        // Update current style
+        // Update current style IMMEDIATELY so all modules get the correct new style
+        const previousStyleKey = currentStyleKey;
         currentStyleKey = newStyleKey;
         currentStyleConfig = STYLES[newStyleKey];
 
@@ -118,8 +119,17 @@ export async function switchStyle(newStyleKey) {
         applyStyleToScene(currentStyleConfig);
 
         // Recreate all celestial objects with new style
+        // Now modules will correctly get the NEW style when they call getCurrentStyleKey()
         if (recreateObjectsCallback) {
-            await recreateObjectsCallback(currentStyleConfig);
+            try {
+                await recreateObjectsCallback(currentStyleConfig);
+            } catch (error) {
+                // If recreation fails, revert the style
+                console.error('Failed to recreate objects:', error);
+                currentStyleKey = previousStyleKey;
+                currentStyleConfig = STYLES[previousStyleKey];
+                throw error;
+            }
         }
 
         // Update UI to reflect active style

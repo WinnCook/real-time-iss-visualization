@@ -11,7 +11,7 @@ import { timeManager } from './utils/time.js';
 import { initSolarSystem, updateSolarSystem, recreateSolarSystem, getCelestialObject, registerISSCallback } from './modules/solarSystem.js';
 import { initPerformanceSlider } from './modules/performanceSlider.js';
 import { initStyles, getCurrentStyle } from './modules/styles.js';
-import { initUI, registerClickableObject, updateFPS, updateISSInfo, updateCameraFollow } from './modules/ui.js';
+import { initUI, registerClickableObject, updateFPS, updateSimulationDate, updateISSInfo, updateCameraFollow } from './modules/ui.js';
 import { initLoadingManager, completeTask, hideLoadingScreen } from './core/loadingManager.js';
 import { initTutorial } from './modules/tutorial.js';
 import { initTouchIndicator } from './modules/touchIndicator.js';
@@ -154,6 +154,9 @@ async function init() {
 
             // Update FPS counter in UI
             updateFPS(getFPS());
+
+            // Update simulation date display
+            updateSimulationDate();
         });
 
         // Finalize setup
@@ -269,10 +272,25 @@ window.addEventListener('DOMContentLoaded', async () => {
     init();
 });
 
-// Export app state for debugging and URL sharing
-window.APP = {
-    ...app,
-    timeManager: timeManager
+// Create a controlled API for sharing functionality only
+// This replaces the previous global window.APP exposure
+window.getShareState = function() {
+    // Only return the minimal state needed for URL sharing
+    return {
+        camera: app.camera,
+        controls: app.controls,
+        timeManager: timeManager
+    };
 };
+
+// Optional: Enable debug mode only in development
+const DEBUG_MODE = false; // Set to true only during development
+if (DEBUG_MODE && window.location.hostname === 'localhost') {
+    console.warn('🔧 Debug mode enabled - app state exposed for debugging');
+    window.APP_DEBUG = Object.freeze({
+        ...app,
+        timeManager: timeManager
+    });
+}
 
 console.log('✅ Main.js loaded');

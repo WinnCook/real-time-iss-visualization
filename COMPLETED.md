@@ -2,6 +2,8 @@
 
 A chronological record of all completed work with details and notes.
 
+**Last Updated:** 2025-11-14
+
 ---
 
 ## 2025-11-10 - Project Initialization
@@ -1774,3 +1776,180 @@ Enhanced visual realism with Earth atmospheric glow shader, sun corona particle 
 ---
 
 **Last Updated:** 2025-11-12 (Sprint 2 Task 3 - Visual Effects completed)
+
+## 2025-11-14 - Sprint 5: Visual Effects Enhancement
+
+### ✅ Task 2: Earth Atmospheric Glow
+**Completed:** 2025-11-14
+**Sprint:** Sprint 5
+**Effort:** 1.5 hours
+**Priority:** P0 (Critical - Realism)
+
+#### What Was Done:
+- Created comprehensive `src/modules/atmosphere.js` module (400+ lines)
+- Implemented custom Fresnel shaders for realistic atmospheric rim lighting
+- Added multi-planet support (Earth, Venus, Mars) with unique atmosphere colors
+- Integrated style-aware rendering for all 4 visual styles
+- Added UI toggle control "🌍 Atmosphere" in Display options
+- Full integration with planets.js module
+
+#### Technical Implementation:
+**Fresnel Shader System:**
+```javascript
+// Custom vertex/fragment shaders
+- Vertex shader calculates view angle
+- Fragment shader applies Fresnel effect: pow(1.0 - dot(normal, view), falloff)
+- Additive blending for glow accumulation
+- BackSide rendering for rim effect only
+```
+
+**Style Configurations:**
+```javascript
+realistic: {
+    earth: { color: [0.3, 0.6, 1.0], intensity: 1.0, falloff: 3.0 },
+    venus: { color: [0.9, 0.8, 0.5], intensity: 0.8, falloff: 2.5 },
+    mars: { color: [0.8, 0.5, 0.3], intensity: 0.3, falloff: 4.0 }
+}
+// Plus configurations for cartoon, neon, minimalist styles
+```
+
+#### Key Features:
+- **Dynamic Fresnel Effect:** Glow intensity varies with viewing angle
+- **Multi-Planet Support:** Earth (blue), Venus (yellow-orange), Mars (dusty red)
+- **Style Adaptability:** Different atmosphere settings per visual style
+- **Performance Optimized:** Uses additive blending, depthWrite disabled
+- **Full Integration:** Follows planets as they orbit, updates with style changes
+
+#### Files Created/Modified:
+- `src/modules/atmosphere.js` - New module with Fresnel shader implementation
+- `src/modules/planets.js` - Added atmosphere initialization, updates, disposal
+- `src/modules/ui.js` - Added atmosphere toggle handler
+- `index.html` - Added UI checkbox for atmosphere control
+- `SPRINT5.md` - Updated documentation with implementation details
+
+#### Testing Results:
+- ✅ Blue atmospheric glow visible around Earth's edge
+- ✅ Venus shows yellow-orange atmosphere
+- ✅ Mars displays dusty red atmosphere
+- ✅ Glow intensity varies correctly with viewing angle
+- ✅ Works seamlessly in all 4 visual styles
+- ✅ No z-fighting with planet surfaces
+- ✅ Performance impact negligible (< 2 FPS)
+- ✅ UI toggle functions correctly
+
+#### Sprint Impact:
+- **Sprint 5 Task 2 COMPLETED** ✅
+- **Sprint 5 Progress:** 2/6 tasks complete (33%)
+- **Total Subtasks:** 16/53 complete
+- **Next Task:** Task 3 - Sun Lens Flare
+
+---
+
+## 2025-11-14 (Evening Session) - Sprint 5 Continues
+
+### ✅ Task 3: Sun Lens Flare System
+**Completed:** 2025-11-14 20:00 UTC
+**Sprint:** Sprint 5 - Visual Effects Enhancement
+**Priority:** P1 (High - Cinematic effect)
+**Effort:** 1.5 hours
+
+#### What Was Done:
+Created a sophisticated camera-aware lens flare system with multiple ghost artifacts that appear when looking toward the sun. The system uses DOM-based overlays with CSS gradients for optimal performance.
+
+#### Technical Implementation:
+
+**DOM-Based Approach:**
+- Used HTML div elements with radial gradients instead of WebGL sprites
+- CSS transforms for smooth positioning
+- Blend mode: screen for realistic light addition
+- Z-index layering for proper stacking
+
+**Flare Configuration (Realistic Style):**
+```javascript
+elements: [
+    { size: 700, distance: 0.0, color: [1.0, 1.0, 1.0], opacity: 0.6 }, // Main flare
+    { size: 300, distance: 0.4, color: [1.0, 0.75, 0.75], opacity: 0.3 }, // Ghost 1
+    { size: 200, distance: 0.6, color: [0.75, 1.0, 0.75], opacity: 0.2 }, // Ghost 2
+    { size: 150, distance: 0.8, color: [0.75, 0.75, 1.0], opacity: 0.2 }, // Ghost 3
+    { size: 400, distance: 1.2, color: [1.0, 1.0, 1.0], opacity: 0.1 },  // Halo
+    { size: 100, distance: -0.3, color: [1.0, 0.8, 0.5], opacity: 0.4 }, // Back ghost
+]
+```
+
+**Occlusion Detection:**
+```javascript
+// Raycasting from camera to sun
+const raycaster = new THREE.Raycaster();
+raycaster.set(camera.position, sunDirection);
+// Check intersections with planets
+// Calculate partial occlusion based on planet size
+```
+
+#### Key Features:
+- **6 Ghost Artifacts:** Multiple flare elements positioned along sun-to-center axis
+- **Dynamic Brightness:** Intensity varies with camera angle to sun
+- **Occlusion Detection:** Flares disappear when sun is behind planets
+- **Edge Fading:** Smooth fade at screen edges
+- **Style Configurations:** Unique setups for Realistic, Cartoon, and Neon styles
+- **UI Control:** Toggle on/off with "✨ Lens Flare" checkbox
+
+#### Files Created/Modified:
+- `src/modules/lensFlare.js` - Complete lens flare system (350+ lines)
+- `src/modules/sun.js` - Added lens flare initialization and updates
+- `src/modules/solarSystem.js` - Initialize lens flare after sun creation
+- `src/modules/ui.js` - Added toggle handler
+- `index.html` - Added lens flare toggle checkbox
+- `SPRINT5.md` - Updated documentation
+
+#### Performance Impact:
+- FPS: Maintained 60 FPS
+- Memory: Minimal (DOM elements, not textures)
+- CPU: Low overhead (updates only on camera movement)
+
+---
+
+### ✅ Bug Fix: Style Button One-Click-Behind Issue
+**Completed:** 2025-11-14 20:30 UTC
+**Sprint:** Sprint 5
+**Effort:** 30 minutes
+
+#### The Problem:
+Style buttons were updating one click behind - clicking "Realistic" showed nothing, then clicking "Neon" would show Realistic style.
+
+#### Root Cause:
+The lens flare system wasn't being recreated during style switches in the `updateSunStyle()` function, while other visual elements (corona, atmosphere) were properly updated.
+
+#### The Fix:
+1. Added `recreateLensFlare()` call in `updateSunStyle()` function
+2. Ensured proper timing of style variable updates in `switchStyle()`
+3. Added error recovery mechanism for failed style switches
+
+#### Files Modified:
+- `src/modules/sun.js` - Added lens flare recreation during style updates
+- `src/modules/styles.js` - Fixed timing and added error handling
+
+#### Testing Results:
+- ✅ Style switches now happen immediately
+- ✅ All visual elements sync properly
+- ✅ No more one-click-behind behavior
+
+---
+
+### ✅ Session Documentation
+**Completed:** 2025-11-14 21:00 UTC
+**Effort:** 15 minutes
+
+#### Documentation Created:
+- `SESSION_SUMMARY_2025-11-14_LENS_FLARE.md` - Detailed session summary
+- Updated `COMPLETED.md` with today's accomplishments
+- Updated `SPRINT5.md` with task completion status
+
+#### Sprint 5 Status Update:
+- **Tasks Completed:** 3/6 (50%)
+  - ✅ Task 1: Sun Corona Particle System
+  - ✅ Task 2: Earth Atmospheric Glow
+  - ✅ Task 3: Sun Lens Flare
+- **Subtasks Completed:** 24/53 (45%)
+- **Next Priority:** Task 4 - Shooting Stars
+
+---

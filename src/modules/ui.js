@@ -16,6 +16,7 @@ import { setLabelsVisible } from './labels.js';
 import { setISSTrailVisible } from './iss.js';
 import { setStarfieldVisible } from './starfield.js';
 import { setCoronaEnabled } from './sunCorona.js';
+import { setSunLensFlareEnabled } from './sun.js';
 import { setPerformanceLevel, getPerformanceSettings } from './performanceSlider.js';
 import { showTutorial } from './tutorial.js';
 import { captureScreenshot } from '../utils/screenshot.js';
@@ -408,6 +409,28 @@ function setupDisplayToggles() {
         });
     }
 
+    // Atmosphere toggle
+    const toggleAtmosphere = document.getElementById('toggle-atmosphere');
+    if (toggleAtmosphere) {
+        toggleAtmosphere.addEventListener('change', (e) => {
+            import('./atmosphere.js').then(({ setAtmosphereVisible }) => {
+                setAtmosphereVisible(e.target.checked);
+                playToggleSound();
+                console.log(`🌍 Atmosphere ${e.target.checked ? 'enabled' : 'disabled'}`);
+            });
+        });
+    }
+
+    // Lens Flare toggle
+    const toggleLensFlare = document.getElementById('toggle-lens-flare');
+    if (toggleLensFlare) {
+        toggleLensFlare.addEventListener('change', (e) => {
+            setSunLensFlareEnabled(e.target.checked);
+            playToggleSound();
+            console.log(`✨ Lens Flare ${e.target.checked ? 'enabled' : 'disabled'}`);
+        });
+    }
+
     // Asteroid belt toggle
     const toggleAsteroidBelt = document.getElementById('toggle-asteroid-belt');
     if (toggleAsteroidBelt) {
@@ -507,9 +530,12 @@ function setupShareButton() {
     if (shareButton) {
         shareButton.addEventListener('click', () => {
             playClickSound();
-            // Get app state from global window.APP
-            if (window.APP) {
-                copyShareableURL(window.APP);
+            // Get app state using controlled API (more secure)
+            if (window.getShareState) {
+                const shareState = window.getShareState();
+                copyShareableURL(shareState);
+            } else {
+                console.warn('Share state API not available');
             }
         });
     }
@@ -1244,7 +1270,7 @@ function handleObjectClick(object) {
         previousObjectPosition = targetPosition.clone(); // Store initial position
 
         console.log(`📷 Camera locked onto ${key}`);
-        console.log(`   Distance: ${finalCameraDistance.toFixed(2)} (baseRadius: ${baseRadius.toFixed(4)}, multiplier: ${zoomMultiplier})`);
+        console.log(`   Distance: ${finalCameraDistance.toFixed(2)} (baseRadius: ${baseRadius.toFixed(4)})`);
         console.log(`   Camera pos: (${newCameraPosition.x.toFixed(2)}, ${newCameraPosition.y.toFixed(2)}, ${newCameraPosition.z.toFixed(2)})`);
         console.log(`   Looking at: (${targetPosition.x.toFixed(2)}, ${targetPosition.y.toFixed(2)}, ${targetPosition.z.toFixed(2)})`);
     }
